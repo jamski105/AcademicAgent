@@ -1,0 +1,374 @@
+{
+  "version": "1.0",
+  "description": "UI-Patterns für wissenschaftliche Datenbanken (disziplinübergreifend)",
+  "databases": {
+    "IEEE Xplore": {
+      "discipline": "Informatik, Ingenieurwesen",
+      "url_pattern": "ieeexplore.ieee.org",
+      "ui_patterns": {
+        "search_field": {
+          "selectors": ["input[name='queryText']", "#qs-search", "input[placeholder*='Search']"],
+          "text_markers": ["Search IEEE Xplore", "Enter search term"]
+        },
+        "advanced_search": {
+          "selectors": ["a[href*='advanced']", "button:contains('Advanced Search')"],
+          "text_markers": ["Advanced Search", "Refine search"]
+        },
+        "filters": {
+          "year": {
+            "selectors": ["select[name='startYear']", "input[id*='year']"],
+            "text_markers": ["Publication Year", "From year"]
+          },
+          "document_type": {
+            "selectors": ["select[name='contentType']", "input[type='checkbox'][value*='Conferences']"],
+            "text_markers": ["Content Type", "Document Type"]
+          }
+        },
+        "results": {
+          "title": {"selectors": ["h2.title", ".result-item-title", "a.title-link"]},
+          "authors": {"selectors": [".author", ".authors-list", "span[class*='author']"]},
+          "abstract": {"selectors": [".abstract-text", ".description", "div[class*='abstract']"]},
+          "pdf_link": {"selectors": ["a[href*='.pdf']", "a:contains('PDF')", "button:contains('Download PDF')"]},
+          "doi": {"selectors": [".doi", "a[href*='doi.org']", "span:contains('DOI:')"]}
+        }
+      },
+      "search_syntax": {
+        "boolean": "AND, OR, NOT (uppercase)",
+        "wildcard": "*",
+        "phrase": "\"exact phrase\"",
+        "field_search": "\"Document Title\":keyword OR \"Abstract\":keyword"
+      }
+    },
+    "Scopus": {
+      "discipline": "Multidisziplinär",
+      "url_pattern": "scopus.com",
+      "ui_patterns": {
+        "search_field": {
+          "selectors": ["input#searchfield", "textarea[name='query']", "input[placeholder*='Search']"],
+          "text_markers": ["Search for articles", "Enter keywords"]
+        },
+        "advanced_search": {
+          "selectors": ["a[href*='advanced']", "#advancedSearchLink"],
+          "text_markers": ["Advanced search", "Build query"]
+        },
+        "filters": {
+          "year": {
+            "selectors": ["input[id*='yearRange']", "select[name='pubyear']"],
+            "text_markers": ["Publication year", "Date range"]
+          },
+          "document_type": {
+            "selectors": ["input[type='checkbox'][id*='doctype']"],
+            "text_markers": ["Document type", "Source type"]
+          }
+        },
+        "results": {
+          "title": {"selectors": ["a.title", ".docTitle", "h4.documentTitle"]},
+          "authors": {"selectors": [".authorName", ".author-list", "span.authors"]},
+          "abstract": {"selectors": [".abstract", ".displayAbstract", "div.abstractText"]},
+          "pdf_link": {"selectors": ["a[href*='.pdf']", "a:contains('View PDF')", ".pdf-link"]},
+          "doi": {"selectors": [".doi", "a[href*='doi.org']"]}
+        }
+      },
+      "search_syntax": {
+        "boolean": "AND, OR, AND NOT",
+        "wildcard": "*",
+        "phrase": "\"exact phrase\"",
+        "field_search": "TITLE-ABS-KEY(keyword) AND PUBYEAR > 2014"
+      }
+    },
+    "SpringerLink": {
+      "discipline": "Multidisziplinär, Informatik, Jura, BWL",
+      "url_pattern": "link.springer.com",
+      "ui_patterns": {
+        "search_field": {
+          "selectors": ["input#query", "input[name='query']", "#search-input"],
+          "text_markers": ["Search SpringerLink", "Search articles"]
+        },
+        "advanced_search": {
+          "selectors": ["a[href*='advanced-search']", "#advanced-search-link"],
+          "text_markers": ["Advanced search"]
+        },
+        "filters": {
+          "year": {
+            "selectors": ["input[name='date-facet-year']", "#facet-year"],
+            "text_markers": ["Publication year", "Year"]
+          },
+          "document_type": {
+            "selectors": ["input[id*='content-type']"],
+            "text_markers": ["Content type", "Type"]
+          }
+        },
+        "results": {
+          "title": {"selectors": ["h3.title", "a.title", ".c-card__title"]},
+          "authors": {"selectors": [".authors", ".c-author-list", "span.author-name"]},
+          "abstract": {"selectors": [".abstract", ".c-card__summary", "div.snippet"]},
+          "pdf_link": {"selectors": ["a[href*='.pdf']", "a:contains('Download PDF')", ".pdf-link"]},
+          "doi": {"selectors": [".doi", "a[href*='doi.org']"]}
+        }
+      },
+      "search_syntax": {
+        "boolean": "AND, OR, NOT",
+        "wildcard": "*",
+        "phrase": "\"exact phrase\"",
+        "field_search": "Simple search (no field operators)"
+      }
+    },
+    "ACM Digital Library": {
+      "discipline": "Informatik",
+      "url_pattern": "dl.acm.org",
+      "ui_patterns": {
+        "search_field": {
+          "selectors": ["input[name='AllField']", "#searchField", "input.search-input"],
+          "text_markers": ["Search the ACM Digital Library", "Search"]
+        },
+        "advanced_search": {
+          "selectors": ["a[href*='advanced']", "#advSearchLink"],
+          "text_markers": ["Advanced Search"]
+        },
+        "filters": {
+          "year": {
+            "selectors": ["select[name='AfterYear']", "#yearFilter"],
+            "text_markers": ["Published after", "Publication date"]
+          },
+          "document_type": {
+            "selectors": ["input[type='checkbox'][name='ContentType']"],
+            "text_markers": ["Content Type", "Research article"]
+          }
+        },
+        "results": {
+          "title": {"selectors": [".issue-item__title", "h5.title", "a.hlFld-Title"]},
+          "authors": {"selectors": [".issue-item__authors", ".author-name", "span.authors"]},
+          "abstract": {"selectors": [".issue-item__abstract", ".abstractSection", "div.abstract"]},
+          "pdf_link": {"selectors": ["a[href*='.pdf']", "a[title='PDF']", ".pdf-download"]},
+          "doi": {"selectors": [".issue-item__doi", "a[href*='doi.org']"]}
+        }
+      },
+      "search_syntax": {
+        "boolean": "AND, OR, NOT",
+        "wildcard": "*",
+        "phrase": "\"exact phrase\"",
+        "field_search": "Title:keyword OR Abstract:keyword"
+      }
+    },
+    "Beck-Online": {
+      "discipline": "Jura, Steuern",
+      "url_pattern": "beck-online.beck.de",
+      "ui_patterns": {
+        "search_field": {
+          "selectors": ["input#searchfield", "input[name='query']", ".search-input"],
+          "text_markers": ["Suche", "Suchbegriff eingeben"]
+        },
+        "advanced_search": {
+          "selectors": ["a:contains('Erweiterte Suche')", "#erweiterteSuche"],
+          "text_markers": ["Erweiterte Suche", "Detailsuche"]
+        },
+        "filters": {
+          "year": {
+            "selectors": ["input[name='jahr']", "#datumFilter"],
+            "text_markers": ["Erscheinungsjahr", "Datum"]
+          },
+          "document_type": {
+            "selectors": ["select[name='dokumenttyp']", "input[value='Aufsatz']"],
+            "text_markers": ["Dokumenttyp", "Publikationsart"]
+          }
+        },
+        "results": {
+          "title": {"selectors": [".treffer-titel", "h3.title", "a.titel"]},
+          "authors": {"selectors": [".autor", ".verfasser", "span.author"]},
+          "abstract": {"selectors": [".leitsatz", ".zusammenfassung", "div.abstract"]},
+          "pdf_link": {"selectors": ["a[href*='.pdf']", "a:contains('PDF')", ".pdf-download"]},
+          "doi": {"selectors": [".doi", "span:contains('DOI')"]}
+        }
+      },
+      "search_syntax": {
+        "boolean": "UND, ODER, NICHT",
+        "wildcard": "*",
+        "phrase": "\"genaue Phrase\"",
+        "field_search": "Titel:Begriff ODER Volltext:Begriff"
+      }
+    },
+    "PubMed": {
+      "discipline": "Medizin, Life Sciences",
+      "url_pattern": "pubmed.ncbi.nlm.nih.gov",
+      "ui_patterns": {
+        "search_field": {
+          "selectors": ["input#search", "input[name='term']", ".search-box"],
+          "text_markers": ["Search PubMed", "Enter keywords"]
+        },
+        "advanced_search": {
+          "selectors": ["a[href*='advanced']", "#advSearchLink"],
+          "text_markers": ["Advanced", "Advanced search"]
+        },
+        "filters": {
+          "year": {
+            "selectors": ["input#id_year_filter", "select[id*='year']"],
+            "text_markers": ["Publication date", "Date range"]
+          },
+          "document_type": {
+            "selectors": ["input[type='checkbox'][id*='article_type']"],
+            "text_markers": ["Article type", "Filter by article type"]
+          }
+        },
+        "results": {
+          "title": {"selectors": [".docsum-title", "a.article-title", "h3.title"]},
+          "authors": {"selectors": [".docsum-authors", ".authors-list", "span.authors"]},
+          "abstract": {"selectors": [".abstract-content", ".abstracttext", "div#abstract"]},
+          "pdf_link": {"selectors": ["a[href*='.pdf']", "a:contains('PDF')", ".pdf-link"]},
+          "doi": {"selectors": [".citation-doi", "a[href*='doi.org']"]}
+        }
+      },
+      "search_syntax": {
+        "boolean": "AND, OR, NOT",
+        "wildcard": "*",
+        "phrase": "\"exact phrase\"",
+        "field_search": "keyword[Title] OR keyword[Abstract]"
+      }
+    },
+    "JSTOR": {
+      "discipline": "Geisteswissenschaften, BWL, Sozialwissenschaften",
+      "url_pattern": "jstor.org",
+      "ui_patterns": {
+        "search_field": {
+          "selectors": ["input#searchText", "input[name='q']", ".search-input"],
+          "text_markers": ["Search JSTOR", "Search for articles"]
+        },
+        "advanced_search": {
+          "selectors": ["a[href*='advanced']", "#advancedSearchLink"],
+          "text_markers": ["Advanced Search"]
+        },
+        "filters": {
+          "year": {
+            "selectors": ["input[name='startYear']", "#yearFilter"],
+            "text_markers": ["Publication year", "Date range"]
+          },
+          "document_type": {
+            "selectors": ["input[type='checkbox'][name='itemType']"],
+            "text_markers": ["Item type", "Article type"]
+          }
+        },
+        "results": {
+          "title": {"selectors": [".title", "h3.article-title", "a.item-title"]},
+          "authors": {"selectors": [".author-name", ".contributor", "span.authors"]},
+          "abstract": {"selectors": [".abstract", ".item-description", "div.snippet"]},
+          "pdf_link": {"selectors": ["a[href*='.pdf']", "a:contains('Download PDF')", ".pdf-link"]},
+          "doi": {"selectors": [".doi", "a[href*='doi.org']"]}
+        }
+      },
+      "search_syntax": {
+        "boolean": "AND, OR, NOT",
+        "wildcard": "*",
+        "phrase": "\"exact phrase\"",
+        "field_search": "ti:(keyword) OR ab:(keyword)"
+      }
+    },
+    "EBSCO Business Source": {
+      "discipline": "BWL, Management",
+      "url_pattern": "search.ebscohost.com",
+      "ui_patterns": {
+        "search_field": {
+          "selectors": ["input#SearchTerm", "input[name='bquery']", ".search-entry"],
+          "text_markers": ["Search", "Enter search terms"]
+        },
+        "advanced_search": {
+          "selectors": ["a:contains('Advanced Search')", "#advSearchLink"],
+          "text_markers": ["Advanced Search", "Search Options"]
+        },
+        "filters": {
+          "year": {
+            "selectors": ["select[id*='PublicationYear']", "#yearFilter"],
+            "text_markers": ["Publication Year", "Date"]
+          },
+          "document_type": {
+            "selectors": ["input[type='checkbox'][id*='SourceType']"],
+            "text_markers": ["Source Type", "Publication Type"]
+          }
+        },
+        "results": {
+          "title": {"selectors": [".title-link", "h3.title", "a.record-title"]},
+          "authors": {"selectors": [".authors", ".contrib-authors", "span.author"]},
+          "abstract": {"selectors": [".abstract-full", ".abstracttext", "div.abstract"]},
+          "pdf_link": {"selectors": ["a[href*='.pdf']", "a:contains('PDF Full Text')", ".pdf-ft"]},
+          "doi": {"selectors": [".doi-link", "a[href*='doi.org']"]}
+        }
+      },
+      "search_syntax": {
+        "boolean": "AND, OR, NOT",
+        "wildcard": "*",
+        "phrase": "\"exact phrase\"",
+        "field_search": "TI keyword OR AB keyword"
+      }
+    },
+    "Web of Science": {
+      "discipline": "Multidisziplinär",
+      "url_pattern": "webofknowledge.com",
+      "ui_patterns": {
+        "search_field": {
+          "selectors": ["input#value(input1)", "textarea[name='search']", ".search-field"],
+          "text_markers": ["Search Web of Science", "Enter keywords"]
+        },
+        "advanced_search": {
+          "selectors": ["a[href*='advanced_search']", "#advSearchBtn"],
+          "text_markers": ["Advanced Search"]
+        },
+        "filters": {
+          "year": {
+            "selectors": ["select[name='timeSpanBegin']", "#yearFilter"],
+            "text_markers": ["Timespan", "Publication year"]
+          },
+          "document_type": {
+            "selectors": ["input[type='checkbox'][name='doctype']"],
+            "text_markers": ["Document Types", "Article type"]
+          }
+        },
+        "results": {
+          "title": {"selectors": [".title", "a.snowplow-full-record", "h3.article-title"]},
+          "authors": {"selectors": [".author", ".authors-list", "span.author-name"]},
+          "abstract": {"selectors": [".abstract", ".abstract-text", "div.summary"]},
+          "pdf_link": {"selectors": ["a[href*='.pdf']", "a:contains('PDF')", ".pdf-link"]},
+          "doi": {"selectors": [".FR_field", "a[href*='doi.org']"]}
+        }
+      },
+      "search_syntax": {
+        "boolean": "AND, OR, NOT",
+        "wildcard": "*",
+        "phrase": "\"exact phrase\"",
+        "field_search": "TS=(keyword) OR TI=(keyword)"
+      }
+    }
+  },
+  "fallback_strategies": {
+    "generic_search_field": {
+      "description": "Falls keine datenbank-spezifischen Selektoren passen",
+      "selectors": [
+        "input[type='search']",
+        "input[type='text'][placeholder*='search' i]",
+        "input[type='text'][placeholder*='suche' i]",
+        "input[name*='search' i]",
+        "input[name*='query' i]",
+        "textarea[name*='search' i]"
+      ]
+    },
+    "generic_advanced_search": {
+      "text_markers": ["Advanced", "Erweitert", "Detailed", "Detailsuche"]
+    },
+    "generic_pdf_link": {
+      "selectors": [
+        "a[href*='.pdf']",
+        "a:contains('PDF')",
+        "a:contains('Download')",
+        "button:contains('PDF')"
+      ]
+    },
+    "screenshot_analysis": {
+      "description": "Wenn alle Selektoren fehlschlagen: Screenshot machen und Claude analysieren lassen",
+      "prompt": "Analysiere diesen Screenshot einer wissenschaftlichen Datenbank. Identifiziere: 1) Suchfeld, 2) Advanced Search Button, 3) Filter-Optionen, 4) Ergebnis-Liste"
+    }
+  },
+  "common_ui_elements": {
+    "search_button": ["Search", "Suchen", "Go", "Submit", "Find"],
+    "clear_button": ["Clear", "Reset", "Löschen", "Zurücksetzen"],
+    "filter_button": ["Filter", "Refine", "Verfeinern"],
+    "next_page": ["Next", "Weiter", "Next page", "→"],
+    "prev_page": ["Previous", "Zurück", "Prev", "←"]
+  }
+}
