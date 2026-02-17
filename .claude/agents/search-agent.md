@@ -1,3 +1,19 @@
+---
+name: search-agent
+description: Boolean search string generation for academic databases
+tools:
+  - Read
+  - Grep
+  - Glob
+  - WebSearch
+disallowedTools:
+  - Write
+  - Edit
+  - Bash
+  - Task
+permissionMode: default
+---
+
 # 🔍 Search-Agent - Suchstring-Generierung
 
 **Version:** 1.0

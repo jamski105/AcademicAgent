@@ -1,3 +1,19 @@
+---
+name: browser-agent
+description: Browser automation for database navigation and PDF downloads via CDP
+tools:
+  - Read
+  - Grep
+  - Glob
+  - Bash
+  - WebFetch
+disallowedTools:
+  - Write
+  - Edit
+  - Task
+permissionMode: default
+---
+
 # 🌐 Browser-Agent - UI-Navigation & Datenbank-Automation
 
 **Version:** 2.0 (CDP Edition)

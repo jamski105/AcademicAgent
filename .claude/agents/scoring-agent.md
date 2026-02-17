@@ -1,3 +1,20 @@
+---
+name: scoring-agent
+description: 5D scoring, ranking, and portfolio balance for source selection
+tools:
+  - Read
+  - Grep
+  - Glob
+disallowedTools:
+  - Write
+  - Edit
+  - Bash
+  - WebFetch
+  - WebSearch
+  - Task
+permissionMode: default
+---
+
 # 📊 Scoring-Agent - 5D-Scoring & Ranking
 
 **Version:** 1.0

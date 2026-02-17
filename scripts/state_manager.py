@@ -12,10 +12,10 @@ from datetime import datetime
 
 STATE_FILE = "metadata/research_state.json"
 
-def save_state(project_dir, phase, status, data=None):
+def save_state(run_dir, phase, status, data=None):
     """Speichere aktuellen Recherche-State"""
-    project_path = Path(project_dir)
-    state_file = project_path / STATE_FILE
+    run_path = Path(run_dir)
+    state_file = run_path / STATE_FILE
     state_file.parent.mkdir(parents=True, exist_ok=True)
 
     # Load existing state if exists
@@ -24,7 +24,7 @@ def save_state(project_dir, phase, status, data=None):
             state = json.load(f)
     else:
         state = {
-            "project_name": project_path.name,
+            "run_name": run_path.name,
             "started_at": datetime.now().isoformat(),
             "phases": {}
         }
@@ -45,10 +45,10 @@ def save_state(project_dir, phase, status, data=None):
 
     print(f"✅ State saved: Phase {phase} - {status}")
 
-def load_state(project_dir):
+def load_state(run_dir):
     """Lade gespeicherten State"""
-    project_path = Path(project_dir)
-    state_file = project_path / STATE_FILE
+    run_path = Path(run_dir)
+    state_file = run_path / STATE_FILE
 
     if not state_file.exists():
         return None
@@ -58,9 +58,9 @@ def load_state(project_dir):
 
     return state
 
-def get_last_completed_phase(project_dir):
+def get_last_completed_phase(run_dir):
     """Finde letzte abgeschlossene Phase"""
-    state = load_state(project_dir)
+    state = load_state(run_dir)
     if not state:
         return -1
 
@@ -72,10 +72,10 @@ def get_last_completed_phase(project_dir):
 
     return last_completed
 
-def get_resume_point(project_dir):
+def get_resume_point(run_dir):
     """Bestimme wo weiterzumachen ist"""
-    last_completed = get_last_completed_phase(project_dir)
-    state = load_state(project_dir)
+    last_completed = get_last_completed_phase(run_dir)
+    state = load_state(run_dir)
 
     if not state:
         return {
@@ -121,32 +121,32 @@ def get_resume_point(project_dir):
 def main():
     if len(sys.argv) < 2:
         print("Usage:")
-        print("  Save state:  python3 state_manager.py save <project_dir> <phase> <status> [data]")
-        print("  Load state:  python3 state_manager.py load <project_dir>")
-        print("  Resume info: python3 state_manager.py resume <project_dir>")
+        print("  Save state:  python3 state_manager.py save <run_dir> <phase> <status> [data]")
+        print("  Load state:  python3 state_manager.py load <run_dir>")
+        print("  Resume info: python3 state_manager.py resume <run_dir>")
         sys.exit(1)
 
     action = sys.argv[1]
 
     if action == "save":
         if len(sys.argv) < 5:
-            print("Usage: python3 state_manager.py save <project_dir> <phase> <status>")
+            print("Usage: python3 state_manager.py save <run_dir> <phase> <status>")
             sys.exit(1)
 
-        project_dir = sys.argv[2]
+        run_dir = sys.argv[2]
         phase = int(sys.argv[3])
         status = sys.argv[4]
         data = json.loads(sys.argv[5]) if len(sys.argv) > 5 else None
 
-        save_state(project_dir, phase, status, data)
+        save_state(run_dir, phase, status, data)
 
     elif action == "load":
         if len(sys.argv) < 3:
-            print("Usage: python3 state_manager.py load <project_dir>")
+            print("Usage: python3 state_manager.py load <run_dir>")
             sys.exit(1)
 
-        project_dir = sys.argv[2]
-        state = load_state(project_dir)
+        run_dir = sys.argv[2]
+        state = load_state(run_dir)
 
         if state:
             print(json.dumps(state, indent=2))
@@ -155,11 +155,11 @@ def main():
 
     elif action == "resume":
         if len(sys.argv) < 3:
-            print("Usage: python3 state_manager.py resume <project_dir>")
+            print("Usage: python3 state_manager.py resume <run_dir>")
             sys.exit(1)
 
-        project_dir = sys.argv[2]
-        resume_info = get_resume_point(project_dir)
+        run_dir = sys.argv[2]
+        resume_info = get_resume_point(run_dir)
 
         print(json.dumps(resume_info, indent=2))
 

@@ -1,3 +1,20 @@
+---
+name: extraction-agent
+description: PDF text extraction and quote extraction with page numbers
+tools:
+  - Read
+  - Grep
+  - Glob
+disallowedTools:
+  - Write
+  - Edit
+  - Bash
+  - WebFetch
+  - WebSearch
+  - Task
+permissionMode: default
+---
+
 # 📄 Extraction-Agent - PDF → Text → Zitate
 
 **Version:** 1.0

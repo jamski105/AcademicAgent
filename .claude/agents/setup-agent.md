@@ -1,3 +1,18 @@
+---
+name: setup-agent
+description: Interactive setup and configuration generation for research sessions
+tools:
+  - Read
+  - Grep
+  - Glob
+  - Bash
+disallowedTools:
+  - Write
+  - Edit
+  - Task
+permissionMode: default
+---
+
 # 🎯 Interactive Setup Agent - Intelligenter Pre-Research Dialog
 
 **Version:** 2.1

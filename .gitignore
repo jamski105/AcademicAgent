@@ -1,0 +1,42 @@
+# Claude Code local settings (user-specific)
+.claude/settings.local.json
+
+# Environment files
+.env
+.env.*
+
+# Secrets
+secrets/
+*.key
+*.pem
+
+# Run outputs (large binary files)
+runs/*/downloads/*.pdf
+runs/*/downloads/*.zip
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.venv/
+venv/
+
+# Node
+node_modules/
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+logs/*.log
