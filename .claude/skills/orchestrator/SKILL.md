@@ -32,10 +32,17 @@ You are the orchestrator coordinating the entire academic research workflow.
 
 3. **Check for Resume**
    - Check runs/<run-id>/metadata/research_state.json
-   - If exists and not completed: ask user if they want to resume from last phase
+   - **VALIDATE STATE**: `python3 scripts/validate_state.py <state_file>`
+   - If validation fails: show error, ask user (start fresh / fix manually / abort)
+   - If exists and valid: ask user if they want to resume from last phase
    - If resume: skip completed phases
 
-4. **Phase Execution**
+4. **Pre-Phase Setup**
+   - **Start CDP Health Monitor** (background): `bash scripts/cdp_health_check.sh monitor 300 --run-dir <run_dir> &`
+   - Save monitor PID for cleanup later
+   - This runs every 5 min, auto-restarts Chrome if it crashes
+
+5. **Phase Execution**
    - **Phase 0: Database Identification** (15-20 min)
      - Delegate to Task(browser-agent) for semi-manual DBIS navigation
      - User helps with login and database selection
@@ -53,7 +60,9 @@ You are the orchestrator coordinating the entire academic research workflow.
      - Delegate to Task(browser-agent) for executing searches via CDP
      - Output: runs/<run-id>/metadata/candidates.json
      - Error handling: CAPTCHA, rate-limit, login required
-     - Save state with progress every 10 strings
+     - **CRITICAL: Incremental State Saves**
+       - Every 5 strings: `python3 scripts/state_manager.py save <run_dir> 2 in_progress '{"progress": "5/30", "candidates": N}'`
+       - Add checksum: `python3 scripts/validate_state.py <state_file> --add-checksum`
      - Save state: phase 2 completed
 
    - **Phase 3: Screening & Ranking** (20-30 min)
@@ -66,6 +75,7 @@ You are the orchestrator coordinating the entire academic research workflow.
      - Delegate to Task(browser-agent) for PDF downloads
      - Output: runs/<run-id>/downloads/*.pdf
      - Fallback strategies: direct DOI, CDP browser, Open Access, manual
+     - **Incremental State Saves**: Every 3 PDFs downloaded
      - Save state: phase 4 completed
 
    - **Phase 5: Quote Extraction** (30-45 min)
@@ -82,11 +92,15 @@ You are the orchestrator coordinating the entire academic research workflow.
      - Save state: phase 6 completed
      - Mark research as completed in state
 
-5. **Progress Logging**
+6. **Progress Logging & State Management**
    - Log to runs/<run-id>/logs/ (append-only)
-   - After each phase: update state for resume capability
+   - After each phase:
+     - Update state: `python3 scripts/state_manager.py save ...`
+     - Add checksum: `python3 scripts/validate_state.py <state_file> --add-checksum`
+   - Validate before every resume
 
-6. **Final Summary**
+7. **Final Summary & Cleanup**
+   - Stop CDP health monitor (kill PID)
    - Show: sources found, quotes extracted, time taken
    - Show file locations
    - Offer: start new research, extend this research, feedback

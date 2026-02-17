@@ -81,13 +81,14 @@ ping google.com
 **Lösung:**
 
 ```bash
-# 1. State prüfen
-bash scripts/resume_research.sh
+# 1. State validieren (zeigt letzte abgeschlossene Phase)
+python3 scripts/validate_state.py runs/[Timestamp]/metadata/research_state.json
 
 # Output:
-# 🔄 Resume möglich!
-# Last completed: Phase 2
-# Resume from Phase 3?
+# ✅ State valid
+# Last completed: Phase 2 (completed)
+# Next: Phase 3 (pending)
+# Checksum: OK
 
 # 2. Chrome starten
 bash scripts/start_chrome_debug.sh
@@ -98,9 +99,74 @@ code .
 # 4. Im Claude Code Chat:
 /orchestrator
 
-# Agent fragt nach Config
-# Agent erkennt State und überspringt Phase 0-2 automatisch
+# Agent fragt nach Config → gib Pfad zum run-Ordner an
+# Agent validiert State automatisch und überspringt Phase 0-2
 ```
+
+**Alternative: Schnellcheck ohne Details**
+
+```bash
+# Zeigt nur ob Resume möglich ist
+bash scripts/resume_research.sh
+```
+
+---
+
+## 🩺 CDP Health Monitor
+
+Der Orchestrator startet automatisch einen Background-Monitor während der Recherche:
+
+### Was macht der Monitor?
+
+```bash
+# Automatisch gestartet vom Orchestrator (läuft im Hintergrund)
+bash scripts/cdp_health_check.sh monitor 300 --run-dir runs/[Timestamp]
+
+# Alle 5 Minuten:
+# 1. Prüft CDP-Verbindung (localhost:9222)
+# 2. Prüft Chrome-Memory (warnt bei >2GB)
+# 3. Startet Chrome neu bei Crash
+# 4. Loggt Status in runs/[Timestamp]/logs/cdp_health.log
+```
+
+### Manuell nutzen
+
+**Status prüfen:**
+
+```bash
+# Einmalige Prüfung
+bash scripts/cdp_health_check.sh check
+
+# Output:
+# ✅ CDP ist erreichbar
+# Chrome PID: 12345
+# Memory: 850 MB
+```
+
+**Chrome neu starten:**
+
+```bash
+# Stoppt Chrome und startet neu mit CDP
+bash scripts/cdp_health_check.sh restart
+```
+
+**Monitor manuell starten:**
+
+```bash
+# Überwachung im Hintergrund (alle 5 Min)
+bash scripts/cdp_health_check.sh monitor 300 &
+
+# Monitor beenden
+pkill -f "cdp_health_check.sh monitor"
+```
+
+### Troubleshooting
+
+| Problem | Lösung |
+|---------|--------|
+| Monitor läuft nicht | Orchestrator startet automatisch - kein manueller Start nötig |
+| Chrome startet nicht neu | `bash scripts/start_chrome_debug.sh` manuell ausführen |
+| Memory-Warnung | Chrome neu starten: `bash scripts/cdp_health_check.sh restart` |
 
 ---
 
@@ -150,12 +216,26 @@ open /tmp/debug.png
 ### State-Management
 
 ```bash
-# State laden
+# State validieren (zeigt Details + prüft Integrität)
+python3 scripts/validate_state.py runs/[Timestamp]/metadata/research_state.json
+
+# Checksum hinzufügen (für Integritätsprüfung)
+python3 scripts/validate_state.py runs/[Timestamp]/metadata/research_state.json --add-checksum
+
+# State laden (zeigt nur Phasen-Status)
 python3 scripts/state_manager.py load runs/[Timestamp]
 
-# State zurücksetzen (Nuclear Option)
+# State manuell speichern (wird normalerweise automatisch gemacht)
+python3 scripts/state_manager.py save runs/[Timestamp] <phase> <status>
+# Beispiel:
+python3 scripts/state_manager.py save runs/2026-02-17_14-30-00 2 completed
+
+# State zurücksetzen (Nuclear Option - nur bei Korruption)
 rm runs/[Timestamp]/metadata/research_state.json
+# Dann: /orchestrator neu starten (startet von Phase 0)
 ```
+
+**Wichtig:** `validate_state.py` ist primär für Resume - prüft Integrität und zeigt nächste Phase!
 
 ---
 

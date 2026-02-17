@@ -235,9 +235,11 @@ fi
 echo ""
 
 # ============================================
-# 9. Install Playwright + Browser
+# 9. Install Playwright (CDP Client Only)
 # ============================================
 echo -e "${BLUE}🎭 Installing Playwright...${NC}"
+echo -e "${YELLOW}Note: Playwright is used ONLY as CDP client to connect to real Chrome${NC}"
+echo -e "${YELLOW}      NOT for headless browsing. User has full control over browser.${NC}"
 
 if [ ! -d "node_modules/playwright" ]; then
   # Initialize npm if needed
@@ -249,11 +251,11 @@ if [ ! -d "node_modules/playwright" ]; then
   echo -e "${YELLOW}Installing Playwright (this may take a few minutes)...${NC}"
   npm install playwright
 
-  # Install Chromium browser
-  echo -e "${YELLOW}Installing Playwright Chromium...${NC}"
+  # Install Chromium browser (fallback only - we use real Chrome via CDP)
+  echo -e "${YELLOW}Installing Playwright Chromium (fallback only)...${NC}"
   npx playwright install chromium
 
-  echo -e "${GREEN}✅ Playwright installed${NC}"
+  echo -e "${GREEN}✅ Playwright installed (CDP client mode)${NC}"
 else
   echo -e "${GREEN}✅ Playwright already installed${NC}"
 fi

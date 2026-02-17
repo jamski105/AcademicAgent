@@ -27,7 +27,53 @@ ERROR_TYPE_FILE="FILE_ERROR"
 ERROR_TYPE_UNKNOWN="UNKNOWN"
 
 # ============================================
-# Handle CDP Connection Error
+# CDP Diagnostics (detailed)
+# ============================================
+diagnose_cdp() {
+  echo -e "${BLUE}🔍 Running CDP diagnostics...${NC}"
+  echo ""
+
+  # 1. Check if Chrome process is running
+  local chrome_pid=$(pgrep -f "remote-debugging-port=9222" 2>/dev/null | head -1)
+  if [ -n "$chrome_pid" ]; then
+    echo -e "${GREEN}✅ Chrome process found (PID: $chrome_pid)${NC}"
+
+    # Check memory
+    local mem_mb=$(ps -o rss= -p "$chrome_pid" 2>/dev/null | awk '{print int($1/1024)}')
+    if [ -n "$mem_mb" ]; then
+      if [ "$mem_mb" -gt 2048 ]; then
+        echo -e "${YELLOW}⚠️  High memory usage: ${mem_mb}MB (may need restart)${NC}"
+      else
+        echo "   Memory: ${mem_mb}MB"
+      fi
+    fi
+  else
+    echo -e "${RED}❌ Chrome process NOT running${NC}"
+  fi
+
+  # 2. Check port availability
+  if lsof -i :9222 > /dev/null 2>&1; then
+    echo -e "${GREEN}✅ Port 9222 is in use${NC}"
+  else
+    echo -e "${RED}❌ Port 9222 is NOT in use (Chrome not listening)${NC}"
+  fi
+
+  # 3. Test CDP endpoint
+  if curl -s --connect-timeout 2 http://localhost:9222/json/version > /dev/null 2>&1; then
+    echo -e "${GREEN}✅ CDP endpoint responding${NC}"
+    local version=$(curl -s http://localhost:9222/json/version | jq -r '.Browser' 2>/dev/null)
+    if [ -n "$version" ]; then
+      echo "   Version: $version"
+    fi
+  else
+    echo -e "${RED}❌ CDP endpoint NOT responding${NC}"
+  fi
+
+  echo ""
+}
+
+# ============================================
+# Handle CDP Connection Error (Enhanced)
 # ============================================
 handle_cdp_error() {
   local project_dir=$1
@@ -37,42 +83,48 @@ handle_cdp_error() {
   echo ""
   echo "Chrome DevTools Protocol (CDP) ist nicht erreichbar."
   echo ""
-  echo "Mögliche Ursachen:"
-  echo "  1. Chrome ist nicht gestartet"
-  echo "  2. Chrome läuft nicht auf Port 9222"
-  echo "  3. Chrome wurde geschlossen"
+
+  # Run diagnostics
+  diagnose_cdp
+
+  echo -e "${YELLOW}🔧 Empfohlene Lösungen (in dieser Reihenfolge):${NC}"
   echo ""
-  echo "🔧 Lösungen:"
+  echo "1️⃣  Auto-Restart via Health Check:"
+  echo "   \$ bash scripts/cdp_health_check.sh restart"
   echo ""
-  echo "  1. Prüfe ob Chrome läuft:"
-  echo "     \$ curl http://localhost:9222/json/version"
+  echo "2️⃣  Manueller Chrome-Neustart:"
+  echo "   \$ bash scripts/start_chrome_debug.sh"
   echo ""
-  echo "  2. Starte Chrome neu:"
-  echo "     \$ bash scripts/start_chrome_debug.sh"
+  echo "3️⃣  Port-Konflikt prüfen (wenn Port belegt):"
+  echo "   \$ lsof -i :9222"
+  echo "   \$ kill <PID>  # Falls anderer Prozess Port nutzt"
   echo ""
-  echo "  3. Warte 5 Sekunden und retry"
+  echo "4️⃣  Chrome komplett beenden und neu starten:"
+  echo "   \$ pkill -f 'remote-debugging-port'"
+  echo "   \$ bash scripts/start_chrome_debug.sh"
   echo ""
 
   # Save error state
   python3 scripts/state_manager.py save "$project_dir" "$phase" "failed" \
     '{"error": "CDP_CONNECTION", "recoverable": true}'
 
-  # Ask user
-  echo -e "${YELLOW}Möchtest du Chrome neu starten? (y/n)${NC}"
+  # Automatic recovery attempt
+  echo -e "${YELLOW}Möchtest du Auto-Recovery versuchen? (y/n)${NC}"
   read -r response
 
   if [[ "$response" =~ ^[Yy]$ ]]; then
-    echo "Starte Chrome neu..."
-    bash scripts/start_chrome_debug.sh &
-    sleep 5
+    echo "Versuche automatische Wiederherstellung..."
 
-    # Test connection
-    if curl -s http://localhost:9222/json/version > /dev/null 2>&1; then
-      echo -e "${GREEN}✅ Chrome gestartet! Retry...${NC}"
+    if bash scripts/cdp_health_check.sh restart; then
+      echo -e "${GREEN}✅ Chrome erfolgreich neu gestartet!${NC}"
+      sleep 3
       return 0  # Retry
     else
-      echo -e "${RED}❌ Chrome-Start fehlgeschlagen${NC}"
-      return 1  # Give up
+      echo -e "${RED}❌ Auto-Recovery fehlgeschlagen${NC}"
+      echo ""
+      echo "Bitte führe manuellen Neustart durch und drücke ENTER."
+      read
+      return 0  # Retry
     fi
   else
     echo "Bitte starte Chrome manuell und drücke ENTER."
@@ -199,7 +251,7 @@ handle_rate_limit() {
 }
 
 # ============================================
-# Handle Network Error
+# Handle Network Error (Enhanced)
 # ============================================
 handle_network_error() {
   local project_dir=$1
@@ -211,20 +263,60 @@ handle_network_error() {
   echo "Verbindung zu $url fehlgeschlagen."
   echo ""
 
+  # Diagnostics
+  echo -e "${BLUE}🔍 Network Diagnostics:${NC}"
+
+  # 1. Test internet connectivity
+  if ping -c 1 -W 2 8.8.8.8 > /dev/null 2>&1; then
+    echo -e "${GREEN}✅ Internet connectivity OK${NC}"
+  else
+    echo -e "${RED}❌ No internet connectivity${NC}"
+  fi
+
+  # 2. Test DNS
+  if nslookup google.com > /dev/null 2>&1; then
+    echo -e "${GREEN}✅ DNS resolution OK${NC}"
+  else
+    echo -e "${RED}❌ DNS resolution failed${NC}"
+  fi
+
+  # 3. Extract domain from URL and test
+  local domain=$(echo "$url" | sed -E 's|https?://([^/]+).*|\1|')
+  if [ -n "$domain" ]; then
+    if curl -s --connect-timeout 5 --head "$url" > /dev/null 2>&1; then
+      echo -e "${GREEN}✅ Target server reachable${NC}"
+    else
+      echo -e "${RED}❌ Cannot reach $domain${NC}"
+
+      # Check if it's a university domain (might need VPN)
+      if [[ "$domain" =~ \.(edu|ac\.|uni-) ]]; then
+        echo -e "${YELLOW}⚠️  University domain detected - VPN likely required!${NC}"
+      fi
+    fi
+  fi
+
+  echo ""
+
   # Save state
   python3 scripts/state_manager.py save "$project_dir" "$phase" "paused" \
     '{"error": "NETWORK_ERROR", "url": "'$url'"}'
 
-  echo "Mögliche Ursachen:"
-  echo "  - Keine Internetverbindung"
-  echo "  - VPN getrennt"
-  echo "  - Server nicht erreichbar"
+  echo -e "${YELLOW}🔧 Lösungsschritte:${NC}"
   echo ""
-  echo "🔧 Lösung:"
-  echo "  1. Prüfe Internetverbindung"
-  echo "  2. Prüfe VPN (für Uni-Datenbanken)"
-  echo "  3. Drücke ENTER zum Retry"
+  echo "1️⃣  Für Uni-Datenbanken:"
+  echo "   - Verbinde mit Uni-VPN"
+  echo "   - Prüfe VPN-Verbindung: https://vpn.uni-xyz.de"
   echo ""
+  echo "2️⃣  Allgemeine Netzwerk-Probleme:"
+  echo "   - Prüfe WLAN/Ethernet-Verbindung"
+  echo "   - Deaktiviere temporär Firewall/Proxy"
+  echo "   - Teste: curl -I $url"
+  echo ""
+  echo "3️⃣  Server-seitige Probleme:"
+  echo "   - Server könnte down sein"
+  echo "   - Warte 1-2 Minuten und retry"
+  echo ""
+  echo "Drücke ENTER wenn Netzwerk-Problem behoben ist..."
 
   read
 

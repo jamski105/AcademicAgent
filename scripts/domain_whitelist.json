@@ -1,0 +1,80 @@
+{
+  "version": "2.0",
+  "description": "Domain whitelist for AcademicAgent web access with DBIS proxy support",
+  "proxy_mode": "dbis_only",
+  "trusted_proxies": [
+    "dbis.ur.de",
+    "dbis.de",
+    "www.dbis.de",
+    "ezproxy.uni-regensburg.de",
+    "shibboleth.uni-regensburg.de",
+    "login.ur.de"
+  ],
+  "proxy_redirect_policy": {
+    "allow_redirects_from_trusted_proxies": true,
+    "session_tracking_required": true,
+    "direct_navigation_blocked": true,
+    "description": "Only allow database access via DBIS. Direct navigation to databases is blocked to ensure university license compliance."
+  },
+  "allowed_domains": [
+    "ieeexplore.ieee.org",
+    "dl.acm.org",
+    "link.springer.com",
+    "link.springer.de",
+    "scopus.com",
+    "pubmed.ncbi.nlm.nih.gov",
+    "www.ncbi.nlm.nih.gov",
+    "beck-online.beck.de",
+    "www.beck-online.de",
+    "arxiv.org",
+    "export.arxiv.org",
+    "researchgate.net",
+    "www.researchgate.net",
+    "doaj.org",
+    "www.doaj.org",
+    "dbis.ur.de",
+    "dbis.de",
+    "www.dbis.de",
+    "scholar.google.com",
+    "scholar.google.de",
+    "jstor.org",
+    "www.jstor.org",
+    "sciencedirect.com",
+    "www.sciencedirect.com",
+    "webofscience.com",
+    "www.webofscience.com",
+    "doi.org",
+    "dx.doi.org",
+    "heinonline.org",
+    "home.heinonline.org",
+    "juris.de",
+    "www.juris.de",
+    "cochranelibrary.com",
+    "www.cochranelibrary.com"
+  ],
+  "blocked_domains": [
+    "sci-hub.*",
+    "*.sci-hub.*",
+    "libgen.*",
+    "*.libgen.*",
+    "gen.lib.rus.ec",
+    "b-ok.org",
+    "*.b-ok.org",
+    "z-library.*",
+    "*.z-library.*"
+  ],
+  "allowed_patterns": [
+    "https://doi.org/*",
+    "https://dx.doi.org/*",
+    "https://arxiv.org/pdf/*",
+    "https://arxiv.org/abs/*"
+  ],
+  "notes": {
+    "proxy_mode": "DBIS proxy mode ensures all database access goes through university authentication",
+    "trusted_proxies": "University proxy servers and authentication systems (DBIS, EZProxy, Shibboleth)",
+    "allowed_domains": "Legacy list - only used if session originated from DBIS",
+    "blocked_domains": "Copyright-infringing sites and pirate repositories",
+    "allowed_patterns": "Specific URL patterns that are always safe (e.g., DOI resolvers)",
+    "security": "Direct navigation to databases bypasses university license - only DBIS entry allowed"
+  }
+}
