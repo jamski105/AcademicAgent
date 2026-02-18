@@ -473,6 +473,61 @@ python3 scripts/validate_state.py runs/[Timestamp]/metadata/research_state.json
 # - Fortsetzungsfähigkeit
 ```
 
+### Unit-Tests ausführen
+
+```bash
+# Test-Dependencies installieren
+pip install -r tests/requirements-test.txt
+
+# Unit-Tests ausführen
+python3 -m pytest tests/unit/ -v
+
+# Mit Coverage-Report
+python3 -m pytest tests/unit/ -v --cov=scripts --cov-report=term
+```
+
+**Test-Coverage:**
+- `test_action_gate.py` - Action-Gate-Validierungslogik (18 Tests)
+- `test_validate_domain.py` - Domain-Validierung und DBIS-Proxy-Mode (16 Tests)
+- `test_sanitize_html.py` - HTML-Sanitierung und Injection-Erkennung (14 Tests)
+- `test_retry_strategy.py` - Retry-Handler und Backoff-Strategien (15 Tests)
+
+### CI/CD Pipeline
+
+Das Projekt verwendet GitHub Actions für automatisierte Tests:
+
+```bash
+# Workflow wird automatisch ausgeführt bei:
+# - Push zu main/develop
+# - Pull Requests zu main
+```
+
+**Pipeline-Jobs:**
+1. **setup-test** - Installiert Python, Node.js, System-Dependencies
+2. **unit-tests** - Führt pytest mit Coverage aus
+3. **security-tests** - Red-Team-Tests (90% Pass-Rate erforderlich)
+4. **script-validation** - Python/Bash-Syntax-Checks
+5. **secrets-scan** - Scannt nach API-Keys und Secrets
+6. **build-validation** - Prüft Dateistruktur und Agent-Configs
+7. **status-report** - Aggregiert Ergebnisse
+
+Siehe [.github/workflows/ci.yml](.github/workflows/ci.yml) für Details.
+
+### Git-Hooks Setup
+
+Pre-Commit-Hook für Secret-Scanning installieren:
+
+```bash
+# Hook installieren
+bash scripts/setup_git_hooks.sh
+
+# Testet automatisch bei jedem Commit:
+# - API-Keys (ANTHROPIC_API_KEY, etc.)
+# - Passwörter und Tokens
+# - Sensitive Dateien (.env, *.pem, SSH-Keys)
+# - Große Dateien (>10 MB Warnung)
+```
+
 ---
 
 ## 🔧 Erweiterte Nutzung
@@ -529,12 +584,174 @@ python3 scripts/export_quotes.py \
   output.docx
 ```
 
+### Utility-Scripts verwenden
+
+#### Kosten-Tracking
+
+Trackt Claude API-Token-Usage und Kosten:
+
+```bash
+# Kosten für eine Recherche anzeigen
+python3 scripts/cost_tracker.py runs/[Timestamp]/metadata/llm_costs.jsonl
+
+# Ausgabe:
+# 📊 Kostenübersicht
+# Gesamt: $2.45
+# Nach Agent: browser-agent ($0.89), scoring-agent ($0.67), ...
+# Nach Modell: claude-opus-4 ($1.23), claude-sonnet-4 ($1.22)
+```
+
+In Agent-Code verwenden:
+
+```python
+from scripts.cost_tracker import CostTracker
+
+tracker = CostTracker(run_id="2026-02-18_14-30-00")
+tracker.record_llm_call(
+    agent_name="scoring-agent",
+    model="claude-sonnet-4",
+    input_tokens=5000,
+    output_tokens=1500,
+    phase="phase_3"
+)
+```
+
+#### Performance-Metrics
+
+Sammelt strukturierte Metriken:
+
+```bash
+# Metriken anzeigen
+jq '.' runs/[Timestamp]/metadata/metrics.jsonl
+
+# Aggregierte Zusammenfassung
+python3 scripts/metrics.py summarize runs/[Timestamp]/metadata/metrics.jsonl
+```
+
+In Agent-Code verwenden:
+
+```python
+from scripts.metrics import MetricsCollector
+
+metrics = MetricsCollector(run_id="2026-02-18_14-30-00")
+
+# Einfache Metrik
+metrics.record("papers_found", 52, unit="count", labels={"database": "IEEE"})
+
+# Zeitmessung
+with metrics.measure_time("pdf_download", labels={"file": "paper1.pdf"}):
+    download_pdf()
+```
+
+#### Retry-Strategien
+
+Exponential Backoff für fehleranfällige Operationen:
+
+```python
+from scripts.retry_strategy import retry_with_backoff, RetryHandler
+
+# Als Decorator
+@retry_with_backoff(max_retries=3, base_delay=2.0)
+def flaky_api_call():
+    response = requests.get("https://api.example.com")
+    return response.json()
+
+# Als Handler mit Profil
+handler = RetryHandler.network_request()  # Vorkonfiguriert für Network
+result = handler.execute(download_file, url="https://...")
+```
+
+#### CDP-Wrapper
+
+Sichere Browser-Automatisierung ohne direkte CDP-Aufrufe:
+
+```python
+from scripts.cdp_wrapper import create_cdp_client
+
+cdp = create_cdp_client()
+result = cdp.navigate("https://ieeexplore.ieee.org")
+html = cdp.get_html()
+cdp.screenshot("/tmp/page.png")
+
+# Datenbank-Suche
+search_result = cdp.search_database(
+    database_name="IEEE Xplore",
+    search_string="(DevOps) AND (Governance)"
+)
+print(f"Gefunden: {search_result.papers_found} Papers")
+```
+
+#### Sichere Bash-Ausführung
+
+Erzwingt Action-Gate-Validierung vor Bash-Befehlen:
+
+```bash
+# Via CLI
+python3 scripts/safe_bash.py "python3 scripts/validate_state.py runs/latest/state.json"
+
+# Dry-Run (validiert ohne Ausführung)
+python3 scripts/safe_bash.py --dry-run "curl https://example.com"
+# Output: ❌ BLOCKIERT: Network request ohne Action-Gate-Freigabe
+```
+
+In Agent-Code verwenden:
+
+```python
+from scripts.safe_bash import safe_bash_execute
+
+try:
+    result = safe_bash_execute(
+        command="python3 scripts/process_data.py",
+        source="system",
+        user_intent="Datenverarbeitung für Phase 3"
+    )
+    print(result.stdout)
+except SafeBashError as e:
+    print(f"Befehl blockiert: {e}")
+```
+
 ---
 
-## 📖 Zusätzliche Dokumentation
+## 📖 Dokumentation
+
+### 📚 Für Nutzer (Studierende & Forscher)
+
+**[User Guide](docs/user-guide/README.md)** - Vollständiger Guide für Endnutzer
+
+- [Erste Schritte](docs/user-guide/01-getting-started.md) - Installation & erste Recherche
+- [Grundlegender Workflow](docs/user-guide/02-basic-workflow.md) - 7-Phasen-Workflow verstehen
+- [Konfiguration erstellen](docs/user-guide/03-configuration.md) - Optimale Konfigs erstellen
+- [Ergebnisse verstehen](docs/user-guide/04-understanding-results.md) - 5D-Bewertungssystem & Outputs
+- [Probleme lösen](docs/user-guide/05-troubleshooting.md) - Troubleshooting & Fehlerbehandlung
+- [Best Practices](docs/user-guide/06-best-practices.md) - Tipps für optimale Recherchen
+
+### 🛠️ Für Entwickler & Contributors
+
+**[Developer Guide](docs/developer-guide/README.md)** - Guide für Entwickler
+
+- [Architektur-Übersicht](docs/developer-guide/01-architecture.md) - System-Design & Datenfluss
+- [Agent-Entwicklung](docs/developer-guide/02-agent-development.md) - Neue Agents erstellen
+- [Datenbanken hinzufügen](docs/developer-guide/03-adding-databases.md) - Neue DBs integrieren
+- [Testing-Guide](docs/developer-guide/04-testing.md) - Unit-, Integration- & E2E-Tests
+- [Security-Considerations](docs/developer-guide/05-security.md) - Sichere Entwicklung
+- [Contribution-Guide](docs/developer-guide/06-contribution-guide.md) - Zum Projekt beitragen
+
+### 📖 Technische Referenz
+
+**[API Reference](docs/api-reference/README.md)** - Detaillierte API-Dokumentation
+
+- [Agents](docs/api-reference/agents.md) - Agent-Definitionen & Prompts
+- [Skills](docs/api-reference/skills.md) - Orchestrator-Skill Dokumentation
+- [Utilities](docs/api-reference/utilities.md) - Python-Module Referenz
+
+### 🔒 Sicherheit & Fehlerbehebung
 
 - **[ERROR_RECOVERY.md](ERROR_RECOVERY.md)** - Umfassender Fehlerbehandlungs-Guide
 - **[SECURITY.md](SECURITY.md)** - Sicherheitshärtung & Red-Team-Tests
+- **[docs/THREAT_MODEL.md](docs/THREAT_MODEL.md)** - Bedrohungsmodell & Sicherheitsanalyse
+
+### ⚙️ Konfiguration & Technisches
+
 - **[docs/DBIS_USAGE.md](docs/DBIS_USAGE.md)** - Technische DBIS-Integration (für Agents)
 - **[config/database_disciplines.yaml](config/database_disciplines.yaml)** - Datenbank-Katalog
 
@@ -542,27 +759,46 @@ python3 scripts/export_quotes.py \
 
 ## 🤝 Beitragen
 
-Beiträge sind willkommen! Verbesserungsbereiche:
+Beiträge sind willkommen!
+
+### ✅ Kürzlich Implementiert (v3.0)
+
+Die folgenden Infrastruktur-Verbesserungen wurden bereits umgesetzt:
+- ✅ CI/CD-Pipeline mit GitHub Actions (7 automatisierte Jobs)
+- ✅ Unit-Tests mit pytest (50+ Tests, Coverage-Tracking)
+- ✅ Kosten-Tracking für Claude API-Nutzung
+- ✅ Performance-Metriken-System (strukturiertes Logging)
+- ✅ Retry-Mechanismen mit Exponential Backoff
+- ✅ Threat-Model und Sicherheitsanalyse
+- ✅ CDP-Wrapper für sichere Browser-Automatisierung
+- ✅ Git-Hooks für Secret-Scanning
+
+### 🎯 Offene Verbesserungsbereiche
 
 1. **Datenbank-Abdeckung**
-   - Disziplin-spezifische Datenbanken hinzufügen
-   - DBIS-Relevanz-Scoring verbessern
+   - Disziplin-spezifische Datenbanken hinzufügen (z.B. PsycINFO, ERIC, MedLine)
+   - DBIS-Relevanz-Scoring mit ML verbessern
+   - Alternative Zugangsmethoden für Paywall-Datenbanken
 
 2. **Bewertungsalgorithmus**
    - H-Index für Journalqualität integrieren
-   - Domain-spezifisches Relevanz-Scoring hinzufügen
+   - Domain-spezifisches Relevanz-Scoring (trainiert auf Fachbegriffen)
+   - Automatische Duplikatserkennung zwischen Datenbanken
 
 3. **Internationalisierung**
-   - Mehrsprachige Suchstrings
-   - Unterstützung nicht-englischer Datenbanken
+   - Mehrsprachige Suchstrings (automatische Übersetzung)
+   - Unterstützung nicht-englischer Datenbanken (z.B. CNKI für Chinesisch)
+   - Lokalisierte Konfigurations-Templates
 
 4. **Ausgabeformate**
-   - Zitierstile (APA, MLA, Chicago)
-   - Export zu Zotero, Mendeley, EndNote
+   - Zitierstile (APA, MLA, Chicago, IEEE)
+   - Export zu Zotero, Mendeley, EndNote (RIS/BibTeX-Import)
+   - Annotierte Bibliographie-Generierung
 
 5. **Benutzeroberfläche**
-   - Webbasierte Konfigurations-UI
-   - Echtzeit-Fortschritts-Dashboard
+   - Webbasierte Konfigurations-UI (React/Next.js)
+   - Echtzeit-Fortschritts-Dashboard mit Streaming-Updates
+   - Visuelle Zitat-Bibliothek mit Highlighting
 
 ---
 

@@ -1,0 +1,130 @@
+{
+  "test.metric": {
+    "count": 1,
+    "sum": 42.5,
+    "min": 42.5,
+    "max": 42.5,
+    "unit": "count",
+    "avg": 42.5
+  },
+  "test.counter": {
+    "count": 1,
+    "sum": 1.0,
+    "min": 1.0,
+    "max": 1.0,
+    "unit": "count",
+    "avg": 1.0
+  },
+  "test.gauge": {
+    "count": 1,
+    "sum": 75.3,
+    "min": 75.3,
+    "max": 75.3,
+    "unit": "percent",
+    "avg": 75.3
+  },
+  "test.operation": {
+    "count": 1,
+    "sum": 0.10504317283630371,
+    "min": 0.10504317283630371,
+    "max": 0.10504317283630371,
+    "unit": "seconds",
+    "avg": 0.10504317283630371
+  },
+  "iteration.started": {
+    "count": 1,
+    "sum": 1.0,
+    "min": 1,
+    "max": 1,
+    "unit": "count",
+    "avg": 1.0
+  },
+  "iteration.duration": {
+    "count": 1,
+    "sum": 0.059565067291259766,
+    "min": 0.059565067291259766,
+    "max": 0.059565067291259766,
+    "unit": "seconds",
+    "avg": 0.059565067291259766
+  },
+  "iteration.papers_found": {
+    "count": 1,
+    "sum": 32.0,
+    "min": 32,
+    "max": 32,
+    "unit": "count",
+    "avg": 32.0
+  },
+  "iteration.throughput": {
+    "count": 1,
+    "sum": 32233.6578688249,
+    "min": 32233.6578688249,
+    "max": 32233.6578688249,
+    "unit": "papers_per_minute",
+    "avg": 32233.6578688249
+  },
+  "database.searches": {
+    "count": 3,
+    "sum": 3.0,
+    "min": 1.0,
+    "max": 1.0,
+    "unit": "count",
+    "avg": 1.0
+  },
+  "database.search.duration": {
+    "count": 1,
+    "sum": 12.3,
+    "min": 12.3,
+    "max": 12.3,
+    "unit": "seconds",
+    "avg": 12.3
+  },
+  "database.papers_found": {
+    "count": 1,
+    "sum": 15.0,
+    "min": 15,
+    "max": 15,
+    "unit": "count",
+    "avg": 15.0
+  },
+  "database.search.success": {
+    "count": 1,
+    "sum": 1.0,
+    "min": 1.0,
+    "max": 1.0,
+    "unit": "count",
+    "avg": 1.0
+  },
+  "database.pdf_downloads": {
+    "count": 1,
+    "sum": 3.0,
+    "min": 3,
+    "max": 3,
+    "unit": "count",
+    "avg": 3.0
+  },
+  "database.download.size": {
+    "count": 1,
+    "sum": 5.2,
+    "min": 5.2,
+    "max": 5.2,
+    "unit": "megabytes",
+    "avg": 5.2
+  },
+  "database.download.duration": {
+    "count": 1,
+    "sum": 8.5,
+    "min": 8.5,
+    "max": 8.5,
+    "unit": "seconds",
+    "avg": 8.5
+  },
+  "errors.total": {
+    "count": 1,
+    "sum": 1.0,
+    "min": 1.0,
+    "max": 1.0,
+    "unit": "count",
+    "avg": 1.0
+  }
+}
