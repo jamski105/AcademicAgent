@@ -1,4 +1,4 @@
-# 🚨 Error Recovery Guide
+# 🚨 Fehlerbehandlungs-Anleitung
 
 Quick-Referenz für Fehlerbehandlung und Resume-Funktionalität.
 
@@ -97,7 +97,7 @@ bash scripts/start_chrome_debug.sh
 code .
 
 # 4. Im Claude Code Chat:
-/orchestrator
+/academicagent
 
 # Agent fragt nach Config → gib Pfad zum run-Ordner an
 # Agent validiert State automatisch und überspringt Phase 0-2
@@ -164,7 +164,7 @@ pkill -f "cdp_health_check.sh monitor"
 
 | Problem | Lösung |
 |---------|--------|
-| Monitor läuft nicht | Orchestrator startet automatisch - kein manueller Start nötig |
+| Monitor läuft nicht | Agent startet automatisch - kein manueller Start nötig |
 | Chrome startet nicht neu | `bash scripts/start_chrome_debug.sh` manuell ausführen |
 | Memory-Warnung | Chrome neu starten: `bash scripts/cdp_health_check.sh restart` |
 
@@ -232,7 +232,7 @@ python3 scripts/state_manager.py save runs/2026-02-17_14-30-00 2 completed
 
 # State zurücksetzen (Nuclear Option - nur bei Korruption)
 rm runs/[Timestamp]/metadata/research_state.json
-# Dann: /orchestrator neu starten (startet von Phase 0)
+# Dann: /academicagent neu starten (startet von Phase 0)
 ```
 
 **Wichtig:** `validate_state.py` ist primär für Resume - prüft Integrität und zeigt nächste Phase!

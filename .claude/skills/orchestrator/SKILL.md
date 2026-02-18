@@ -1,8 +1,12 @@
 # orchestrator
 
-Main research orchestration agent coordinating all phases
+**Version:** 3.0 (VERALTET - nutze stattdessen /academicagent)
 
-## Configuration
+**⚠️ LEGACY SKILL:** Dieses Skill ist veraltet. Bitte nutze `/academicagent` für neue Recherchen.
+
+Haupt-Recherche-Orchestrierungs-Agent der alle Phasen mit iterativer Datenbanksuche-Strategie koordiniert
+
+## Konfiguration
 
 ```json
 {
@@ -11,118 +15,744 @@ Main research orchestration agent coordinating all phases
 }
 ```
 
-## Parameters
+## Parameter
 
-- `$ARGUMENTS`: Optional run-id. If not provided, lists available runs and asks user to choose.
+- `$ARGUMENTS`: Optionale run-id. Falls nicht angegeben, listet verfügbare Runs auf und fragt User welcher gewählt werden soll.
 
-## Instructions
+## Anweisungen
 
-You are the orchestrator coordinating the entire academic research workflow.
+Du bist der Orchestrator der den gesamten akademischen Recherche-Workflow mit **iterativer Datenbanksuche**-Fähigkeit koordiniert.
 
-### Your Task
+---
 
-1. **Run Selection (if run-id not provided)**
-   - List directories in runs/
-   - Ask user which run to continue/start
-   - Load runs/<run-id>/config.md as single source of truth
+### Deine Aufgabe
 
-2. **Load Config**
-   - Read runs/<run-id>/config.md (NOT from config/ - use snapshot for reproducibility)
-   - Parse: project title, research question, clusters, databases, quality thresholds, portfolio targets
+#### 1. Run-Auswahl (wenn run-id nicht angegeben)
 
-3. **Check for Resume**
-   - Check runs/<run-id>/metadata/research_state.json
-   - **VALIDATE STATE**: `python3 scripts/validate_state.py <state_file>`
-   - If validation fails: show error, ask user (start fresh / fix manually / abort)
-   - If exists and valid: ask user if they want to resume from last phase
-   - If resume: skip completed phases
+- Liste Verzeichnisse in `runs/` auf
+- Frage User welchen Run fortsetzen/starten
+- Lade Konfiguration aus runs/<run-id>/
 
-4. **Pre-Phase Setup**
-   - **Start CDP Health Monitor** (background): `bash scripts/cdp_health_check.sh monitor 300 --run-dir <run_dir> &`
-   - Save monitor PID for cleanup later
-   - This runs every 5 min, auto-restarts Chrome if it crashes
+#### 2. Konfig laden (NEU: Unterstützt beide Formate)
 
-5. **Phase Execution**
-   - **Phase 0: Database Identification** (15-20 min)
-     - Delegate to Task(browser-agent) for semi-manual DBIS navigation
-     - User helps with login and database selection
-     - Output: runs/<run-id>/metadata/databases.json
-     - Checkpoint 0: Show databases, get user approval
-     - Save state: `python3 scripts/state_manager.py save <run_dir> 0 completed`
+**Prüfe welches Konfig-Format:**
 
-   - **Phase 1: Search String Generation** (5-10 min)
-     - Delegate to Task(search-agent) for boolean search strings
-     - Output: runs/<run-id>/metadata/search_strings.json
-     - Checkpoint 1: Show examples, get user approval
-     - Save state: phase 1 completed
+```bash
+# Neues Format (v2.1)
+if [ -f "runs/<run-id>/run_config.json" ]; then
+  CONFIG_FORMAT="json"
+  CONFIG_FILE="runs/<run-id>/run_config.json"
+# Altes Format (v1.x)
+elif [ -f "runs/<run-id>/config.md" ]; then
+  CONFIG_FORMAT="markdown"
+  CONFIG_FILE="runs/<run-id>/config.md"
+else
+  FEHLER: Keine Konfig gefunden
+fi
+```
 
-   - **Phase 2: Database Searching** (90-120 min)
-     - Delegate to Task(browser-agent) for executing searches via CDP
-     - Output: runs/<run-id>/metadata/candidates.json
-     - Error handling: CAPTCHA, rate-limit, login required
-     - **CRITICAL: Incremental State Saves**
-       - Every 5 strings: `python3 scripts/state_manager.py save <run_dir> 2 in_progress '{"progress": "5/30", "candidates": N}'`
-       - Add checksum: `python3 scripts/validate_state.py <state_file> --add-checksum`
-     - Save state: phase 2 completed
+**Lese Konfig:**
 
-   - **Phase 3: Screening & Ranking** (20-30 min)
-     - Delegate to Task(scoring-agent) for 5D scoring
-     - Output: runs/<run-id>/metadata/ranked_top27.json
-     - Checkpoint 3: Show top 27, user selects top 18
-     - Save state: phase 3 completed
+```bash
+Read: $CONFIG_FILE
+```
 
-   - **Phase 4: PDF Download** (20-30 min)
-     - Delegate to Task(browser-agent) for PDF downloads
-     - Output: runs/<run-id>/downloads/*.pdf
-     - Fallback strategies: direct DOI, CDP browser, Open Access, manual
-     - **Incremental State Saves**: Every 3 PDFs downloaded
-     - Save state: phase 4 completed
+**Parse basierend auf Format:**
 
-   - **Phase 5: Quote Extraction** (30-45 min)
-     - Delegate to Task(extraction-agent) for PDF→quotes
-     - Output: runs/<run-id>/metadata/quotes.json
-     - Checkpoint 5: Show sample quotes, get quality confirmation
-     - Save state: phase 5 completed
+**WENN JSON (v2.1):**
+Extrahiere:
+- `research_question`
+- `run_goal.type`
+- `search_parameters` (target_citations, intensity, time_period, keywords)
+- `search_strategy` (mode, databases_per_iteration, early_termination_threshold)
+- `databases.initial_ranking` (gescorete Datenbankliste)
+- `quality_criteria`
+- `output_preferences`
 
-   - **Phase 6: Finalization** (15-20 min)
-     - Run Python scripts for output generation:
-       - `python3 scripts/create_quote_library.py <quotes> <sources> <run_dir>/Quote_Library.csv`
-       - `python3 scripts/create_bibliography.py <sources> <quotes> <config> <run_dir>/Annotated_Bibliography.md`
-     - Checkpoint 6: Show final outputs, get confirmation
-     - Save state: phase 6 completed
-     - Mark research as completed in state
+**WENN Markdown (Legacy):**
+Extrahiere (altes Format):
+- Projekt-Titel, Forschungsfrage, Cluster, Datenbanken, Qualitätsschwellen
 
-6. **Progress Logging & State Management**
-   - Log to runs/<run-id>/logs/ (append-only)
-   - After each phase:
-     - Update state: `python3 scripts/state_manager.py save ...`
-     - Add checksum: `python3 scripts/validate_state.py <state_file> --add-checksum`
-   - Validate before every resume
+---
 
-7. **Final Summary & Cleanup**
-   - Stop CDP health monitor (kill PID)
-   - Show: sources found, quotes extracted, time taken
-   - Show file locations
-   - Offer: start new research, extend this research, feedback
+#### 3. Auf Fortsetzung prüfen
+
+- Prüfe `runs/<run-id>/metadata/research_state.json`
+- **STATE VALIDIEREN**: `python3 scripts/validate_state.py <state_file>`
+- Falls Validierung fehlschlägt: zeige Fehler, frage User (neu starten / manuell beheben / abbrechen)
+- Falls vorhanden und gültig: frage User ob er von letzter Phase fortsetzen möchte
+- Falls fortsetzen: überspringe abgeschlossene Phasen
+
+---
+
+#### 4. Pre-Phase Setup
+
+- **Starte CDP Health Monitor** (Hintergrund):
+  ```bash
+  bash scripts/cdp_health_check.sh monitor 300 --run-dir <run_dir> &
+  ```
+- Speichere Monitor-PID für späteres Cleanup
+- Läuft alle 5 Min, startet Chrome automatisch neu falls es abstürzt
+
+---
+
+#### 5. Phase Execution (UPDATED for Iterative Search)
+
+### **Phase 0: Database Identification (MODIFIED)**
+
+**IF search_strategy.mode == "manual":**
+- Delegate to Task(browser-agent) for semi-manual DBIS navigation
+- User helps with login and database selection
+- Output: `runs/<run-id>/metadata/databases.json`
+
+**IF search_strategy.mode == "iterative" OR "comprehensive":**
+- **SKIP** - databases already ranked in run_config.json
+- Load database pool from `run_config.json`
+- Initialize: `databases.remaining = databases.initial_ranking`
+- Output already exists in config
+
+**Checkpoint 0:**
+Show databases to be used, get user approval
+
+**Save state:**
+```bash
+python3 scripts/state_manager.py save <run_dir> 0 completed
+```
+
+---
+
+### **Phase 1: Search String Generation** (Unchanged)
+
+- Delegate to Task(search-agent) for boolean search strings
+- Input: keywords from run_config.json
+- Output: `runs/<run-id>/metadata/search_strings.json`
+- Checkpoint 1: Show examples, get user approval
+- Save state: phase 1 completed
+
+---
+
+### **Phase 2: Iterative Database Searching (NEW)**
+
+**This is the main change for v2.1!**
+
+**IF search_strategy.mode == "iterative":**
+
+```
+╭──────────────────────────────────────────────────────────────╮
+│ 🔍 Starte iterative Datenbanksuche                           │
+├──────────────────────────────────────────────────────────────┤
+│ Strategie: Adaptiv (5 DBs pro Iteration)                     │
+│ Ziel:      [target_citations] Zitationen                     │
+│ Pool:      [N] Datenbanken gerankt und bereit                │
+│                                                              │
+│ Stopp-Bedingungen:                                           │
+│  ✓ Ziel erreicht                                             │
+│  ✓ 2 aufeinanderfolgende leere Iterationen                  │
+│  ✓ Alle Datenbanken erschöpft                                │
+╰──────────────────────────────────────────────────────────────╯
+```
+
+**Initialize tracking:**
+```json
+{
+  "current_iteration": 0,
+  "citations_found": 0,
+  "consecutive_empty_searches": 0,
+  "databases_searched": [],
+  "databases_remaining": [/* from config */],
+  "citations_per_database": {}
+}
+```
+
+**ITERATION LOOP:**
+
+```python
+while True:
+    current_iteration += 1
+
+    # Check termination BEFORE starting iteration
+    if citations_found >= target_citations:
+        → SUCCESS_TERMINATION
+        break
+
+    if consecutive_empty_searches >= early_termination_threshold:
+        → EARLY_TERMINATION (user dialog)
+        break
+
+    if len(databases_remaining) == 0:
+        → EXHAUSTED_TERMINATION
+        break
+
+    if current_iteration > max_iterations:
+        → MAX_ITERATIONS_REACHED
+        break
+
+    # Select next batch of databases
+    batch_size = databases_per_iteration  # Usually 5
+    current_batch = databases_remaining[:batch_size]
+    databases_remaining = databases_remaining[batch_size:]
+
+    # Display iteration header
+    print(f"╭──────────────────────────────────────────────────╮")
+    print(f"│ 🔍 Iteration {current_iteration}/{max_iterations}")
+    print(f"│ Goal: {target_citations} | Found: {citations_found}")
+    print(f"╰──────────────────────────────────────────────────╯")
+
+    print(f"\nDatabases this iteration:")
+    for db in current_batch:
+        print(f"  • {db.name} (score: {db.score})")
+
+    # Execute search for this batch
+    batch_results = search_databases(current_batch)
+
+    # Process results
+    new_citations = count_new_citations(batch_results)
+    citations_found += new_citations
+
+    # Update tracking
+    for db, count in batch_results.items():
+        citations_per_database[db] = count
+
+    if new_citations == 0:
+        consecutive_empty_searches += 1
+    else:
+        consecutive_empty_searches = 0
+
+    # Save incremental state
+    update_run_config_progress()
+    save_iteration_report(current_iteration)
+
+    # Display iteration summary
+    display_iteration_summary(current_iteration, new_citations, citations_found)
+
+    # Continue loop or terminate
+```
+
+**Search Execution for Batch:**
+
+Delegate to Task(browser-agent):
+
+```
+Prompt:
+"Execute database searches for this iteration batch.
+
+Databases for this iteration:
+[List of 5 databases with URLs]
+
+Search strings: Read from runs/<run-id>/metadata/search_strings.json
+
+For EACH database:
+1. Navigate to database
+2. Execute all relevant search strings
+3. Collect paper metadata (title, authors, year, DOI, abstract)
+4. Save results
+
+Output format:
+{
+  "database": "IEEE Xplore",
+  "papers_found": 45,
+  "papers_after_filters": 32,
+  "metadata": [...]
+}
+
+Quality filters (apply during search):
+- Time period: [from config]
+- Peer-reviewed: [from config]
+- Min citations: [from config]
+
+IMPORTANT:
+- Handle CAPTCHA/login (ask user if needed)
+- Rate limit: Wait 2-3 sec between searches
+- Error recovery: Skip DB if completely inaccessible
+- Incremental save: Save after each DB completes
+
+Return results for all databases in this batch."
+```
+
+**Browser-agent returns:**
+
+```json
+{
+  "iteration": 2,
+  "databases_searched": ["IEEE Xplore", "ACM", "Scopus", "PubMed", "arXiv"],
+  "results": [
+    {
+      "database": "IEEE Xplore",
+      "papers_found": 45,
+      "papers_relevant": 32,
+      "candidates": [/* paper metadata */]
+    },
+    // ... for each DB
+  ],
+  "errors": [],
+  "duration_minutes": 35
+}
+```
+
+**Count new citations:**
+
+```python
+# Deduplicate across iterations
+existing_dois = load_existing_dois()
+new_papers = filter_new_papers(batch_results, existing_dois)
+new_citations = len(new_papers)
+```
+
+**Update progress:**
+
+```bash
+# Update run_config.json progress section
+Write: runs/<run-id>/run_config.json
+# (Update progress_tracking.current_iteration, citations_found, etc.)
+```
+
+**Display Iteration Summary:**
+
+```
+╔══════════════════════════════════════════════════════════════╗
+║            ✓ Iteration 2 Complete                            ║
+╚══════════════════════════════════════════════════════════════╝
+
+Results:
+┌──────────────────────────────────────────────────────────────┐
+│ [✓] IEEE Xplore          45 papers → 32 relevant ⭐          │
+│ [✓] ACM Digital Library  38 papers → 28 relevant ⭐          │
+│ [✓] Scopus               22 papers → 15 relevant             │
+│ [✓] PubMed               18 papers → 12 relevant             │
+│ [✓] arXiv                8 papers → 5 relevant               │
+└──────────────────────────────────────────────────────────────┘
+
+╭──────────────────────────────────────────────────────────────╮
+│ 📊 Iteration 2 Summary                                       │
+├──────────────────────────────────────────────────────────────┤
+│ Papers found:     131 (92 after filters)                     │
+│ New citations:    85 (deduped)                               │
+│ Total citations:  117/50 ✓ GOAL REACHED!                    │
+│ Duration:         35 minutes                                 │
+│ Top performer:    IEEE Xplore (32 papers)                    │
+├──────────────────────────────────────────────────────────────┤
+│ 📈 Progress:      [████████████████████████████████] 234%    │
+╰──────────────────────────────────────────────────────────────╯
+
+Decision: GOAL REACHED - Stopping search
+```
+
+---
+
+**Termination Handling:**
+
+### **SUCCESS_TERMINATION:**
+
+```
+╔══════════════════════════════════════════════════════════════╗
+║                                                              ║
+║              ✓ SEARCH SUCCESSFUL!                            ║
+║                                                              ║
+║         Found [X] citations (Target: [Y])                    ║
+║                                                              ║
+╚══════════════════════════════════════════════════════════════╝
+
+╭──────────────────────────────────────────────────────────────╮
+│ 📊 Search Statistics                                         │
+├──────────────────────────────────────────────────────────────┤
+│ Total iterations:    [N]                                     │
+│ Databases searched:  [M]                                     │
+│ Papers processed:    [P]                                     │
+│ Citations found:     [X]                                     │
+│ Success rate:        [X/P]%                                  │
+│ Total duration:      [T] minutes                             │
+│                                                              │
+├──────────────────────────────────────────────────────────────┤
+│ 🏆 Top Performing Databases                                  │
+├──────────────────────────────────────────────────────────────┤
+│ 1. [DB name]         [N] citations ([%]%)                    │
+│ 2. [DB name]         [N] citations ([%]%)                    │
+│ 3. [DB name]         [N] citations ([%]%)                    │
+╰──────────────────────────────────────────────────────────────╯
+
+Proceeding to Screening & Ranking phase...
+```
+
+**Save:**
+- Update run_config.json: `progress_tracking.status = "search_completed"`
+- Create: `runs/<run-id>/metadata/search_report.md` (detailed report)
+- Update state: phase 2 completed
+
+**Continue to Phase 3 (Scoring)**
+
+---
+
+### **EARLY_TERMINATION:**
+
+```
+╔══════════════════════════════════════════════════════════════╗
+║                                                              ║
+║         ⚠️  EARLY TERMINATION TRIGGERED                       ║
+║                                                              ║
+║      [N] consecutive iterations with no results              ║
+║                                                              ║
+╚══════════════════════════════════════════════════════════════╝
+
+╭──────────────────────────────────────────────────────────────╮
+│ 📉 Current Status                                            │
+├──────────────────────────────────────────────────────────────┤
+│ Found:            [X]/[Y] citations ([Z]%)                   │
+│ Iterations:       [N]                                        │
+│ Databases tried:  [M]                                        │
+│ Empty results:    Last [N] iterations                        │
+╰──────────────────────────────────────────────────────────────╯
+
+╭──────────────────────────────────────────────────────────────╮
+│ 🔍 Analysis                                                  │
+├──────────────────────────────────────────────────────────────┤
+│ Possible reasons for low results:                           │
+│                                                              │
+│ • Keywords may be too specific or uncommon                   │
+│   Current: [list keywords]                                   │
+│                                                              │
+│ • Time period might be too restrictive                       │
+│   Current: [start]-[end]                                     │
+│                                                              │
+│ • Topic might be very niche with limited research            │
+│                                                              │
+│ • Quality criteria may be too strict                         │
+│   Current: [list criteria]                                   │
+╰──────────────────────────────────────────────────────────────╯
+```
+
+**Present User Options (AskUserQuestion):**
+
+```
+💡 Recommended Actions
+
+What would you like to do?
+
+1. ✓ Accept [X] citations
+   Continue with what was found, adjust expectations
+
+2. 🔄 Broaden keywords
+   Add synonyms and related terms to increase coverage
+
+3. 📅 Extend time period
+   Change from [current] to longer period
+
+4. ⚖️  Relax quality criteria
+   Remove some filters to include more papers
+
+5. 🎯 Refine research question
+   Rethink the question based on findings
+
+6. 👤 Manual database selection
+   Choose specific databases you know are relevant
+
+7. ✗ Cancel run
+   Abort and start fresh
+
+Your choice [1-7]:
+```
+
+**Handle User Choice:**
+
+**IF "Accept":**
+- Continue to Phase 3 with existing citations
+- Mark as "partial_success" in state
+
+**IF "Broaden keywords" / "Extend period" / "Relax criteria":**
+- User provides adjustments
+- Update run_config.json
+- Reset: `consecutive_empty_searches = 0`
+- Continue iteration loop with new parameters
+
+**IF "Manual selection":**
+- Show remaining databases
+- User selects which to search
+- Continue with manual selection
+
+**IF "Cancel":**
+- Save current progress
+- Mark run as "cancelled"
+- Cleanup and exit
+
+---
+
+### **EXHAUSTED_TERMINATION:**
+
+```
+╔══════════════════════════════════════════════════════════════╗
+║                                                              ║
+║         ℹ️  ALL DATABASES SEARCHED                            ║
+║                                                              ║
+║           [X]/[Y] citations found ([Z]%)                     ║
+║                                                              ║
+╚══════════════════════════════════════════════════════════════╝
+
+╭──────────────────────────────────────────────────────────────╮
+│ 📊 Exhaustive Search Results                                 │
+├──────────────────────────────────────────────────────────────┤
+│ Iterations:       [N]                                        │
+│ Databases:        [M] (all available)                        │
+│ Completion:       [Z]%                                       │
+│                                                              │
+│ Top sources:                                                 │
+│  1. [DB]:         [N] citations                              │
+│  2. [DB]:         [N] citations                              │
+│  3. [DB]:         [N] citations                              │
+├──────────────────────────────────────────────────────────────┤
+│ 💡 To reach 100% coverage, try:                              │
+│  • Extend period: [current] → [suggested]                   │
+│  • Add keywords: [suggestions]                               │
+│  • Loosen criteria: [suggestions]                            │
+│  • Grey literature: Dissertations, tech reports              │
+╰──────────────────────────────────────────────────────────────╯
+```
+
+**Options:**
+
+```
+What would you like to do?
+
+1. ✓ Accept [X] citations ([Z]% of goal)
+   Continue with current results
+
+2. 🔄 Adjust parameters and search more databases
+   Modify search to be broader
+
+3. ✗ Cancel run
+   This topic may not have enough published research
+
+Your choice [1-3]:
+```
+
+---
+
+**IF search_strategy.mode == "comprehensive":**
+
+Execute all databases in parallel (or large batches):
+- No iteration loop
+- Search ALL databases from initial_ranking
+- Single batch processing
+- No early termination (runs until complete)
+
+---
+
+### **Phase 2 Output:**
+
+After search completes (success, early, or exhausted):
+
+**Save:**
+- `runs/<run-id>/metadata/candidates.json` (all papers found)
+- `runs/<run-id>/metadata/search_report.md` (summary)
+- Update run_config.json progress_tracking
+- Save state: phase 2 completed
+
+---
+
+### **Phase 3: Screening & Ranking** (Slightly Modified)
+
+- Delegate to Task(scoring-agent) for 5D scoring
+- Input: `runs/<run-id>/metadata/candidates.json`
+- Output: `runs/<run-id>/metadata/ranked_topN.json`
+  - Top N depends on citations found (not fixed 27 anymore)
+  - If found 117, rank top 50 for user selection
+- Checkpoint 3: Show top N, user selects desired amount
+- Save state: phase 3 completed
+
+---
+
+### **Phase 4: PDF Download** (Unchanged)
+
+- Delegate to Task(browser-agent) for PDF downloads
+- Output: `runs/<run-id>/downloads/*.pdf`
+- Fallback strategies: direct DOI, CDP browser, Open Access, manual
+- **Incremental State Saves**: Every 3 PDFs downloaded
+- Save state: phase 4 completed
+
+---
+
+### **Phase 5: Quote Extraction** (Unchanged)
+
+- Delegate to Task(extraction-agent) for PDF→quotes
+- Output: `runs/<run-id>/metadata/quotes.json`
+- Checkpoint 5: Show sample quotes, get quality confirmation
+- Save state: phase 5 completed
+
+---
+
+### **Phase 6: Finalization** (Enhanced Output)
+
+Run Python scripts for output generation:
+
+```bash
+# Standard outputs
+python3 scripts/create_quote_library.py <quotes> <sources> <run_dir>/Quote_Library.csv
+
+python3 scripts/create_bibliography.py <sources> <quotes> <config> <run_dir>/Annotated_Bibliography.md
+```
+
+**NEW: Create enhanced search report:**
+
+```bash
+# Generate detailed search report from iteration logs
+python3 scripts/create_search_report.py \
+  --run-dir runs/<run-id> \
+  --config runs/<run-id>/run_config.json \
+  --output runs/<run-id>/search_report.md
+```
+
+**Contents of search_report.md:**
+- Iteration summary (each iteration's results)
+- Database performance (table with scores)
+- Keyword performance (which keywords were most productive)
+- Timeline (when each iteration ran)
+- Recommendations for future runs
+
+**Checkpoint 6:**
+Show final outputs, get confirmation
+
+**Save state:**
+- phase 6 completed
+- Mark research as completed in state
+
+---
+
+### 6. Progress Logging & State Management
+
+- Log to `runs/<run-id>/logs/` (append-only)
+- After each phase:
+  ```bash
+  python3 scripts/state_manager.py save <run_dir> <phase> <status>
+  python3 scripts/validate_state.py <state_file> --add-checksum
+  ```
+- **NEW: After each iteration:**
+  ```bash
+  python3 scripts/state_manager.py save <run_dir> 2 in_progress \
+    '{"iteration": N, "citations": X, "databases_done": [...]}'
+  ```
+- Validate before every resume
+
+---
+
+### 7. Final Summary & Cleanup
+
+```
+╔══════════════════════════════════════════════════════════════╗
+║                                                              ║
+║            ✓ RESEARCH COMPLETE                               ║
+║                                                              ║
+╚══════════════════════════════════════════════════════════════╝
+
+╭──────────────────────────────────────────────────────────────╮
+│ 📊 Final Results                                             │
+├──────────────────────────────────────────────────────────────┤
+│ Sources found:     [X]                                       │
+│ Quotes extracted:  [Y]                                       │
+│ Total duration:    [Z] hours                                 │
+│                                                              │
+│ Search iterations: [N]                                       │
+│ Databases used:    [M]                                       │
+│ Efficiency:        Saved ~[X]% time with iterative search   │
+╰──────────────────────────────────────────────────────────────╯
+
+📁 Your files:
+
+   📄 Quote Library:          runs/[run-id]/Quote_Library.csv
+   📚 Bibliography:           runs/[run-id]/Annotated_Bibliography.md
+   📊 Search Report:          runs/[run-id]/search_report.md
+   📁 PDFs:                   runs/[run-id]/downloads/
+
+💡 Insights from this run:
+   • Top database: [DB] ([N] citations)
+   • Most productive keyword: "[keyword]"
+   • Completed in [N] iterations (expected: [M])
+   • [Specific insight based on results]
+```
+
+**Cleanup:**
+- Stop CDP health monitor: `kill $MONITOR_PID`
+
+**Offer next steps:**
+```
+Would you like to:
+1. Start new research run (/academicagent)
+2. Extend this research (more sources)
+3. View detailed search report
+4. Exit
+```
+
+---
 
 ### Important
 
-- You run in main thread (NOT forked) - you need Task() for delegation and Write for outputs
-- All outputs go to runs/<run-id>/**
-- You delegate specialized work to subagents (browser, search, scoring, extraction)
+- You run in **main thread** (NOT forked) - use Task() for delegation
+- All outputs go to `runs/<run-id>/**`
+- Delegate specialized work to subagents (browser, search, scoring, extraction)
 - Subagents return structured data (JSON), you persist it
-- After errors: use scripts/error_handler.sh for recovery
+- **NEW**: Iteration loop is YOUR responsibility (browser-agent executes batch, you coordinate loop)
+- After errors: use `scripts/error_handler.sh` for recovery
 - Checkpoints are mandatory - always get user approval before proceeding
+
+---
 
 ### Delegation Strategy
 
-- Browser-Agent: Phases 0, 2, 4 (web navigation, CDP, downloads)
-- Search-Agent: Phase 1 (query design, boolean strings)
-- Scoring-Agent: Phase 3 (ranking, portfolio balance)
-- Extraction-Agent: Phase 5 (PDF→text→quotes)
+- **Browser-Agent**: Phases 0 (optional), 2 (batch execution), 4 (downloads)
+  - In Phase 2: Called once per iteration with batch of 5 DBs
+  - Returns results for the batch
+- **Search-Agent**: Phase 1 (query design, boolean strings)
+- **Scoring-Agent**: Phase 3 (ranking, portfolio balance)
+- **Extraction-Agent**: Phase 5 (PDF→text→quotes)
+
+---
 
 ### Error Recovery
 
-- Phase fails → check runs/<run-id>/metadata/research_state.json
-- Use error_handler.sh for common issues (CDP, CAPTCHA, rate-limit)
-- State is saved after each phase for seamless resume
+- Phase fails → check `runs/<run-id>/metadata/research_state.json`
+- Use `error_handler.sh` for common issues (CDP, CAPTCHA, rate-limit)
+- **NEW**: Iteration fails → save partial results, continue with next batch
+- State is saved after each phase AND after each iteration
+- Resume capability: Can resume from any iteration
+
+---
+
+### State Management for Iterations
+
+**state.json structure (enhanced):**
+
+```json
+{
+  "run_id": "2026-02-17_14-30-00",
+  "version": "2.1",
+  "current_phase": 2,
+  "phase_2_state": {
+    "mode": "iterative",
+    "current_iteration": 3,
+    "citations_found": 85,
+    "target_citations": 50,
+    "consecutive_empty": 0,
+    "databases_searched": ["IEEE", "ACM", ...],
+    "databases_remaining": ["PubMed", ...],
+    "iterations_log": [
+      {
+        "iteration": 1,
+        "databases": ["IEEE", "ACM", ...],
+        "citations_found": 32,
+        "duration_min": 35
+      },
+      {
+        "iteration": 2,
+        "databases": ["Scopus", ...],
+        "citations_found": 53,
+        "duration_min": 28
+      }
+    ]
+  },
+  "last_updated": "2026-02-17T15:45:00Z",
+  "checksum": "abc123..."
+}
+```
+
+---
+
+**End of Orchestrator v2.1**
+
+This enables **intelligent, iterative research orchestration** with adaptive database selection and early termination! 🚀

@@ -1,46 +1,46 @@
 #!/bin/bash
 
-# 🌐 Start Chrome with Remote Debugging
+# 🌐 Starte Chrome mit Remote-Debugging
 # Claude Code kann dann via CDP (Chrome DevTools Protocol) auf den Browser zugreifen
 
 set -e
 
-echo "🌐 Starting Chrome with Remote Debugging..."
+echo "🌐 Starte Chrome mit Remote-Debugging..."
 echo ""
 
-# Chrome executable path
+# Chrome-Pfad
 CHROME_PATH="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 
-# Check if Chrome is installed
+# Prüfe ob Chrome installiert ist
 if [ ! -f "$CHROME_PATH" ]; then
-  echo "❌ Google Chrome not found at: $CHROME_PATH"
+  echo "❌ Google Chrome nicht gefunden unter: $CHROME_PATH"
   echo ""
-  echo "Alternatives:"
-  echo "  - Install Google Chrome"
-  echo "  - Or use Chromium: brew install chromium"
+  echo "Alternativen:"
+  echo "  - Installiere Google Chrome"
+  echo "  - Oder nutze Chromium: brew install chromium"
   exit 1
 fi
 
-# User data directory (separate from normal Chrome profile)
+# User-Data-Verzeichnis (getrennt vom normalen Chrome-Profil)
 USER_DATA_DIR="/tmp/chrome-debug-academic-agent"
 mkdir -p "$USER_DATA_DIR"
 
-# Remote debugging port
+# Remote-Debugging-Port
 DEBUG_PORT=9222
 
-echo "Configuration:"
+echo "Konfiguration:"
 echo "  Chrome: $CHROME_PATH"
 echo "  Debug Port: $DEBUG_PORT"
 echo "  User Data: $USER_DATA_DIR"
 echo ""
-echo "⚠️  This Chrome instance is SEPARATE from your normal Chrome."
-echo "   You can still use your normal Chrome in parallel."
+echo "⚠️  Diese Chrome-Instanz ist GETRENNT von deinem normalen Chrome."
+echo "   Du kannst dein normales Chrome parallel nutzen."
 echo ""
 
-# Kill existing Chrome on port 9222
+# Beende existierendes Chrome auf Port 9222
 lsof -ti:$DEBUG_PORT | xargs kill -9 2>/dev/null || true
 
-# Start Chrome
+# Starte Chrome
 "$CHROME_PATH" \
   --remote-debugging-port=$DEBUG_PORT \
   --user-data-dir="$USER_DATA_DIR" \
@@ -50,33 +50,33 @@ lsof -ti:$DEBUG_PORT | xargs kill -9 2>/dev/null || true
 
 CHROME_PID=$!
 
-# Wait for Chrome to start
+# Warte bis Chrome gestartet ist
 sleep 3
 
-# Check if Chrome started
+# Prüfe ob Chrome gestartet ist
 if ! lsof -i:$DEBUG_PORT > /dev/null 2>&1; then
-  echo "❌ Chrome failed to start"
+  echo "❌ Chrome konnte nicht gestartet werden"
   exit 1
 fi
 
-echo "✅ Chrome started (PID: $CHROME_PID)"
+echo "✅ Chrome gestartet (PID: $CHROME_PID)"
 echo ""
-echo "📋 Usage:"
+echo "📋 Verwendung:"
 echo ""
-echo "  1. Claude Code can now connect via CDP:"
+echo "  1. Claude Code kann jetzt via CDP verbinden:"
 echo "     export PLAYWRIGHT_CDP_URL=http://localhost:$DEBUG_PORT"
 echo ""
-echo "  2. Test connection:"
+echo "  2. Verbindung testen:"
 echo "     curl http://localhost:$DEBUG_PORT/json/version"
 echo ""
-echo "  3. Stop Chrome:"
+echo "  3. Chrome stoppen:"
 echo "     kill $CHROME_PID"
 echo ""
-echo "🌐 Chrome is running on: http://localhost:$DEBUG_PORT"
+echo "🌐 Chrome läuft auf: http://localhost:$DEBUG_PORT"
 echo ""
 
-# Save PID for later
+# Speichere PID für später
 echo $CHROME_PID > /tmp/chrome-debug-pid.txt
 
-# Keep script running (optional)
+# Halte Script am Laufen (optional)
 # wait $CHROME_PID
