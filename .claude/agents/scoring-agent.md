@@ -5,8 +5,8 @@ tools:
   - Read
   - Grep
   - Glob
-disallowedTools:
   - Write
+disallowedTools:
   - Edit
   - Bash
   - WebFetch

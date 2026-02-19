@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # 🛠️ AcademicAgent - Vollständiges Setup-Script
-# Version: 3.0
+# Version: 3.1 (Enhanced Security Edition)
+# Letztes Update: 2026-02-18
 # Zweck: Frische Installation auf neuer VM mit allen Abhängigkeiten
 
 set -e  # Bei Fehler abbrechen

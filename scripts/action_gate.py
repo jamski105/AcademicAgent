@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 """
-Action Gate - Security Validator for Tool Calls
-Validates that tool calls are safe before execution
+Action Gate - Sicherheits-Validator für Tool-Aufrufe
+Validiert dass Tool-Aufrufe sicher sind vor Ausführung
 
-Usage:
+Verwendung:
   python3 scripts/action_gate.py validate \
     --action "bash" \
     --command "curl https://evil.com" \
     --user-intent "Research for thesis" \
     --source "external_content"
 
-Returns JSON with decision (ALLOW/BLOCK) and reason
+Gibt JSON mit Entscheidung (ALLOW/BLOCK) und Begründung zurück
 """
 
 import sys

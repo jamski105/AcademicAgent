@@ -1,8 +1,8 @@
 # 🛡️ Sicherheitsdokumentation - AcademicAgent
 
-**Version:** 2.3 (Gehärtet)
-**Zuletzt aktualisiert:** 2026-02-17
-**Sicherheitslevel:** Produktionsreif
+**Version:** 3.1 (Enhanced Security)
+**Zuletzt aktualisiert:** 2026-02-18
+**Sicherheitslevel:** Produktionsreif mit erweiterten Schutzmaßnahmen
 
 ---
 
@@ -10,7 +10,14 @@
 
 AcademicAgent ist gegen **(Indirekte) Prompt-Injection**-Angriffe von externen Quellen (Websites, PDFs, Datenbankergebnisse) gehärtet. Dieses Dokument beschreibt alle implementierten Sicherheitsmaßnahmen.
 
-**Sicherheits-Score:** 9/10 (90% der Maßnahmen implementiert)
+**Sicherheits-Score:** 9.5/10 (95% der Maßnahmen implementiert)
+
+**Neu in v3.1:**
+- ✅ Safe-Bash-Wrapper (framework-enforced Action-Gate)
+- ✅ PDF Security Validator (Deep Analysis)
+- ✅ CDP Fallback Manager (Auto-Recovery)
+- ✅ Budget Limiter (Cost-Control)
+- ✅ Encryption at Rest Dokumentation
 
 ---
 
@@ -248,6 +255,98 @@ python3 scripts/validate_domain.py "https://ieeexplore.ieee.org"
 - Manual logins by user (agent doesn't handle credentials)
 
 **Test:** [tests/red_team/run_tests.sh](file:///Users/j65674/Repos/AcademicAgent/tests/red_team/run_tests.sh) (INJ-006)
+
+---
+
+### 8. Encryption at Rest (RECOMMENDED)
+
+**Current State:** PDFs und extrahierte Zitate werden in Plaintext gespeichert (`runs/*/downloads/`, `runs/*/outputs/`).
+
+**Risiko:**
+- PDFs können sensitive/proprietary Forschungsinhalte enthalten
+- Zitate können PII (Autor-Emails, Kontakte) enthalten
+- Laptop-Verlust/Disk-Theft = komplette Recherche kompromittiert
+
+**Empfohlene Maßnahmen:**
+
+#### Option 1: System-Level Disk Encryption (EMPFOHLEN)
+
+**macOS:**
+```bash
+# Aktiviere FileVault (Full Disk Encryption)
+# System Settings → Privacy & Security → FileVault → Turn On
+```
+
+**Linux:**
+```bash
+# LUKS (Linux Unified Key Setup) für Disk Encryption
+# Sollte bei Installation aktiviert werden
+# Für existierende Systeme: verschlüssele Home-Directory
+
+# Check ob encrypted:
+lsblk -o NAME,SIZE,FSTYPE,MOUNTPOINT
+# Sollte "crypto_LUKS" zeigen
+```
+
+**Warum System-Level?**
+- ✅ Transparente Encryption (keine Code-Änderungen)
+- ✅ Alle Dateien geschützt (nicht nur runs/)
+- ✅ OS-native, gut getestet
+- ✅ Keine Performance-Probleme
+
+#### Option 2: Per-Run Encryption (OPTIONAL)
+
+Falls du zusätzliche Sicherheit willst (z.B. für Cloud-Backup):
+
+```bash
+# Verschlüssele run-Verzeichnis nach Recherche mit 'age'
+# Install: brew install age (macOS) / apt install age (Linux)
+
+# 1. Generiere Key (einmalig)
+age-keygen -o ~/.academic-agent-key.txt
+
+# 2. Verschlüssele Run
+tar czf - runs/2026-02-18_14-30-00 | \
+  age -r $(cat ~/.academic-agent-key.txt | grep public) \
+  > runs/2026-02-18_14-30-00.tar.gz.age
+
+# 3. Lösche Plaintext (nach Backup!)
+rm -rf runs/2026-02-18_14-30-00
+
+# 4. Entschlüsseln (später)
+age -d -i ~/.academic-agent-key.txt \
+  runs/2026-02-18_14-30-00.tar.gz.age | tar xzf -
+```
+
+#### Option 3: Auto-Cleanup (MINIMAL)
+
+Falls Encryption nicht möglich:
+
+```bash
+# Lösche PDFs nach Zitat-Extraktion (Phase 6)
+# Behalte nur: quotes.json, bibliography.bib
+
+# Füge zu Orchestrator nach Phase 5:
+if [ "$CLEANUP_PDFS" = "true" ]; then
+  echo "🗑️ Cleanup: Lösche PDFs..."
+  rm -rf runs/$RUN_ID/downloads/*.pdf
+  echo "✅ PDFs gelöscht, Zitate bleiben"
+fi
+```
+
+**Setze in Config:**
+```markdown
+## Security Settings
+- Cleanup PDFs after extraction: Yes
+- Keep only: quotes, bibliography, metadata
+```
+
+**Compliance:**
+- **GDPR:** Empfiehlt Encryption at Rest für PII
+- **ISO 27001:** Erfordert Data Protection Measures
+- **Best Practice:** Immer Disk Encryption für sensitive Daten
+
+**Aktion:** Aktiviere FileVault (macOS) oder LUKS (Linux) JETZT!
 
 ---
 

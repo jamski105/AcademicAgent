@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Navigation Session Tracker for DBIS Proxy Mode
-Tracks browser navigation to enforce DBIS-first policy
+Navigations-Session-Tracker für DBIS-Proxy-Modus
+Trackt Browser-Navigation um DBIS-first-Policy durchzusetzen
 
-Usage:
+Verwendung:
   python3 scripts/track_navigation.py "https://dbis.ur.de" session.json
   python3 scripts/track_navigation.py "https://ieeexplore.ieee.org" session.json
 """

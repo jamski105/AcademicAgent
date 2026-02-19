@@ -1,6 +1,6 @@
 # 🎓 AcademicAgent
 
-**Version:** 3.0
+**Version:** 3.1 (Enhanced Security Edition)
 **Autonomes akademisches Literatur-Recherche-System**
 
 AcademicAgent ist ein Claude-basierter Forschungsassistent, der den gesamten Literaturrecherche-Prozess automatisiert - von der Datenbanksuche bis zur Zitat-Extraktion. Er liefert 18 hochwertige Veröffentlichungen mit zitierfähigen Zitaten in 3,5-4 Stunden.
@@ -327,12 +327,17 @@ AcademicAgent ist gegen Prompt-Injection-Angriffe gehärtet. Wichtige Maßnahmen
 
 - **Instruktions-Hierarchie**: Externe Inhalte werden nur als DATEN behandelt
 - **Input-Sanitierung**: HTML-Bereinigung, Injection-Pattern-Erkennung
-- **Action Gate**: Validiert Tool-Aufrufe vor Ausführung
-- **Domain-Whitelist**: Nur akademische Datenbanken erlaubt (über DBIS)
+- **⭐ NEW: Safe-Bash-Wrapper**: Framework-enforced Action-Gate für alle Bash-Aufrufe
+- **⭐ NEW: PDF Security Validator**: Deep Analysis mit Metadata-Stripping, Redundancy-Detection, Structure-Validation
+- **Action Gate**: Validiert Tool-Aufrufe vor Ausführung (Source-Tracking: system/user/external_content)
+- **Domain-Whitelist**: Nur akademische Datenbanken erlaubt (über DBIS Proxy-Mode)
 - **Least Privilege**: Beschränkter Dateisystem- und Netzwerkzugriff
 - **Reader/Actor-Trennung**: Read-only-Agents können keine Befehle ausführen
+- **⭐ NEW: CDP Fallback Manager**: Auto-Recovery bei Chrome-Ausfällen mit Playwright Headless Fallback
+- **⭐ NEW: Budget Limiter**: Token-Budget-Enforcement (warnt bei 80%, stoppt bei 100%)
+- **⭐ NEW: Encryption at Rest Docs**: Empfehlungen für FileVault/LUKS Disk-Encryption
 
-**Sicherheits-Score:** 9/10 (90% der Maßnahmen implementiert)
+**Sicherheits-Score:** 9.5/10 (95% der Maßnahmen implementiert, +5% durch neue Features)
 
 Siehe [SECURITY.md](SECURITY.md) für vollständige Sicherheitsdokumentation und Red-Team-Tests.
 

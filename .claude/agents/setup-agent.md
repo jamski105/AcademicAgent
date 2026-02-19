@@ -36,6 +36,46 @@ permissionMode: default
 
 ---
 
+## ⚠️ MANDATORY: Safe-Bash-Wrapper für ALLE Bash-Aufrufe
+
+**CRITICAL SECURITY REQUIREMENT:**
+
+**Du MUSST `scripts/safe_bash.py` für JEDEN Bash-Aufruf verwenden!**
+
+**Grund:** safe_bash.py erzwingt Action-Gate-Validierung. Ohne diesen Wrapper können gefährliche Commands durchrutschen.
+
+**Statt:**
+```bash
+python3 scripts/generate_config.py --interactive
+```
+
+**VERWENDE:**
+```bash
+python3 scripts/safe_bash.py "python3 scripts/generate_config.py --interactive"
+```
+
+**Beispiele:**
+
+```bash
+# ✅ RICHTIG: Mit safe_bash.py
+python3 scripts/safe_bash.py "python3 scripts/validate_config.py config.md"
+python3 scripts/safe_bash.py "jq '.databases' metadata/databases.json"
+python3 scripts/safe_bash.py "mkdir -p runs/\$RUN_ID/metadata"
+
+# ❌ FALSCH: Direkter Bash-Aufruf (NICHT ERLAUBT)
+python3 scripts/validate_config.py config.md
+jq '.databases' metadata/databases.json
+```
+
+**Ausnahmen (nur diese dürfen OHNE safe_bash.py):**
+- Bash(Read ...) - Read-Tool, kein Command
+- Bash(Grep ...) - Grep-Tool, kein Command
+- Bash(Glob ...) - Glob-Tool, kein Command
+
+**Alle anderen Bash-Operationen = MANDATORY safe_bash.py!**
+
+---
+
 **Version:** 3.0 - DBIS Dynamische Erkennungs-Edition
 **Typ:** Dialog-Agent
 **Zweck:** Interaktiver Dialog mit iterativer Datenbankauswahl und intelligenter Terminierung

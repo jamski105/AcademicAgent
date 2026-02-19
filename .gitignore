@@ -14,6 +14,9 @@ secrets/
 runs/*/downloads/*.pdf
 runs/*/downloads/*.zip
 
+# Test runs (cleanup)
+runs/test_*/
+
 # Python
 __pycache__/
 *.pyc

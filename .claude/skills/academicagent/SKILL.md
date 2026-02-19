@@ -95,6 +95,43 @@ Warte auf User-Entscheidung.
 **Bei Wahl 2:** Kopiere Template und zeige Pfad
 **Bei Wahl 3:** Erstelle minimalen temporären Kontext
 
+#### Schritt 2.5: Browser-Verfügbarkeit sicherstellen (NEU - CRITICAL)
+
+**WICHTIG:** Vor dem Start der Recherche muss Browser verfügbar sein!
+
+```bash
+# Prüfe Browser-Verfügbarkeit mit CDP Fallback Manager
+python3 scripts/cdp_fallback_manager.py start --fallback
+
+# Exit-Codes:
+# 0 = Browser verfügbar (CDP oder Playwright)
+# 1 = Browser nicht verfügbar
+
+EXIT_CODE=$?
+
+if [ $EXIT_CODE -eq 0 ]; then
+  echo "✅ Browser bereit"
+else
+  echo "❌ Browser konnte nicht gestartet werden"
+  echo ""
+  echo "Bitte starte Chrome manuell mit:"
+  echo "  bash scripts/start_chrome_debug.sh"
+  echo ""
+  echo "Oder installiere Playwright für Fallback:"
+  echo "  npm install playwright"
+  exit 1
+fi
+```
+
+**Browser-Status anzeigen:**
+```
+✅ Browser bereit
+   Mode: CDP (Chrome Debug Mode auf Port 9222)
+   [oder: Mode: Playwright Headless Fallback]
+
+Fahre fort mit Setup...
+```
+
 #### Schritt 3: Setup-Agent starten
 
 ```
@@ -178,9 +215,9 @@ Erneut versuchen? (Ja/Nein)
 Falls Konfig erfolgreich erstellt wurde:
 
 ```bash
-# Starte Orchestrator mit der generierten Konfig
+# Starte Orchestrator-Agent mit der generierten Konfig
 Task(
-  subagent_type="orchestrator",
+  subagent_type="orchestrator-agent",
   description="Recherche-Pipeline ausführen",
   prompt="Führe die vollständige Recherche-Pipeline aus.
 

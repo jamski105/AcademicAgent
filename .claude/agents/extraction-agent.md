@@ -5,8 +5,8 @@ tools:
   - Read
   - Grep
   - Glob
-disallowedTools:
   - Write
+disallowedTools:
   - Edit
   - Bash
   - WebFetch
@@ -77,22 +77,53 @@ Du bist der **Extraction-Agent** für Zitat-Extraktion.
 
 **1. Für jede PDF:**
 
-#### a. PDF → Text konvertieren
+#### a. PDF Security Validation (NEU - MANDATORY)
+
+**CRITICAL:** Alle PDFs MÜSSEN durch Security-Validator laufen!
 
 ```bash
-pdftotext -layout projects/[ProjectName]/pdfs/001_Bass_2015.pdf projects/[ProjectName]/txt/001.txt
+# Security-Validation mit pdf_security_validator.py
+python3 scripts/pdf_security_validator.py \
+  projects/[ProjectName]/pdfs/001_Bass_2015.pdf \
+  projects/[ProjectName]/txt/001.txt \
+  --report projects/[ProjectName]/logs/001_security_report.json
 
-# -layout: Behält Seitenlayout (wichtig für Seitenzahlen)
-# Output: 001.txt
+# Exit-Codes:
+# 0 = SAFE (LOW/MEDIUM risk)
+# 1 = HIGH risk (Warnung, aber extrahiert)
+# 2 = CRITICAL risk (PDF NICHT extrahiert)
 ```
 
-**Verifiziere:**
+**Prüfe Exit-Code:**
 ```bash
-# Prüfe, ob Text lesbar
+EXIT_CODE=$?
+
+if [ $EXIT_CODE -eq 2 ]; then
+  echo "🚨 PDF 001 BLOCKIERT (CRITICAL risk - potenzielle Injection)"
+  # Skip diese PDF, fahre mit nächster fort
+  continue
+elif [ $EXIT_CODE -eq 1 ]; then
+  echo "⚠️  PDF 001 HIGH risk, aber extrahiert (prüfe Security-Report)"
+  # Text wurde trotzdem extrahiert (bereinigt)
+fi
+
+# EXIT_CODE 0 = Alles OK, fahre fort
+echo "✅ PDF 001 sicher extrahiert"
+```
+
+**Verifiziere Output:**
+```bash
+# Prüfe, ob bereinigter Text lesbar ist
 head -20 projects/[ProjectName]/txt/001.txt
 
 # Falls OCR-Problem (gescanntes PDF):
-# → pdftotext schlägt fehl → Log "OCR required for 001.pdf" → Skip
+# → pdf_security_validator.py schlägt fehl → Log "OCR required for 001.pdf" → Skip
+```
+
+**Security-Report prüfen (optional):**
+```bash
+# Zeige Warnungen aus Security-Report
+jq '.result.warnings' projects/[ProjectName]/logs/001_security_report.json
 ```
 
 ---

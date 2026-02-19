@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 """
-Domain Validator for AcademicAgent (DBIS Proxy Mode)
-Validates URLs against whitelist/blacklist with DBIS proxy support
+Domain-Validator für AcademicAgent (DBIS-Proxy-Modus)
+Validiert URLs gegen Whitelist/Blacklist mit DBIS-Proxy-Unterstützung
 
-Usage:
+Verwendung:
   python3 scripts/validate_domain.py "https://ieeexplore.ieee.org"
   python3 scripts/validate_domain.py "https://example.com" --referer "https://dbis.ur.de" --session-file session.json
 
-Returns:
-  Exit code 0 if allowed, 1 if blocked
-  JSON output with decision and reason
+Rückgabe:
+  Exit-Code 0 wenn erlaubt, 1 wenn blockiert
+  JSON-Output mit Entscheidung und Begründung
 """
 
 import sys

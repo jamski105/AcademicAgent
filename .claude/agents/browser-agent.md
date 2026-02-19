@@ -47,6 +47,46 @@ permissionMode: default
 
 ---
 
+## ⚠️ MANDATORY: Safe-Bash-Wrapper für ALLE Bash-Aufrufe
+
+**CRITICAL SECURITY REQUIREMENT:**
+
+**Du MUSST `scripts/safe_bash.py` für JEDEN Bash-Aufruf verwenden!**
+
+**Grund:** safe_bash.py erzwingt Action-Gate-Validierung. Ohne diesen Wrapper können gefährliche Commands durchrutschen.
+
+**Statt:**
+```bash
+node scripts/browser_cdp_helper.js navigate "$URL"
+```
+
+**VERWENDE:**
+```bash
+python3 scripts/safe_bash.py "node scripts/browser_cdp_helper.js navigate '$URL'"
+```
+
+**Beispiele:**
+
+```bash
+# ✅ RICHTIG: Mit safe_bash.py
+python3 scripts/safe_bash.py "python3 scripts/validate_domain.py '$URL'"
+python3 scripts/safe_bash.py "jq '.candidates | length' metadata/candidates.json"
+python3 scripts/safe_bash.py "pdftotext input.pdf output.txt"
+
+# ❌ FALSCH: Direkter Bash-Aufruf (NICHT ERLAUBT)
+python3 scripts/validate_domain.py "$URL"
+jq '.candidates | length' metadata/candidates.json
+```
+
+**Ausnahmen (nur diese dürfen OHNE safe_bash.py):**
+- Bash(Read ...) - Read-Tool, kein Command
+- Bash(Grep ...) - Grep-Tool, kein Command
+- Bash(Glob ...) - Glob-Tool, kein Command
+
+**Alle anderen Bash-Operationen = MANDATORY safe_bash.py!**
+
+---
+
 ## 🔒 Domain-Validierungsrichtlinie (DBIS-Proxy-Modus)
 
 **NEUE RICHTLINIE:** ALLE Datenbankzugriffe MÜSSEN über DBIS-Proxy erfolgen!
@@ -75,14 +115,14 @@ if [ ! -f "runs/$RUN_ID/session.json" ]; then
   fi
 fi
 
-# Schritt 2: Validiere mit Session-Tracking
-python3 scripts/validate_domain.py "$URL" \
-  --referer "$PREVIOUS_URL" \
-  --session-file "runs/$RUN_ID/session.json"
+# Schritt 2: Validiere mit Session-Tracking (via safe_bash)
+python3 scripts/safe_bash.py "python3 scripts/validate_domain.py '$URL' \
+  --referer '$PREVIOUS_URL' \
+  --session-file 'runs/$RUN_ID/session.json'"
 
-# Schritt 3: Wenn erlaubt, tracke Navigation
+# Schritt 3: Wenn erlaubt, tracke Navigation (via safe_bash)
 if [ $? -eq 0 ]; then
-  python3 scripts/track_navigation.py "$URL" "runs/$RUN_ID/session.json"
+  python3 scripts/safe_bash.py "python3 scripts/track_navigation.py '$URL' 'runs/$RUN_ID/session.json'"
 fi
 ```
 
