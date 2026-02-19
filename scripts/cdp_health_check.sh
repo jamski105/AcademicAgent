@@ -3,6 +3,8 @@
 # Monitors Chrome DevTools Protocol connection
 # Auto-recovery if Chrome crashes
 
+set -euo pipefail
+
 CDP_PORT=9222
 CDP_URL="http://localhost:${CDP_PORT}/json/version"
 MAX_RETRIES=3
@@ -124,6 +126,9 @@ monitor() {
     local run_dir=${2:-}
 
     echo -e "${GREEN}🔍 Starting CDP monitoring (interval: ${interval}s)${NC}"
+
+    # Graceful shutdown on SIGINT/SIGTERM
+    trap 'echo -e "\n${YELLOW}Shutting down monitoring...${NC}"; exit 0' SIGINT SIGTERM
 
     if [ -n "$run_dir" ]; then
         echo "   Run directory: $run_dir"

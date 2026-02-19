@@ -250,6 +250,41 @@ logger.metric("navigation_success_rate_after_retry", 0.85, unit="ratio")
 4. **Log alle Retry-Events** (für Post-Mortem-Analyse)
 5. **Unterscheide transiente vs. permanente Fehler**
 
+### ENFORCEMENT: with_retry Decorator (MANDATORY für Python-Code)
+
+**NEU seit v3.2:** Falls du Python-Code für CDP-Wrapper nutzt, MUSS `@with_retry` Decorator verwendet werden!
+
+```python
+from scripts.enforce_retry import with_cdp_retry
+
+@with_cdp_retry(run_id=run_id)
+def navigate_to_database(url: str):
+    """Navigate to database with automatic retry enforcement"""
+    return cdp_helper.navigate(url)
+
+# Automatic retry mit exponential backoff - KANN NICHT umgangen werden
+result = navigate_to_database("https://ieeexplore.ieee.org")
+```
+
+**Vorteile:**
+- ✅ Retry ist framework-enforced (Agent kann es nicht überspringen)
+- ✅ Automatisches Logging von Retry-Attempts
+- ✅ Orchestrator kann verify via Log-File ob Retries stattfanden
+
+**Orchestrator-Verification:**
+```python
+from scripts.enforce_retry import verify_retry_enforcement
+
+# Nach Agent-Completion: Prüfe ob Retry enforcement aktiv war
+result = verify_retry_enforcement(
+    log_file=Path(f"runs/{run_id}/logs/browser_agent.jsonl"),
+    operation_name="CDP_navigate"
+)
+
+if not result['enforced']:
+    logger.warning("Retry enforcement was bypassed!")
+```
+
 ---
 
 ## 🔒 Domain-Validierungsrichtlinie (DBIS-Proxy-Modus)

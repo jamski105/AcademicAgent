@@ -1,7 +1,16 @@
 # 🎓 AcademicAgent
 
-**Version:** 3.1 (Enhanced Security Edition)
+**Version:** 3.2 (Validation-Gate & MANDATORY Encryption Edition)
 **Autonomes akademisches Literatur-Recherche-System**
+
+> ⚠️ **WICHTIG: macOS ONLY**
+>
+> Dieses System ist **ausschließlich für macOS** entwickelt und getestet.
+> - Erfordert macOS-spezifische Pfade (`/Applications/Google Chrome.app`)
+> - Nutzt macOS-spezifische Befehle (`stat -f`, `lsof`, `open`)
+> - Homebrew als Paketmanager
+>
+> **Linux/Windows werden NICHT unterstützt.**
 
 AcademicAgent ist ein Claude-basierter Forschungsassistent, der den gesamten Literaturrecherche-Prozess automatisiert - von der Datenbanksuche bis zur Zitat-Extraktion. Er liefert 18 hochwertige Veröffentlichungen mit zitierfähigen Zitaten in 3,5-4 Stunden.
 
@@ -16,7 +25,7 @@ AcademicAgent ist ein Claude-basierter Forschungsassistent, der den gesamten Lit
 - **PDF-Extraktion**: Natives `pdftotext` - 5x schneller als browserbasierte Extraktion
 - **Zitatbibliothek**: Strukturiertes JSON mit Seitenzahlen und Relevanzscores
 - **Fehlerwiederherstellung**: Automatisches State-Management mit Fortsetzungsfähigkeit
-- **Sicherheit**: Schutz gegen Prompt-Injection-Angriffe (9/10 Score)
+- **Sicherheit**: Defense-in-Depth mit Validation-Gate, Encryption-at-Rest, Retry-Enforcement (9.8/10 Score)
 
 ---
 
@@ -24,9 +33,10 @@ AcademicAgent ist ein Claude-basierter Forschungsassistent, der den gesamten Lit
 
 ### Voraussetzungen
 
-- macOS oder Linux
-- Chrome-Browser
+- **macOS** (10.15 Catalina oder neuer empfohlen)
+- Google Chrome Browser
 - Universitäts-VPN-Zugang (für lizenzierte Datenbanken)
+- Homebrew Paketmanager (wird automatisch installiert falls nicht vorhanden)
 
 ### Installation
 
@@ -553,18 +563,18 @@ runs/2026-02-18_14-30-00
 
 ### Benutzerdefinierte Datenbank hinzufügen
 
-Bearbeite [config/database_disciplines.yaml](config/database_disciplines.yaml):
+**Hinweis:** Die Datenbank-Konfiguration erfolgt derzeit über die DBIS-Integration. Für custom databases kontaktiere die Maintainer oder öffne ein GitHub Issue mit deinem Datenbank-Vorschlag.
+
+Zukünftige Version wird `config/databases.yaml` unterstützen:
 
 ```yaml
+# Coming soon in v3.2
 - name: Benutzerdefinierte Datenbank
   disciplines:
     - Deine Disziplin
   url: custom-db.com
   access: Subscription
-  api_available: false
   base_score: 85
-  priority: 2
-  notes: "Beschreibung deiner benutzerdefinierten Datenbank"
 ```
 
 ### Iterative Suchparameter anpassen
@@ -581,9 +591,20 @@ Bearbeite Konfig um Suchverhalten zu ändern:
 
 ### Zitatbibliothek nach Word exportieren
 
+**Option 1: Pandoc (manuell)**
+
 ```bash
-# JSON in formatiertes Word-Dokument konvertieren
-# (Benötigt pandoc - installiert via setup.sh)
+# Konvertiere BibTeX zu Word
+pandoc runs/[Timestamp]/outputs/bibliography.bib \
+  -o bibliography.docx \
+  --citeproc
+```
+
+**Option 2: JSON Export (coming soon)**
+
+Zukünftige Version wird `scripts/export_quotes.py` enthalten:
+```bash
+# Coming in v3.2
 python3 scripts/export_quotes.py \
   runs/[Timestamp]/outputs/quote_library.json \
   output.docx
@@ -753,12 +774,14 @@ except SafeBashError as e:
 
 - **[ERROR_RECOVERY.md](ERROR_RECOVERY.md)** - Umfassender Fehlerbehandlungs-Guide
 - **[SECURITY.md](SECURITY.md)** - Sicherheitshärtung & Red-Team-Tests
+- **[PRIVACY.md](PRIVACY.md)** - Datenschutzrichtlinie & GDPR-Compliance
 - **[docs/THREAT_MODEL.md](docs/THREAT_MODEL.md)** - Bedrohungsmodell & Sicherheitsanalyse
 
 ### ⚙️ Konfiguration & Technisches
 
 - **[docs/DBIS_USAGE.md](docs/DBIS_USAGE.md)** - Technische DBIS-Integration (für Agents)
-- **[config/database_disciplines.yaml](config/database_disciplines.yaml)** - Datenbank-Katalog
+- **[UPGRADE.md](UPGRADE.md)** - Upgrade-Anleitung zwischen Versionen
+- **[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)** - Community-Verhaltenskodex
 
 ---
 
@@ -843,10 +866,18 @@ MIT License - Siehe LICENSE-Datei für Details
 
 ## 🔄 Versionshistorie
 
+- **v3.1** (2026-02-19) - Security-Hardening, macOS-Only, Script-Robustheit
+  - ✅ Safe-Bash Wrapper, PDF Security Validator, CDP Fallback Manager
+  - ✅ Budget Limiter, Encryption at Rest Docs
+  - ✅ Alle Scripts mit `set -euo pipefail`
+  - ✅ TTY-Checks, Cleanup-Traps, bc-Fallbacks
+  - ⚠️ Linux-Support entfernt (macOS-only)
 - **v3.0** (2026-02-18) - Datenbank-Strategie V3.0 mit dynamischer DBIS-Erkennung
 - **v2.5** (Vorherig) - Iterative Datenbanksuche
 - **v2.0** (Vorherig) - 5D-Bewertungssystem
 - **v1.0** (Vorherig) - Erstes Release
+
+Siehe [UPGRADE.md](UPGRADE.md) für Migrations-Anleitung.
 
 ---
 

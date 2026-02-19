@@ -14,8 +14,10 @@ secrets/
 runs/*/downloads/*.pdf
 runs/*/downloads/*.zip
 
-# Test runs (cleanup)
+# Test runs (cleanup - not for production)
 runs/test_*/
+runs/e2e_test_*/
+runs/dev_test_*/
 
 # Python
 __pycache__/
@@ -39,6 +41,11 @@ Thumbs.db
 *.swp
 *.swo
 *~
+
+# Editor backup files
+*.sh-e
+*.py-e
+*.md-e
 
 # Logs
 *.log

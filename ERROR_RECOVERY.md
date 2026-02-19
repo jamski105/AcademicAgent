@@ -272,4 +272,13 @@ Der Agent wendet automatisch diese Strategien an:
 
 ---
 
+## 📚 Related Documentation
+
+- **[SECURITY.md](SECURITY.md)** - Sicherheitsmaßnahmen & Red-Team-Tests
+- **[PRIVACY.md](PRIVACY.md)** - Datenschutz & Compliance
+- **[UPGRADE.md](UPGRADE.md)** - Upgrade-Anleitung (bei Version-Wechsel)
+- **[README.md](README.md)** - Vollständiger Feature-Guide
+
+---
+
 **Happy Researching! 🚀**

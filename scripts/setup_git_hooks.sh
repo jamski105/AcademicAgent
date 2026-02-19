@@ -2,7 +2,7 @@
 # Setup Git Hooks für AcademicAgent Security
 # Installiert Pre-Commit-Hook für Secrets-Erkennung
 
-set -e
+set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"

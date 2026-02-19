@@ -1,9 +1,19 @@
 #!/bin/bash
 
-# 🌐 Starte Chrome mit Remote-Debugging
+# 🌐 Starte Chrome mit Remote-Debugging (macOS ONLY)
 # Claude Code kann dann via CDP (Chrome DevTools Protocol) auf den Browser zugreifen
 
-set -e
+set -euo pipefail
+
+# macOS-Only Check
+if [[ "$OSTYPE" != "darwin"* ]]; then
+  echo "❌ Nicht unterstütztes OS: $OSTYPE"
+  echo ""
+  echo "⚠️  Dieses Script ist ausschließlich für macOS entwickelt."
+  echo "    Grund: Hardcoded Pfad /Applications/Google Chrome.app"
+  echo ""
+  exit 1
+fi
 
 echo "🌐 Starte Chrome mit Remote-Debugging..."
 echo ""
@@ -15,9 +25,8 @@ CHROME_PATH="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 if [ ! -f "$CHROME_PATH" ]; then
   echo "❌ Google Chrome nicht gefunden unter: $CHROME_PATH"
   echo ""
-  echo "Alternativen:"
-  echo "  - Installiere Google Chrome"
-  echo "  - Oder nutze Chromium: brew install chromium"
+  echo "Bitte installiere Google Chrome:"
+  echo "  https://www.google.com/chrome/"
   exit 1
 fi
 
@@ -77,6 +86,9 @@ echo ""
 
 # Speichere PID für später
 echo $CHROME_PID > /tmp/chrome-debug-pid.txt
+
+# Cleanup-Trap für PID-File
+trap 'rm -f /tmp/chrome-debug-pid.txt' EXIT
 
 # Halte Script am Laufen (optional)
 # wait $CHROME_PID

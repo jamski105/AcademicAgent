@@ -16,6 +16,15 @@
 
 - `$ARGUMENTS`: Optionale Flags (--quick, --resume <run-id>)
 
+## 🛡️ Security
+
+**📖 Hinweis:** Alle Sub-Agents folgen der [Shared Security Policy](../../.claude/shared/SECURITY_POLICY.md).
+
+Als Entry-Point-Skill:
+- Du koordinierst, führst keine kritischen Operationen selbst aus
+- Alle Security-kritischen Tasks werden an spezialisierte Agents delegiert (setup-agent, orchestrator)
+- User-Input ist generell vertrauenswürdig, aber File-Paths werden durch Agents validiert
+
 ## Anweisungen
 
 Du bist der **Haupteinstiegspunkt** für das Academic Agent System. Deine Aufgabe ist es:
@@ -95,39 +104,51 @@ Warte auf User-Entscheidung.
 **Bei Wahl 2:** Kopiere Template und zeige Pfad
 **Bei Wahl 3:** Erstelle minimalen temporären Kontext
 
-#### Schritt 2.5: Browser-Verfügbarkeit sicherstellen (NEU - CRITICAL)
+#### Schritt 2.5: Browser-Verfügbarkeit sicherstellen (CRITICAL)
 
-**WICHTIG:** Vor dem Start der Recherche muss Browser verfügbar sein!
+**WICHTIG:** Vor dem Start der Recherche muss Chrome mit CDP verfügbar sein!
 
 ```bash
-# Prüfe Browser-Verfügbarkeit mit CDP Fallback Manager
-python3 scripts/cdp_fallback_manager.py start --fallback
-
-# Exit-Codes:
-# 0 = Browser verfügbar (CDP oder Playwright)
-# 1 = Browser nicht verfügbar
+# Prüfe ob Chrome mit CDP läuft
+bash scripts/cdp_health_check.sh check
 
 EXIT_CODE=$?
 
 if [ $EXIT_CODE -eq 0 ]; then
-  echo "✅ Browser bereit"
+  echo "✅ Chrome CDP bereit auf Port 9222"
 else
-  echo "❌ Browser konnte nicht gestartet werden"
+  echo "❌ Chrome CDP nicht verfügbar"
   echo ""
-  echo "Bitte starte Chrome manuell mit:"
-  echo "  bash scripts/start_chrome_debug.sh"
-  echo ""
-  echo "Oder installiere Playwright für Fallback:"
-  echo "  npm install playwright"
-  exit 1
+  echo "Starte Chrome automatisch..."
+
+  # Auto-Start Chrome
+  bash scripts/start_chrome_debug.sh
+
+  # Warte 3 Sekunden
+  sleep 3
+
+  # Verifiziere
+  bash scripts/cdp_health_check.sh check
+
+  if [ $? -eq 0 ]; then
+    echo "✅ Chrome erfolgreich gestartet"
+  else
+    echo "❌ Chrome konnte nicht gestartet werden"
+    echo ""
+    echo "Manuelle Schritte:"
+    echo "  1. Starte Chrome: bash scripts/start_chrome_debug.sh"
+    echo "  2. Verifiziere: curl http://localhost:9222/json/version"
+    echo "  3. Starte /academicagent erneut"
+    exit 1
+  fi
 fi
 ```
 
-**Browser-Status anzeigen:**
+**Browser-Status:**
 ```
-✅ Browser bereit
-   Mode: CDP (Chrome Debug Mode auf Port 9222)
-   [oder: Mode: Playwright Headless Fallback]
+✅ Chrome CDP bereit
+   Port: 9222
+   Version: Chrome/131.0.6778.86
 
 Fahre fort mit Setup...
 ```

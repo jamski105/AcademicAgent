@@ -1,0 +1,153 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://academicagent.local/schemas/ranked_sources.json",
+  "title": "Ranked Sources Schema",
+  "description": "Schema for ranked and scored sources from Phase 3 (Scoring & Ranking)",
+  "type": "object",
+  "required": ["ranked_sources", "total_ranked", "portfolio_balance", "timestamp"],
+  "properties": {
+    "ranked_sources": {
+      "type": "array",
+      "description": "Array of ranked sources (top N after scoring)",
+      "items": {
+        "type": "object",
+        "required": ["rank", "id", "title", "authors", "year", "scores", "ranking_score", "category"],
+        "properties": {
+          "rank": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Rank position (1 = best)"
+          },
+          "id": {
+            "type": "string",
+            "pattern": "^C[0-9]{3,4}$",
+            "description": "Candidate ID from Phase 2"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 500,
+            "description": "Paper title (sanitized)"
+          },
+          "authors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1
+          },
+          "year": {
+            "type": "integer",
+            "minimum": 1900,
+            "maximum": 2030
+          },
+          "doi": {
+            "type": "string",
+            "description": "DOI (optional)"
+          },
+          "database": {
+            "type": "string",
+            "description": "Source database"
+          },
+          "citations": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "scores": {
+            "type": "object",
+            "required": ["D1", "D2", "D3", "D4", "D5", "total"],
+            "properties": {
+              "D1": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1,
+                "description": "Topic Focus Score"
+              },
+              "D2": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1,
+                "description": "Cluster Coverage Score"
+              },
+              "D3": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1,
+                "description": "Mechanisms/Instruments Score"
+              },
+              "D4": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1,
+                "description": "Methodological Rigor Score"
+              },
+              "D5": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1,
+                "description": "Citability Score"
+              },
+              "total": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 5,
+                "description": "Total Score (D1+D2+D3+D4+D5)"
+              }
+            }
+          },
+          "ranking_score": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Final ranking score (total * log(citations+1))"
+          },
+          "category": {
+            "type": "string",
+            "enum": ["Primary", "Management", "Standards", "Other"],
+            "description": "Portfolio category"
+          }
+        }
+      }
+    },
+    "total_ranked": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of sources ranked"
+    },
+    "portfolio_balance": {
+      "type": "object",
+      "required": ["Primary", "Management", "Standards", "Other"],
+      "properties": {
+        "Primary": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Count of Primary sources"
+        },
+        "Management": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Count of Management/Practice sources"
+        },
+        "Standards": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Count of Standards/Framework sources"
+        },
+        "Other": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Count of Other sources"
+        }
+      }
+    },
+    "avg_score": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 5,
+      "description": "Average total score across ranked sources"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

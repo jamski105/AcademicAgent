@@ -3,7 +3,7 @@
 # 🚨 Error Handler - AcademicAgent
 # Zentraler Error Handler für alle Agent-Operationen
 
-set -e
+set -euo pipefail
 
 # ============================================
 # Color codes
@@ -110,7 +110,14 @@ handle_cdp_error() {
 
   # Automatic recovery attempt
   echo -e "${YELLOW}Möchtest du Auto-Recovery versuchen? (y/n)${NC}"
-  read -r response
+
+  # TTY-Check für non-interactive Umgebungen
+  if [ -t 0 ]; then
+    read -t 60 -r response || response="n"
+  else
+    echo "Non-interactive mode - Auto-Recovery wird nicht versucht"
+    response="n"
+  fi
 
   if [[ "$response" =~ ^[Yy]$ ]]; then
     echo "Versuche automatische Wiederherstellung..."
@@ -164,7 +171,13 @@ handle_captcha() {
   echo "  3. Drücke ENTER zum Fortfahren"
   echo ""
 
-  read
+  # TTY-Check für non-interactive Umgebungen
+  if [ -t 0 ]; then
+    read -t 300 -r || echo "Timeout nach 5 Minuten"
+  else
+    echo "Non-interactive mode - Warte 60 Sekunden..."
+    sleep 60
+  fi
 
   echo -e "${GREEN}✅ CAPTCHA gelöst! Fortsetzen...${NC}"
 
@@ -202,7 +215,13 @@ handle_login() {
   echo "  3. Drücke ENTER zum Fortfahren"
   echo ""
 
-  read
+  # TTY-Check für non-interactive Umgebungen
+  if [ -t 0 ]; then
+    read -t 600 -r || echo "Timeout nach 10 Minuten"
+  else
+    echo "Non-interactive mode - Warte 120 Sekunden..."
+    sleep 120
+  fi
 
   echo -e "${GREEN}✅ Login abgeschlossen! Fortsetzen...${NC}"
 
@@ -318,7 +337,13 @@ handle_network_error() {
   echo ""
   echo "Drücke ENTER wenn Netzwerk-Problem behoben ist..."
 
-  read
+  # TTY-Check für non-interactive Umgebungen
+  if [ -t 0 ]; then
+    read -t 300 -r || echo "Timeout nach 5 Minuten"
+  else
+    echo "Non-interactive mode - Warte 60 Sekunden..."
+    sleep 60
+  fi
 
   echo -e "${BLUE}🔄 Retry...${NC}"
 
@@ -376,8 +401,15 @@ handle_file_error() {
   esac
 
   echo ""
-  echo "Drücke ENTER zum Beenden."
-  read
+
+  # TTY-Check für non-interactive Umgebungen
+  if [ -t 0 ]; then
+    echo "Drücke ENTER zum Beenden."
+    read -t 30 -r || true
+  else
+    echo "Beende in 5 Sekunden..."
+    sleep 5
+  fi
 
   return 1  # Don't retry
 }

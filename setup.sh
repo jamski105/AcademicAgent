@@ -5,7 +5,7 @@
 # Letztes Update: 2026-02-18
 # Zweck: Frische Installation auf neuer VM mit allen Abhängigkeiten
 
-set -e  # Bei Fehler abbrechen
+set -euo pipefail  # Bei Fehler abbrechen, uninitialisierte Variablen erkennen, Pipe-Fehler nicht ignorieren
 
 # Farben
 GREEN='\033[0;32m'
@@ -21,22 +21,26 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo ""
 
 # ============================================
-# 1. Betriebssystem-Erkennung
+# 1. Betriebssystem-Erkennung (macOS ONLY)
 # ============================================
 echo -e "${BLUE}📋 Erkenne Betriebssystem...${NC}"
 
-OS="unknown"
-if [[ "$OSTYPE" == "darwin"* ]]; then
-  OS="macos"
-  echo -e "${GREEN}✅ macOS erkannt${NC}"
-elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
-  OS="linux"
-  echo -e "${GREEN}✅ Linux erkannt${NC}"
-else
+if [[ "$OSTYPE" != "darwin"* ]]; then
   echo -e "${RED}❌ Nicht unterstütztes OS: $OSTYPE${NC}"
-  echo "Aktuell unterstützt: macOS, Linux"
+  echo ""
+  echo "⚠️  AcademicAgent ist ausschließlich für macOS entwickelt."
+  echo ""
+  echo "Grund:"
+  echo "  - macOS-spezifische Pfade (/Applications/Google Chrome.app)"
+  echo "  - macOS-spezifische Befehle (stat -f, lsof, open)"
+  echo "  - Homebrew als Paketmanager"
+  echo ""
+  echo "Linux/Windows werden nicht unterstützt."
   exit 1
 fi
+
+OS="macos"
+echo -e "${GREEN}✅ macOS erkannt${NC}"
 
 echo ""
 
@@ -45,10 +49,20 @@ echo ""
 # ============================================
 echo -e "${BLUE}📦 Prüfe Paketmanager...${NC}"
 
-if [[ "$OS" == "macos" ]]; then
-  # macOS: Prüfe auf Homebrew
-  if ! command -v brew &> /dev/null; then
-    echo -e "${YELLOW}⚠️  Homebrew nicht gefunden. Installiere...${NC}"
+# macOS: Prüfe auf Homebrew
+if ! command -v brew &> /dev/null; then
+  echo -e "${YELLOW}⚠️  Homebrew nicht gefunden.${NC}"
+  echo ""
+  echo "⚠️  SICHERHEITSHINWEIS:"
+  echo "    Homebrew wird von einem öffentlichen GitHub-Repository installiert."
+  echo "    Bitte prüfe den Installationsbefehl vorher auf https://brew.sh"
+  echo ""
+  echo "Möchtest du Homebrew jetzt installieren? (y/n)"
+  read -r INSTALL_BREW
+
+  if [[ "$INSTALL_BREW" =~ ^[Yy]$ ]]; then
+    echo ""
+    echo -e "${YELLOW}Installiere Homebrew...${NC}"
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
     # Füge Homebrew zu PATH hinzu
@@ -58,69 +72,41 @@ if [[ "$OS" == "macos" ]]; then
 
     echo -e "${GREEN}✅ Homebrew installiert${NC}"
   else
-    echo -e "${GREEN}✅ Homebrew gefunden${NC}"
-  fi
-  PKG_MANAGER="brew"
-
-elif [[ "$OS" == "linux" ]]; then
-  # Linux: Erkenne Paketmanager
-  if command -v apt &> /dev/null; then
-    PKG_MANAGER="apt"
-    echo -e "${GREEN}✅ apt gefunden${NC}"
-  elif command -v yum &> /dev/null; then
-    PKG_MANAGER="yum"
-    echo -e "${GREEN}✅ yum gefunden${NC}"
-  elif command -v dnf &> /dev/null; then
-    PKG_MANAGER="dnf"
-    echo -e "${GREEN}✅ dnf gefunden${NC}"
-  else
-    echo -e "${RED}❌ Kein unterstützter Paketmanager gefunden${NC}"
+    echo -e "${RED}❌ Homebrew erforderlich. Installation abgebrochen.${NC}"
+    echo ""
+    echo "Manuelle Installation:"
+    echo "  /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
     exit 1
   fi
+else
+  echo -e "${GREEN}✅ Homebrew gefunden${NC}"
 fi
+PKG_MANAGER="brew"
 
 echo ""
 
 # ============================================
-# 3. Chrome / Chromium installieren
+# 3. Chrome installieren (macOS)
 # ============================================
-echo -e "${BLUE}🌐 Installiere Chrome/Chromium...${NC}"
+echo -e "${BLUE}🌐 Prüfe Google Chrome...${NC}"
 
 CHROME_INSTALLED=false
 
-if [[ "$OS" == "macos" ]]; then
+if [[ -d "/Applications/Google Chrome.app" ]]; then
+  echo -e "${GREEN}✅ Google Chrome bereits installiert${NC}"
+  CHROME_INSTALLED=true
+else
+  echo -e "${YELLOW}⚠️  Google Chrome nicht gefunden${NC}"
+  echo "Bitte manuell installieren von: https://www.google.com/chrome/"
+  echo ""
+  echo "Drücke ENTER wenn Chrome installiert ist (oder zum Überspringen)..."
+  read -r
+
   if [[ -d "/Applications/Google Chrome.app" ]]; then
-    echo -e "${GREEN}✅ Google Chrome bereits installiert${NC}"
+    echo -e "${GREEN}✅ Chrome verifiziert${NC}"
     CHROME_INSTALLED=true
   else
-    echo -e "${YELLOW}⚠️  Google Chrome nicht gefunden${NC}"
-    echo "Bitte manuell installieren von: https://www.google.com/chrome/"
-    echo ""
-    echo "Drücke ENTER wenn Chrome installiert ist (oder zum Überspringen)..."
-    read
-
-    if [[ -d "/Applications/Google Chrome.app" ]]; then
-      echo -e "${GREEN}✅ Chrome verifiziert${NC}"
-      CHROME_INSTALLED=true
-    else
-      echo -e "${YELLOW}⚠️  Chrome nicht gefunden - fahre trotzdem fort${NC}"
-    fi
-  fi
-
-elif [[ "$OS" == "linux" ]]; then
-  if command -v google-chrome &> /dev/null || command -v chromium &> /dev/null || command -v chromium-browser &> /dev/null; then
-    echo -e "${GREEN}✅ Chrome/Chromium bereits installiert${NC}"
-    CHROME_INSTALLED=true
-  else
-    echo -e "${YELLOW}Installiere Chromium...${NC}"
-    if [[ "$PKG_MANAGER" == "apt" ]]; then
-      sudo apt update
-      sudo apt install -y chromium-browser
-    elif [[ "$PKG_MANAGER" == "yum" ]] || [[ "$PKG_MANAGER" == "dnf" ]]; then
-      sudo $PKG_MANAGER install -y chromium
-    fi
-    echo -e "${GREEN}✅ Chromium installiert${NC}"
-    CHROME_INSTALLED=true
+    echo -e "${YELLOW}⚠️  Chrome nicht gefunden - fahre trotzdem fort${NC}"
   fi
 fi
 
@@ -134,14 +120,7 @@ echo -e "${BLUE}📄 Installiere poppler (pdftotext)...${NC}"
 if command -v pdftotext &> /dev/null; then
   echo -e "${GREEN}✅ pdftotext bereits installiert${NC}"
 else
-  if [[ "$PKG_MANAGER" == "brew" ]]; then
-    brew install poppler
-  elif [[ "$PKG_MANAGER" == "apt" ]]; then
-    sudo apt update
-    sudo apt install -y poppler-utils
-  elif [[ "$PKG_MANAGER" == "yum" ]] || [[ "$PKG_MANAGER" == "dnf" ]]; then
-    sudo $PKG_MANAGER install -y poppler-utils
-  fi
+  brew install poppler
   echo -e "${GREEN}✅ pdftotext installiert${NC}"
 fi
 
@@ -155,14 +134,7 @@ echo -e "${BLUE}⬇️  Installiere wget...${NC}"
 if command -v wget &> /dev/null; then
   echo -e "${GREEN}✅ wget bereits installiert${NC}"
 else
-  if [[ "$PKG_MANAGER" == "brew" ]]; then
-    brew install wget
-  elif [[ "$PKG_MANAGER" == "apt" ]]; then
-    sudo apt update
-    sudo apt install -y wget
-  elif [[ "$PKG_MANAGER" == "yum" ]] || [[ "$PKG_MANAGER" == "dnf" ]]; then
-    sudo $PKG_MANAGER install -y wget
-  fi
+  brew install wget
   echo -e "${GREEN}✅ wget installiert${NC}"
 fi
 
@@ -176,14 +148,7 @@ echo -e "${BLUE}🌐 Installiere curl...${NC}"
 if command -v curl &> /dev/null; then
   echo -e "${GREEN}✅ curl bereits installiert${NC}"
 else
-  if [[ "$PKG_MANAGER" == "brew" ]]; then
-    brew install curl
-  elif [[ "$PKG_MANAGER" == "apt" ]]; then
-    sudo apt update
-    sudo apt install -y curl
-  elif [[ "$PKG_MANAGER" == "yum" ]] || [[ "$PKG_MANAGER" == "dnf" ]]; then
-    sudo $PKG_MANAGER install -y curl
-  fi
+  brew install curl
   echo -e "${GREEN}✅ curl installiert${NC}"
 fi
 
@@ -197,14 +162,7 @@ echo -e "${BLUE}🔧 Installiere jq...${NC}"
 if command -v jq &> /dev/null; then
   echo -e "${GREEN}✅ jq bereits installiert${NC}"
 else
-  if [[ "$PKG_MANAGER" == "brew" ]]; then
-    brew install jq
-  elif [[ "$PKG_MANAGER" == "apt" ]]; then
-    sudo apt update
-    sudo apt install -y jq
-  elif [[ "$PKG_MANAGER" == "yum" ]] || [[ "$PKG_MANAGER" == "dnf" ]]; then
-    sudo $PKG_MANAGER install -y jq
-  fi
+  brew install jq
   echo -e "${GREEN}✅ jq installiert${NC}"
 fi
 
@@ -220,14 +178,7 @@ if command -v git &> /dev/null; then
   echo -e "${GREEN}✅ git bereits installiert ($GIT_VERSION)${NC}"
 else
   echo -e "${YELLOW}Installiere git...${NC}"
-  if [[ "$PKG_MANAGER" == "brew" ]]; then
-    brew install git
-  elif [[ "$PKG_MANAGER" == "apt" ]]; then
-    sudo apt update
-    sudo apt install -y git
-  elif [[ "$PKG_MANAGER" == "yum" ]] || [[ "$PKG_MANAGER" == "dnf" ]]; then
-    sudo $PKG_MANAGER install -y git
-  fi
+  brew install git
   echo -e "${GREEN}✅ git installiert${NC}"
 fi
 
@@ -242,14 +193,7 @@ if command -v pandoc &> /dev/null; then
   echo -e "${GREEN}✅ pandoc bereits installiert${NC}"
 else
   echo -e "${YELLOW}Installiere pandoc (für Zitat-Export nach Word)...${NC}"
-  if [[ "$PKG_MANAGER" == "brew" ]]; then
-    brew install pandoc
-  elif [[ "$PKG_MANAGER" == "apt" ]]; then
-    sudo apt update
-    sudo apt install -y pandoc
-  elif [[ "$PKG_MANAGER" == "yum" ]] || [[ "$PKG_MANAGER" == "dnf" ]]; then
-    sudo $PKG_MANAGER install -y pandoc
-  fi
+  brew install pandoc
   echo -e "${GREEN}✅ pandoc installiert${NC}"
 fi
 
@@ -264,16 +208,7 @@ if command -v node &> /dev/null; then
   NODE_VERSION=$(node --version)
   echo -e "${GREEN}✅ Node.js bereits installiert ($NODE_VERSION)${NC}"
 else
-  if [[ "$PKG_MANAGER" == "brew" ]]; then
-    brew install node
-  elif [[ "$PKG_MANAGER" == "apt" ]]; then
-    # Installiere Node.js 18.x LTS
-    curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-    sudo apt install -y nodejs
-  elif [[ "$PKG_MANAGER" == "yum" ]] || [[ "$PKG_MANAGER" == "dnf" ]]; then
-    curl -fsSL https://rpm.nodesource.com/setup_18.x | sudo bash -
-    sudo $PKG_MANAGER install -y nodejs
-  fi
+  brew install node
   echo -e "${GREEN}✅ Node.js installiert${NC}"
 fi
 
@@ -288,14 +223,7 @@ if command -v python3 &> /dev/null; then
   PYTHON_VERSION=$(python3 --version)
   echo -e "${GREEN}✅ Python 3 bereits installiert ($PYTHON_VERSION)${NC}"
 else
-  if [[ "$PKG_MANAGER" == "brew" ]]; then
-    brew install python3
-  elif [[ "$PKG_MANAGER" == "apt" ]]; then
-    sudo apt update
-    sudo apt install -y python3 python3-pip
-  elif [[ "$PKG_MANAGER" == "yum" ]] || [[ "$PKG_MANAGER" == "dnf" ]]; then
-    sudo $PKG_MANAGER install -y python3 python3-pip
-  fi
+  brew install python3
   echo -e "${GREEN}✅ Python 3 installiert${NC}"
 fi
 
@@ -308,13 +236,14 @@ echo -e "${BLUE}🎭 Installiere Playwright...${NC}"
 echo -e "${YELLOW}Hinweis: Playwright wird NUR als CDP-Client verwendet um sich mit echtem Chrome zu verbinden${NC}"
 echo -e "${YELLOW}         NICHT für Headless-Browsing. User hat volle Kontrolle über Browser.${NC}"
 
-if [ ! -d "node_modules/playwright" ]; then
-  # Initialisiere npm falls nötig
-  if [ ! -f "package.json" ]; then
-    echo -e "${YELLOW}Erstelle package.json...${NC}"
-    npm init -y > /dev/null 2>&1
-  fi
+# Initialisiere npm falls nötig (idempotent)
+if [ ! -f "package.json" ]; then
+  echo -e "${YELLOW}Erstelle package.json...${NC}"
+  npm init -y > /dev/null 2>&1
+fi
 
+# Installiere/Update Playwright (idempotent)
+if [ ! -d "node_modules/playwright" ]; then
   echo -e "${YELLOW}Installiere Playwright (kann einige Minuten dauern)...${NC}"
   npm install playwright
 
@@ -325,6 +254,9 @@ if [ ! -d "node_modules/playwright" ]; then
   echo -e "${GREEN}✅ Playwright installiert (CDP-Client-Modus)${NC}"
 else
   echo -e "${GREEN}✅ Playwright bereits installiert${NC}"
+  # Stelle sicher dass Playwright aktuell ist (idempotent)
+  echo -e "${YELLOW}Prüfe Playwright-Version...${NC}"
+  npm list playwright 2>/dev/null || echo "  (Version konnte nicht ermittelt werden)"
 fi
 
 echo ""
@@ -360,6 +292,20 @@ chmod +x scripts/*.py 2>/dev/null || true
 chmod +x scripts/*.js 2>/dev/null || true
 
 echo -e "${GREEN}✅ Berechtigungen gesetzt${NC}"
+echo ""
+
+# ============================================
+# 14b. Installiere Git Pre-Commit Hooks
+# ============================================
+echo -e "${BLUE}🔒 Installiere Git Pre-Commit Hooks...${NC}"
+
+if [ -f "scripts/setup_git_hooks.sh" ]; then
+  bash scripts/setup_git_hooks.sh
+  echo -e "${GREEN}✅ Git Hooks installiert (Secret-Scanning aktiv)${NC}"
+else
+  echo -e "${YELLOW}⚠️  scripts/setup_git_hooks.sh nicht gefunden - überspringe${NC}"
+fi
+
 echo ""
 
 # ============================================
@@ -465,7 +411,54 @@ if [ "$VERIFICATION_FAILED" = true ]; then
 fi
 
 # ============================================
-# 16. Erfolgsmeldung
+# 16. Encryption-at-Rest Check (MANDATORY für Production)
+# ============================================
+echo ""
+echo -e "${BLUE}🔒 Prüfe Disk-Encryption (MANDATORY für Production)...${NC}"
+echo ""
+
+ENCRYPTION_ENABLED=false
+
+# macOS: FileVault check
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  if fdesetup status | grep -q "FileVault is On"; then
+    echo -e "${GREEN}✅ FileVault ist aktiviert${NC}"
+    ENCRYPTION_ENABLED=true
+  else
+    echo -e "${RED}❌ FileVault ist NICHT aktiviert!${NC}"
+    echo ""
+    echo -e "${YELLOW}⚠️  SICHERHEITSWARNUNG:${NC}"
+    echo "   AcademicAgent speichert sensitive Forschungsinhalte (PDFs, Zitate)."
+    echo "   GDPR/ISO-27001 erfordert Encryption-at-Rest für PII."
+    echo ""
+    echo "   FileVault aktivieren:"
+    echo "   1. System Settings → Privacy & Security → FileVault"
+    echo "   2. Click 'Turn On FileVault'"
+    echo "   3. Neustart erforderlich"
+    echo ""
+    echo "   ⚠️  Ohne FileVault sind deine Forschungsdaten bei Laptop-Verlust kompromittiert!"
+    echo ""
+  fi
+fi
+
+if [ "$ENCRYPTION_ENABLED" = false ]; then
+  echo "Möchtest du trotzdem fortfahren? (y/n)"
+  read -r CONTINUE_WITHOUT_ENCRYPTION
+
+  if [[ ! "$CONTINUE_WITHOUT_ENCRYPTION" =~ ^[Yy]$ ]]; then
+    echo ""
+    echo "Setup abgebrochen. Bitte aktiviere Disk-Encryption und führe setup.sh erneut aus."
+    exit 1
+  fi
+
+  echo ""
+  echo -e "${YELLOW}⚠️  Fortfahren OHNE Disk-Encryption (nicht empfohlen für Production)${NC}"
+fi
+
+echo ""
+
+# ============================================
+# 17. Erfolgsmeldung
 # ============================================
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

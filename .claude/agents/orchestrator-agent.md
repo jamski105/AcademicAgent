@@ -86,11 +86,14 @@ logger.error(\"Sub-agent failed\",
   exit 1
 fi
 
-# 2. MANDATORY: Validiere Agent-Output-JSON
-python3 scripts/safe_bash.py "python3 scripts/validate_json.py \
-  --file runs/\$RUN_ID/metadata/{output_file}.json \
+# 2. MANDATORY: Validiere Agent-Output-JSON via validation_gate.py
+python3 scripts/safe_bash.py "python3 scripts/validation_gate.py \
+  --agent {agent_name} \
+  --phase {phase_num} \
+  --output-file runs/\$RUN_ID/metadata/{output_file}.json \
   --schema schemas/{agent}_output_schema.json \
-  --sanitize-text-fields"
+  --run-id \$RUN_ID \
+  --write-sanitized"
 
 VALIDATION_EXIT=$?
 
@@ -137,12 +140,14 @@ Informiere User: "✅ Agent output validated & sanitized"
 # 4. ERST JETZT nächsten Agent spawnen oder Phase fortsetzen
 ```
 
-#### Was validate_json.py tut:
-1. **JSON-Schema-Validation** - Struktur entspricht Schema?
-2. **Text-Field-Sanitization** - title, abstract, etc. HTML-bereinigt?
+#### Was validation_gate.py tut:
+1. **JSON-Schema-Validation** - Struktur entspricht Schema? (via jsonschema library)
+2. **Text-Field-Sanitization** - title, abstract, etc. HTML-bereinigt & Injection-Patterns entfernt
 3. **Type-Checking** - year ist Number, citations ist Number, etc.?
 4. **Required-Fields-Check** - doi, title, authors vorhanden?
-5. **Injection-Detection** - Verdächtige Patterns in Text-Feldern?
+5. **Injection-Detection** - 8 verdächtige Patterns in Text-Feldern (ignore instructions, role takeover, command execution, network commands, secret access)
+6. **Recursive Sanitization** - Alle verschachtelten text-fields werden sanitized
+7. **--write-sanitized Flag** - Schreibt sanitized output zurück (überschreibt original)
 
 #### Schemas definiert in: `schemas/`
 - `search_strings_schema.json` (search-agent output)

@@ -1,0 +1,102 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://academicagent.local/schemas/quotes.json",
+  "title": "Quotes Schema",
+  "description": "Schema for extracted quotes from Phase 5 (Quote Extraction)",
+  "type": "object",
+  "required": ["quotes", "total_quotes", "sources_processed", "timestamp"],
+  "properties": {
+    "quotes": {
+      "type": "array",
+      "description": "Array of extracted quotes from PDFs",
+      "items": {
+        "type": "object",
+        "required": ["quote_id", "source_id", "source_title", "authors", "year", "page", "quote", "context", "relevance"],
+        "properties": {
+          "quote_id": {
+            "type": "string",
+            "pattern": "^Q[0-9]{3,4}$",
+            "description": "Unique quote ID (e.g., Q001, Q042)"
+          },
+          "source_id": {
+            "type": "string",
+            "pattern": "^[0-9]{3}$",
+            "description": "Source ID (e.g., 001, 018)"
+          },
+          "source_title": {
+            "type": "string",
+            "minLength": 10,
+            "description": "Paper title (sanitized)"
+          },
+          "authors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1
+          },
+          "year": {
+            "type": "integer",
+            "minimum": 1900,
+            "maximum": 2030
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9999,
+            "description": "Page number in PDF"
+          },
+          "quote": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 350,
+            "description": "Extracted quote (max 35 words ≈ 350 chars)"
+          },
+          "context": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 500,
+            "description": "1-2 sentence context of quote"
+          },
+          "relevance": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 500,
+            "description": "Why this quote is relevant to research question"
+          },
+          "keywords_matched": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Keywords that matched in this quote"
+          },
+          "filename": {
+            "type": "string",
+            "pattern": "^[0-9]{3}_.*\\.pdf$",
+            "description": "Source PDF filename"
+          }
+        }
+      }
+    },
+    "total_quotes": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Total number of quotes extracted"
+    },
+    "sources_processed": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of PDFs processed"
+    },
+    "avg_quotes_per_source": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Average quotes per source"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

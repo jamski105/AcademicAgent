@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # 🌐 Smart Chrome Setup with Auto-DBIS Check
-# Version 2.1 - Interactive Mode
+# Version 2.1 - Interactive Mode (macOS ONLY)
 
-set -e
+set -euo pipefail
 
 # Colors for output
 RED='\033[0;31m'
@@ -11,6 +11,16 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
+
+# macOS-Only Check
+if [[ "$OSTYPE" != "darwin"* ]]; then
+  echo -e "${RED}❌ Nicht unterstütztes OS: $OSTYPE${NC}"
+  echo ""
+  echo "⚠️  Dieses Script ist ausschließlich für macOS entwickelt."
+  echo "    Grund: Hardcoded Pfad /Applications/Google Chrome.app"
+  echo ""
+  exit 1
+fi
 
 echo -e "${BLUE}🌐 Smart Chrome Setup - AcademicAgent${NC}"
 echo ""
@@ -30,6 +40,14 @@ fi
 # User data directory (separate from normal Chrome profile)
 USER_DATA_DIR="/tmp/chrome-debug-academic-agent"
 mkdir -p "$USER_DATA_DIR"
+
+# Temp directory for screenshots
+TEMP_DIR="/tmp/academic-agent-setup"
+mkdir -p "$TEMP_DIR"
+
+# Cleanup-Trap für temporäre Verzeichnisse (bei Fehler)
+# Hinweis: USER_DATA_DIR bleibt erhalten damit Chrome-Session persistent ist
+trap 'rm -rf "$TEMP_DIR"' EXIT
 
 # Remote debugging port
 DEBUG_PORT=9222
@@ -135,8 +153,6 @@ echo -e "${BLUE}[4/4] Checking DBIS login status...${NC}"
 echo ""
 
 # Take screenshot
-TEMP_DIR="/tmp/academic-agent-setup"
-mkdir -p "$TEMP_DIR"
 SCREENSHOT_PATH="$TEMP_DIR/dbis_check.png"
 
 if [ -f "scripts/browser_cdp_helper.js" ]; then

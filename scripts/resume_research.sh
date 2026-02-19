@@ -3,7 +3,7 @@
 # 🔄 Resume Research - AcademicAgent
 # Setzt unterbrochene Recherche fort
 
-set -e
+set -euo pipefail
 
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -23,7 +23,11 @@ if [ $# -lt 1 ]; then
 fi
 
 PROJECT_NAME=$1
-PROJECT_DIR="$HOME/AcademicAgent/projects/$PROJECT_NAME"
+
+# Nutze relative Pfade statt hardcoded $HOME/AcademicAgent
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+PROJECT_DIR="$ROOT_DIR/projects/$PROJECT_NAME"
 
 # ============================================
 # Check if project exists
@@ -32,7 +36,7 @@ if [ ! -d "$PROJECT_DIR" ]; then
   echo "❌ Project not found: $PROJECT_DIR"
   echo ""
   echo "Available projects:"
-  ls -1 "$HOME/AcademicAgent/projects/" 2>/dev/null || echo "  (none)"
+  ls -1 "$ROOT_DIR/projects/" 2>/dev/null || echo "  (none)"
   exit 1
 fi
 
@@ -118,7 +122,7 @@ echo ""
 echo "📋 Next steps:"
 echo ""
 echo "  1. Open VS Code:"
-echo "     cd $(pwd)"
+echo "     cd $ROOT_DIR"
 echo "     code ."
 echo ""
 echo "  2. Start Claude Code Chat:"

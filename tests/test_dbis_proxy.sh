@@ -2,7 +2,7 @@
 # Tests for DBIS Proxy Mode
 # Validates that domain validation enforces DBIS-first policy
 
-set -e
+set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -144,7 +144,13 @@ rm -f "$SESSION_FILE"
 
 # Summary
 TOTAL=$((PASSED + FAILED))
-PASS_RATE=$(echo "scale=2; $PASSED / $TOTAL * 100" | bc)
+
+# Calculate pass rate with bc (fallback to awk if not available)
+if command -v bc &> /dev/null; then
+  PASS_RATE=$(echo "scale=2; $PASSED / $TOTAL * 100" | bc)
+else
+  PASS_RATE=$(awk "BEGIN {printf \"%.2f\", $PASSED / $TOTAL * 100}")
+fi
 
 echo "========================"
 echo "Test Results:"
@@ -154,7 +160,9 @@ echo -e "  ${RED}Failed: $FAILED${NC}"
 echo ""
 echo "Pass Rate: $PASS_RATE%"
 
-if [ "$PASS_RATE" = "100.00" ]; then
+# Vergleich mit awk da bc möglicherweise nicht verfügbar
+PASS_RATE_INT=$(echo "$PASS_RATE" | awk -F. '{print $1}')
+if [ "$PASS_RATE_INT" -eq 100 ]; then
   echo -e "${GREEN}✅ ALL TESTS PASSED${NC}"
   exit 0
 else

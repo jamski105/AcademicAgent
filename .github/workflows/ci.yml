@@ -251,12 +251,44 @@ jobs:
           echo "✅ Alle Agent-Configs vorhanden"
 
   # ============================================
-  # Job 7: Status-Report
+  # Job 7: E2E Pipeline-Tests
+  # ============================================
+  e2e-tests:
+    name: E2E Pipeline-Tests
+    runs-on: ubuntu-latest
+    needs: [unit-tests, security-tests, script-validation, build-validation]
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Installiere Test-Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+          pip install --upgrade pip
+
+      - name: Führe E2E Pipeline-Test aus
+        run: |
+          echo "=== Führe E2E Pipeline-Test aus ==="
+          bash tests/e2e/test_minimal_pipeline.sh
+
+      - name: Validiere Test-Output
+        run: |
+          echo "✅ E2E Pipeline-Test erfolgreich"
+
+  # ============================================
+  # Job 8: Status-Report
   # ============================================
   status-report:
     name: CI Status-Report
     runs-on: ubuntu-latest
-    needs: [unit-tests, security-tests, script-validation, build-validation]
+    needs: [unit-tests, security-tests, script-validation, build-validation, e2e-tests]
     if: always()
 
     steps:
