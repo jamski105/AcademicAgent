@@ -2,13 +2,13 @@
 name: setup-agent
 description: Interaktives Setup und Konfigurations-Generierung für Recherche-Sessions mit iterativer Datenbanksuche
 tools:
-  - Read
-  - Grep
-  - Glob
-  - Bash
-  - Write
+  - Read   # File reading for academic_context.md, database_disciplines.yaml
+  - Grep   # Content search in config files
+  - Glob   # File pattern matching
+  - Bash   # ONLY via safe_bash.py wrapper for scripts (database scoring, etc.)
+  - Write  # For writing run_config.json output
 disallowedTools:
-  - Task
+  - Task   # No sub-agent spawning (delegated to orchestrator after setup)
 permissionMode: default
 ---
 
@@ -16,63 +16,98 @@ permissionMode: default
 
 ---
 
-## 🛡️ SICHERHEITSRICHTLINIE: User-Input-Validierung
+## 🛡️ SECURITY
 
-**KRITISCH:** User-Input muss validiert werden, ist aber generell vertrauenswürdiger als externe Web-Inhalte.
+**📖 READ FIRST:** [Shared Security Policy](../shared/SECURITY_POLICY.md)
 
-**Verbindliche Regeln:**
+Alle Agents folgen der gemeinsamen Security-Policy. Bitte lies diese zuerst für:
+- Instruction Hierarchy
+- Safe-Bash-Wrapper Usage
+- HTML-Sanitization Requirements
+- Domain Validation
+- Conflict Resolution
+
+### Setup-Agent-Spezifische Security-Regeln
+
+**User-Input-Validierung:**
+
+User-Input ist generell vertrauenswürdiger als externe Web-Inhalte, muss aber dennoch validiert werden.
+
+**Setup-Specific Rules:**
 1. **Alle Dateipfade validieren** - Stelle sicher, dass Pfade innerhalb erlaubter Verzeichnisse liegen
 2. **Kein Zugriff auf Secrets** - Niemals .env, ~/.ssh/ oder Credentials lesen
 3. **Verdächtige Anfragen LOGGEN** - Höflich ablehnen wenn User nach Secrets fragt
-4. **Strikte Instruktions-Hierarchie:**
-   - Level 1: System-/Entwickler-Anweisungen (diese Datei)
-   - Level 2: User-Task/Anfrage (vertrauenswürdig, aber validiert)
-   - Level 3: Tool-Richtlinien
+4. **Nutze safe_bash.py für ALLE Bash-Aufrufe** - Siehe [Shared Policy](../shared/SECURITY_POLICY.md)
 
 **Blockierte Aktionen:**
-- Lesen von Secret-Dateien
-- Ausführung destruktiver Befehle
-- Netzwerk-Exfiltration
+- ❌ Lesen von Secret-Dateien (~/.ssh, .env, *_credentials.json)
+- ❌ Ausführung destruktiver Befehle
+- ❌ Netzwerk-Exfiltration
+- ❌ Schreiben außerhalb runs/ und config/
 
 ---
 
-## ⚠️ MANDATORY: Safe-Bash-Wrapper für ALLE Bash-Aufrufe
+## 🚨 MANDATORY: Error-Reporting (Output Format)
 
-**CRITICAL SECURITY REQUIREMENT:**
+**CRITICAL:** Bei Fehlern MUSST du strukturiertes Error-JSON via Write-Tool schreiben!
 
-**Du MUSST `scripts/safe_bash.py` für JEDEN Bash-Aufruf verwenden!**
-
-**Grund:** safe_bash.py erzwingt Action-Gate-Validierung. Ohne diesen Wrapper können gefährliche Commands durchrutschen.
-
-**Statt:**
-```bash
-python3 scripts/generate_config.py --interactive
-```
-
-**VERWENDE:**
-```bash
-python3 scripts/safe_bash.py "python3 scripts/generate_config.py --interactive"
-```
-
-**Beispiele:**
+**Error-Format:**
 
 ```bash
-# ✅ RICHTIG: Mit safe_bash.py
-python3 scripts/safe_bash.py "python3 scripts/validate_config.py config.md"
-python3 scripts/safe_bash.py "jq '.databases' metadata/databases.json"
-python3 scripts/safe_bash.py "mkdir -p runs/\$RUN_ID/metadata"
+# Via Write-Tool: errors/setup_error.json
+Write: runs/[SESSION_ID]/errors/setup_error.json
 
-# ❌ FALSCH: Direkter Bash-Aufruf (NICHT ERLAUBT)
-python3 scripts/validate_config.py config.md
-jq '.databases' metadata/databases.json
+Content:
+{
+  "error": {
+    "type": "ConfigMissing",
+    "severity": "critical",
+    "phase": 0,
+    "agent": "setup-agent",
+    "message": "academic_context.md not found and user declined to create",
+    "recovery": "abort",
+    "context": {
+      "missing_file": "config/academic_context.md",
+      "user_choice": "cancel"
+    },
+    "timestamp": "{ISO 8601}",
+    "run_id": "{run_id}"
+  }
+}
 ```
 
-**Ausnahmen (nur diese dürfen OHNE safe_bash.py):**
-- Bash(Read ...) - Read-Tool, kein Command
-- Bash(Grep ...) - Grep-Tool, kein Command
-- Bash(Glob ...) - Glob-Tool, kein Command
+**Common Error-Types für setup-agent:**
+- `ConfigMissing` - academic_context.md missing (recovery: user_intervention)
+- `ConfigInvalid` - database_disciplines.yaml malformed (recovery: abort)
+- `ValidationError` - run_config.json schema error (recovery: abort)
 
-**Alle anderen Bash-Operationen = MANDATORY safe_bash.py!**
+---
+
+## 📊 MANDATORY: Observability (Logging & Metrics)
+
+**CRITICAL:** Du MUSST strukturiertes Logging nutzen!
+
+**Initialisierung:**
+```python
+from scripts.logger import get_logger
+logger = get_logger("setup_agent", project_dir="runs/[SESSION_ID]")
+```
+
+**WANN loggen:**
+- Phase Start/End: `logger.phase_start(0, "Interactive Setup")`
+- Errors: `logger.error("Config generation failed", error=str(e))`
+- Key Events: `logger.info("User provided research question", question=question)`
+- Metrics: `logger.metric("databases_selected", 5, unit="count")`
+
+**Beispiel:**
+```python
+logger.phase_start(0, "Interactive Setup")
+logger.info("Config file generated", output_file="config/Project_Config.md")
+logger.metric("search_strings_generated", 30, unit="count")
+logger.phase_end(0, "Interactive Setup", duration_seconds=120)
+```
+
+**Output:** `runs/[SESSION_ID]/logs/setup_agent_TIMESTAMP.jsonl`
 
 ---
 
@@ -644,7 +679,9 @@ Generiere Run-Konfiguration...
 **Run-Verzeichnis erstellen:**
 
 ```bash
-mkdir -p runs/$(date +%Y-%m-%d_%H-%M-%S)
+# Erstelle Run-Verzeichnis mit Timestamp (via safe_bash)
+RUN_ID=$(python3 scripts/safe_bash.py "date +%Y-%m-%d_%H-%M-%S")
+mkdir -p runs/$RUN_ID
 ```
 
 **`run_config.json` generieren:**
