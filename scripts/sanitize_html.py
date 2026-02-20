@@ -162,6 +162,9 @@ def sanitize_html(html: str, max_length: int = 50000) -> dict:
     all_injections = comment_injections + text_injections
 
     if all_injections:
+        # Standardized English warning for automated detection
+        warnings.append("SECURITY WARNING: injection pattern detected")
+        # Detailed German warning
         warnings.append(f"⚠️  SICHERHEITSWARNUNG: {len(all_injections)} potenzielle Injection-Pattern erkannt")
         # Don't show the actual match text to avoid leaking sensitive patterns in warnings
         for inj in all_injections[:5]:  # Zeige erste 5
