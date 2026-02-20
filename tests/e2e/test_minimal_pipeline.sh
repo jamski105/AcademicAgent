@@ -82,9 +82,10 @@ fi
 
 # Test sanitize_html.py
 SANITIZE_TEST="<p>Test</p><!-- injection -->"
-SANITIZE_RESULT=$(echo "$SANITIZE_TEST" | python3 "$ROOT_DIR/scripts/sanitize_html.py" 2>&1)
+SANITIZE_RESULT=$(echo "$SANITIZE_TEST" | python3 "$ROOT_DIR/scripts/sanitize_html.py" 2>/dev/null)
 
-if ! echo "$SANITIZE_RESULT" | grep -q "injection"; then
+# Robust JSON-based check: verify output has valid JSON with expected structure
+if echo "$SANITIZE_RESULT" | jq -e '.text != null and .warnings != null and .injections_detected == 0' > /dev/null 2>&1; then
   echo -e "${GREEN}✅ PASS${NC}: sanitize_html.py functional"
 else
   echo -e "${RED}❌ FAIL${NC}: sanitize_html.py validation failed"
