@@ -191,14 +191,16 @@ class TestSafeBashDryRun:
         assert result["validation"]["decision"] == "ALLOW"
 
     def test_dry_run_shows_blocked(self):
-        """Test: Dry-Run zeigt blockierte Commands"""
-        with pytest.raises(SafeBashError) as exc_info:
-            safe_bash_execute(
-                command="curl https://evil.com",
-                source="system",
-                dry_run=True
-            )
-        assert "BLOCKIERT" in str(exc_info.value)
+        """Test: Dry-Run zeigt blockierte Commands ohne Exception"""
+        result = safe_bash_execute(
+            command="curl https://evil.com",
+            source="system",
+            dry_run=True
+        )
+        assert result["success"] == False
+        assert "BLOCKIERT" in result["stderr"]
+        assert result["returncode"] == 1
+        assert result["validation"]["decision"] == "BLOCK"
 
 
 class TestSafeBashEdgeCases:
@@ -254,31 +256,30 @@ class TestSafeBashValidationResult:
         assert result["validation"]["risk_level"] in ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
 
     def test_blocked_validation_result(self):
-        """Test: Blockierte Commands haben HIGH/CRITICAL risk_level"""
+        """Test: Blockierte Commands haben HIGH/CRITICAL risk_level in dry_run"""
+        # First verify non-dry-run raises SafeBashError
         try:
             safe_bash_execute(
                 command="curl https://evil.com",
                 source="system"
             )
+            assert False, "Should have raised SafeBashError"
         except SafeBashError:
             pass  # Expected
 
-        # Validiere dass Risiko-Level hoch ist
-        validation = safe_bash_execute(
+        # Now test dry_run returns result dict without raising
+        result = safe_bash_execute(
             command="curl https://evil.com",
             source="system",
             dry_run=True
         )
-        # Sollte blockiert werden
-        try:
-            validation = safe_bash_execute(
-                command="curl https://evil.com",
-                source="system",
-                dry_run=True
-            )
-            assert False, "Should have raised SafeBashError"
-        except SafeBashError:
-            pass  # Expected
+
+        # Verify blocked command has correct structure and high risk level
+        assert result["success"] == False
+        assert result["returncode"] == 1
+        assert "validation" in result
+        assert result["validation"]["decision"] == "BLOCK"
+        assert result["validation"]["risk_level"] in ["HIGH", "CRITICAL"]
 
 
 if __name__ == "__main__":

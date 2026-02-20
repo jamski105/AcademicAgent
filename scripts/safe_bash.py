@@ -87,10 +87,20 @@ def safe_bash_execute(
         # Log zu stderr
         print(error_msg, file=sys.stderr)
 
-        # Raise Exception
+        # In dry_run mode: return result dict instead of raising
+        if dry_run:
+            return {
+                "success": False,
+                "stdout": "",
+                "stderr": error_msg,
+                "returncode": 1,
+                "validation": validation_result
+            }
+
+        # In normal mode: raise exception
         raise SafeBashError(error_msg)
 
-    # Step 3: Dry-Run-Modus
+    # Step 3: Dry-Run-Modus (for allowed commands)
     if dry_run:
         return {
             "success": True,
