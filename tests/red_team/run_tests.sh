@@ -107,7 +107,7 @@ echo ""
 # Test 6: Domain Whitelist - Allow IEEE
 echo "[Test WHITELIST-001] Domain Validation - Allow IEEE"
 TOTAL=$((TOTAL + 1))
-RESULT=$(python3 "$ROOT_DIR/scripts/validate_domain.py" "https://ieeexplore.ieee.org/document/123" 2>/dev/null || true)
+RESULT=$(python3 "$ROOT_DIR/scripts/validate_domain.py" "https://ieeexplore.ieee.org/document/123" --referer "https://dbis.ur.de" 2>/dev/null || true)
 
 if echo "$RESULT" | jq -e '.allowed == true' > /dev/null 2>&1; then
   echo -e "${GREEN}✅ PASS${NC}: IEEE domain allowed"
