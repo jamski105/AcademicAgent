@@ -1,6 +1,5 @@
 # Wissenschaftlicher Kontext - Beispiel (Computer Science / HCI)
 
-**Version:** 3.0
 **Beispiel für:** Computer Science, Human-Computer Interaction, VR Accessibility
 
 ---

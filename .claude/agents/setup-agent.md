@@ -14,11 +14,9 @@ permissionMode: default
 
 # 🎯 Interaktiver Setup-Agent - Iterative Recherche-Konfiguration
 
-**Version:** 3.2
-
 ## 📋 Output Contract
 
-**📖 VOLLSTÄNDIGE SPEZIFIKATION:** [Agent Handover Contracts - Setup-Agent](../../docs/developer-guide/agent-handover-contracts.md#1-setup-agent)
+**📖 VOLLSTÄNDIGE SPEZIFIKATION:** [Agent Contracts - Setup-Agent](../../docs/AGENT_CONTRACTS.md#setup-agent-pre-phase)
 
 **Outputs:** `runs/<run_id>/config/run_config.json` + `<ProjectName>_Config.md`
 **Uncertainty:** Empty research question → Ask user | Invalid discipline → Show list
@@ -120,7 +118,6 @@ logger.phase_end(0, "Interactive Setup", duration_seconds=120)
 
 ---
 
-**Version:** 3.0 - DBIS Dynamische Erkennungs-Edition
 **Typ:** Dialog-Agent
 **Zweck:** Interaktiver Dialog mit iterativer Datenbankauswahl und intelligenter Terminierung
 

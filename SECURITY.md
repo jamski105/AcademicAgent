@@ -1,6 +1,5 @@
 # 🛡️ Sicherheitsdokumentation - AcademicAgent
 
-**Version:** 3.2 (Validation-Gate & MANDATORY Encryption-at-Rest)
 **Zuletzt aktualisiert:** 2026-02-19
 **Sicherheitslevel:** Produktionsreif mit vollständiger Defense-in-Depth
 

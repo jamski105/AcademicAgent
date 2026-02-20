@@ -16,15 +16,13 @@ permissionMode: default
 
 # 🌐 Browser-Agent - UI-Navigation & Datenbank-Automation
 
-**Version:** 3.2
-
 ---
 
 ## 📋 Output Contract
 
 **CRITICAL:** Dieser Agent hat unterschiedliche Output-Contracts für 3 Phasen!
 
-**📖 VOLLSTÄNDIGE SPEZIFIKATION:** [Agent Handover Contracts - Browser-Agent](../../docs/developer-guide/agent-handover-contracts.md#2-browser-agent)
+**📖 VOLLSTÄNDIGE SPEZIFIKATION:** [Agent Contracts - Browser-Agent](../../docs/AGENT_CONTRACTS.md#browser-agent-phasen-0-2-4)
 
 **Quick Reference:**
 - **Phase 0 (DBIS Navigation):** Schreibt `metadata/databases.json` (Liste relevanter Datenbanken)
@@ -362,7 +360,6 @@ fi
 
 ---
 
-**Version:** 3.0 (CDP Edition)
 **Zweck:** Browser-Steuerung via Chrome DevTools Protocol (CDP)
 
 ---

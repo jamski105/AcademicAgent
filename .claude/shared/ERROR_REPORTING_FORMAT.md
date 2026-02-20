@@ -1,6 +1,5 @@
 # 🚨 Unified Error Reporting Format
 
-**Version:** 1.0
 **Letzte Aktualisierung:** 2026-02-19
 
 ---
