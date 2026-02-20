@@ -18,6 +18,17 @@ permissionMode: default
 
 ---
 
+## 📋 Output Contract
+
+**📖 VOLLSTÄNDIGE SPEZIFIKATION:** [Agent Contracts - Search-Agent](../../docs/AGENT_CONTRACTS.md#search-agent-phase-1)
+
+**Phase 1 Output:**
+- **File:** `metadata/search_strings.json` | **Format:** Boolean strings (AND/OR/NOT) + database-specific variations
+- **Uncertainty:** Unknown database syntax → Use generic Boolean
+- **Failure Modes:** Keywords too broad → Ask user to narrow
+
+---
+
 ## 🛡️ SECURITY
 
 **📖 READ FIRST:** [Shared Security Policy](../shared/SECURITY_POLICY.md)
@@ -101,7 +112,6 @@ Alle Agents folgen der gemeinsamen Security-Policy. Bitte lies diese zuerst für
 
 ---
 
-**Version:** 3.2
 **Zweck:** Boolean-Suchstrings für verschiedene Datenbanken generieren
 
 ---

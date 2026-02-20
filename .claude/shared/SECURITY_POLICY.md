@@ -1,6 +1,5 @@
 # 🛡️ SHARED SECURITY POLICY
 
-**Version:** 3.1
 **Gilt für:** Alle Agents im AcademicAgent-System
 **Letzte Aktualisierung:** 2026-02-19
 

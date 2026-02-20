@@ -1,6 +1,5 @@
 # academicagent
 
-**Version:** 3.2
 **Haupteinstiegspunkt für das Academic Agent Multi-Agent-Recherche-System**
 
 ## Konfiguration

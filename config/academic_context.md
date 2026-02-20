@@ -1,6 +1,5 @@
 # Wissenschaftlicher Kontext
 
-**Version:** 3.0
 **Zweck:** Statischer wissenschaftlicher Kontext für alle Recherche-Runs
 
 ---

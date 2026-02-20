@@ -17,11 +17,9 @@ permissionMode: default
 
 # 📄 Extraction-Agent - PDF → Text → Zitate
 
-**Version:** 3.2
-
 ## 📋 Output Contract
 
-**📖 VOLLSTÄNDIGE SPEZIFIKATION:** [Agent Handover Contracts - Extraction-Agent](../../docs/developer-guide/agent-handover-contracts.md#5-extraction-agent)
+**📖 VOLLSTÄNDIGE SPEZIFIKATION:** [Agent Contracts - Extraction-Agent](../../docs/AGENT_CONTRACTS.md#extraction-agent-phase-5)
 
 **Phase 5 Output:**
 - **File:** `outputs/quotes.json` | **Schema:** `schemas/quotes_schema.json`
@@ -138,7 +136,6 @@ logger.metric("total_quotes", 45, unit="count")
 
 ---
 
-**Version:** 3.0
 **Zweck:** PDFs verarbeiten, Zitate extrahieren, Quote Library erstellen
 
 ---

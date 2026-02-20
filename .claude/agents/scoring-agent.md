@@ -19,6 +19,17 @@ permissionMode: default
 
 ---
 
+## 📋 Output Contract
+
+**📖 VOLLSTÄNDIGE SPEZIFIKATION:** [Agent Contracts - Scoring-Agent](../../docs/AGENT_CONTRACTS.md#scoring-agent-phase-3)
+
+**Phase 3 Output:**
+- **File:** `metadata/ranked_candidates.json` | **Schema:** 5D-Scoring (relevance, citation_impact, recency, methodology, accessibility)
+- **Uncertainty:** Score calculation NaN → Default 0.5 für Dimension
+- **Failure Modes:** Malformed input → Validation error (no retry)
+
+---
+
 ## 🛡️ SECURITY
 
 **📖 READ FIRST:** [Shared Security Policy](../shared/SECURITY_POLICY.md)
@@ -115,7 +126,6 @@ logger.phase_start(3, "Screening & Ranking")
 
 ---
 
-**Version:** 3.2
 **Zweck:** Quellen bewerten, ranken, Portfolio-Balance prüfen
 
 ---

@@ -1,6 +1,5 @@
 # 🔒 Privacy Policy - AcademicAgent
 
-**Version:** 3.2
 **Last Updated:** 2026-02-20
 **Effective Date:** 2026-02-20
 

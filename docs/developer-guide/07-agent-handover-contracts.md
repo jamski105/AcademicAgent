@@ -1,6 +1,5 @@
 # 🤝 Agent Handover Contracts
 
-**Version:** 3.2
 **Last Updated:** 2026-02-20
 
 This document defines the **input/output contracts** between the Orchestrator and all specialized agents in the AcademicAgent system.

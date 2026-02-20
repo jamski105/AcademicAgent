@@ -14,8 +14,6 @@ permissionMode: default
 
 # 🎯 Orchestrator-Agent - Recherche-Pipeline-Koordinator
 
-**Version:** 3.2 (Interner Agent)
-
 **⚠️ WICHTIG:** Dieser Agent ist **NICHT für direkte User-Aufrufe** gedacht!
 - ✅ Wird automatisch von `/academicagent` Skill aufgerufen
 - ❌ User sollten NICHT manuell `Task(orchestrator-agent)` aufrufen
@@ -31,7 +29,7 @@ permissionMode: default
 
 **CRITICAL:** Als Orchestrator koordinierst du Sub-Agents über definierte Input/Output-Contracts.
 
-**📖 LIES ZUERST:** [Agent Handover Contracts](../../docs/developer-guide/agent-handover-contracts.md)
+**📖 LIES ZUERST:** [Agent Contracts](../../docs/AGENT_CONTRACTS.md)
 
 Diese zentrale Dokumentation definiert für JEDEN Agent:
 - **Inputs:** Welche Files/Strukturen werden erwartet (Pfade, Format, Schema)

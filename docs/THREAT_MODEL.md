@@ -1,6 +1,5 @@
 # 🛡️ Threat Model - AcademicAgent
 
-**Version:** 3.2
 **Last Updated:** 2026-02-20
 **System:** Academic Literature Research Agent System
 **Security Level:** Production-Ready
