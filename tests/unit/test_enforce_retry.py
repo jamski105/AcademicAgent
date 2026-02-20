@@ -72,21 +72,44 @@ class TestWithRetryDecorator:
 
         assert call_count == 3  # Initial + 2 retries
 
-    def test_exponential_backoff(self):
+    def test_exponential_backoff(self, monkeypatch):
         """Retry delays should follow exponential backoff"""
         delays = []
 
+        # Monkeypatch time.sleep to capture delays
+        original_sleep = time.sleep
+        def mock_sleep(seconds):
+            delays.append(seconds)
+            # Don't actually sleep to keep test fast
+
+        monkeypatch.setattr(time, 'sleep', mock_sleep)
+
+        call_count = 0
+
         @with_retry(max_retries=3, base_delay=0.1)
         def track_delays():
-            if len(delays) < 3:
-                start = time.time()
+            nonlocal call_count
+            call_count += 1
+            if call_count < 4:  # Fail first 3 times, succeed on 4th
                 raise TimeoutError("Retry")
             return "done"
 
-        # This will measure the delays but we can't easily capture them
-        # So we just verify it succeeds after retries
+        # Should succeed after 3 retries
         result = track_delays()
         assert result == "done"
+
+        # Verify exponential backoff: delays should be ~0.1, ~0.2, ~0.4
+        # (with some jitter tolerance)
+        assert len(delays) == 3, f"Expected 3 delays, got {len(delays)}"
+
+        # First delay should be around base_delay (0.1s)
+        assert 0.08 <= delays[0] <= 0.12, f"First delay {delays[0]} not around 0.1s"
+
+        # Second delay should be around 2x base_delay (0.2s)
+        assert 0.18 <= delays[1] <= 0.24, f"Second delay {delays[1]} not around 0.2s"
+
+        # Third delay should be around 4x base_delay (0.4s)
+        assert 0.36 <= delays[2] <= 0.48, f"Third delay {delays[2]} not around 0.4s"
 
     def test_custom_retryable_exceptions(self):
         """Should only retry on specified exceptions"""

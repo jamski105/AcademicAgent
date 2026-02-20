@@ -228,9 +228,8 @@ class RetryHandler:
                         f"❌ Maximale Retries erreicht ({self.max_retries}). "
                         f"Letzte Exception: {type(e).__name__}: {str(e)}"
                     )
-                    raise RetryEnforcementError(
-                        f"Operation failed after {self.max_retries} retries"
-                    ) from e
+                    # Raise original exception (tests expect original exception type)
+                    raise
 
                 # Berechne Delay und warte
                 delay = self.get_delay(attempt)
@@ -247,11 +246,9 @@ class RetryHandler:
 
         # Sollte nie erreicht werden, aber zur Sicherheit
         if last_exception:
-            raise RetryEnforcementError(
-                f"Operation failed after {self.max_retries} retries"
-            ) from last_exception
+            raise last_exception
         else:
-            raise RetryEnforcementError("Operation failed with unknown error")
+            raise RuntimeError("Operation failed with unknown error")
 
 
 def retry_with_backoff(
