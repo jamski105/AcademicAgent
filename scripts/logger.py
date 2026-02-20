@@ -31,7 +31,7 @@ class LogLevel(Enum):
 # Patterns for sensitive data detection
 _SENSITIVE_PATTERNS = [
     # API Keys and tokens (common prefixes)
-    (re.compile(r'\b(sk-[a-zA-Z0-9]{20,})\b'), '[REDACTED_API_KEY]'),
+    (re.compile(r'\b(sk-[a-zA-Z0-9]{15,})\b'), '[REDACTED_API_KEY]'),
     (re.compile(r'\b(AKIA[0-9A-Z]{16})\b'), '[REDACTED_AWS_KEY]'),
     (re.compile(r'\b(AIza[0-9A-Za-z_-]{35})\b'), '[REDACTED_GOOGLE_KEY]'),
     (re.compile(r'\bBearer\s+[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+'), 'Bearer [REDACTED_JWT]'),
@@ -105,7 +105,7 @@ def _redact_dict(data: dict) -> dict:
     # Known sensitive field names (case-insensitive)
     sensitive_keys = {
         'password', 'passwd', 'pwd', 'secret', 'api_key', 'apikey', 'access_token',
-        'auth_token', 'session_token', 'private_key', 'encryption_key', 'cookie'
+        'auth_token', 'session_token', 'token', 'private_key', 'encryption_key', 'cookie'
     }
 
     for key, value in data.items():
