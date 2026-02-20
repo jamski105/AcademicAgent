@@ -33,7 +33,7 @@ from jsonschema import validate, ValidationError
 
 # Blocked patterns in text fields (potential injection)
 INJECTION_PATTERNS = [
-    (r'ignore\s+(all\s+)?(previous|prior)\s+instructions?', 'Ignore instructions'),
+    (r'ignore\s+(?:all\s+)?(?:(?:previous|prior)\s+)?instructions?', 'Ignore instructions'),
     (r'you\s+are\s+now\s+(a|an)\s+\w+', 'Role takeover'),
     (r'(execute|run)\s+(command|bash|shell|script)', 'Command execution'),
     (r'(curl|wget|ssh|scp)\s+', 'Network command'),
