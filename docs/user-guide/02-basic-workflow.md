@@ -586,6 +586,8 @@ Jetzt verstehst du den Workflow! Als nächstes:
 - **[Ergebnisse verstehen](04-understanding-results.md)** - Was bedeuten die Bewertungen?
 - **[Zurück zum Inhaltsverzeichnis](README.md)**
 
+**Für Entwickler:** Detaillierte Input/Output-Verträge zwischen Agents findest du in der **[Agent Handover Contracts Dokumentation](../developer-guide/agent-handover-contracts.md)**.
+
 ---
 
 **[← Zurück zu: Erste Schritte](01-getting-started.md) | [Weiter zu: Konfiguration →](03-configuration.md)**

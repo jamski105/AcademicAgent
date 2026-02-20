@@ -1,8 +1,8 @@
 # 🔒 Privacy Policy - AcademicAgent
 
-**Version:** 3.1
-**Last Updated:** 2026-02-19
-**Effective Date:** 2026-02-19
+**Version:** 3.2
+**Last Updated:** 2026-02-20
+**Effective Date:** 2026-02-20
 
 ---
 
@@ -114,6 +114,51 @@ lsblk -o NAME,SIZE,FSTYPE,MOUNTPOINT
 - ✅ **File system permissions:** Agents can only write to `runs/**` directory
 - ✅ **Secret protection:** `.env`, `~/.ssh/`, `secrets/` are blocked
 - ✅ **Network restrictions:** Only academic domains whitelisted
+
+### 4.3 Log Redaction (NEW in v3.2)
+
+**Automatic PII/Secret Redaction:**
+
+All logs (`runs/[timestamp]/logs/*.log`) automatically redact sensitive data **before** writing to disk:
+
+| Pattern | Redaction | Example |
+| ------- | --------- | ------- |
+| API Keys (sk-, AKIA, AIza) | `[REDACTED_API_KEY]` | `sk-abc123...` → `[REDACTED_API_KEY]` |
+| Session tokens | `[REDACTED_TOKEN]` | `session_token: xyz...` → `[REDACTED_TOKEN]` |
+| Private key blocks | `[REDACTED_PRIVATE_KEY]` | `-----BEGIN PRIVATE KEY-----` → removed |
+| Email addresses | Partial mask | `user@example.com` → `us***@example.com` |
+| Password fields (JSON) | `[REDACTED]` | `{"password": "..."}` → `{"password": "[REDACTED]"}` |
+
+**Implementation:** `scripts/logger.py::redact_sensitive()`
+**Tests:** `tests/unit/test_logger_redaction.py`
+
+**Important Notes:**
+
+- ✅ Redaction is **automatic** (no configuration needed)
+- ✅ Redaction is **safe by default** (never crashes logging)
+- ⚠️ Redaction is **pattern-based** (not AI-powered; edge cases may leak)
+- ⚠️ **Backup/archive logs securely** (redaction happens only at write time)
+
+**Manual Log Review:**
+
+If you suspect logs contain sensitive data (e.g., pre-v3.2 logs):
+
+```bash
+# Search for potential secrets in logs
+grep -r "sk-\|AKIA\|password" runs/*/logs/
+
+# Delete sensitive logs
+rm runs/[timestamp]/logs/phase_*.log
+```
+
+**Retention Policy:**
+
+- Logs are kept **indefinitely** by default (user-controlled)
+- **Recommended:** Delete logs older than 30 days
+
+```bash
+find runs/ -name "*.log" -mtime +30 -delete
+```
 
 ---
 
@@ -262,5 +307,5 @@ rm -rf runs/*
 
 ---
 
-**Last Review Date:** 2026-02-19
-**Next Review Date:** 2026-05-19 (quarterly)
+**Last Review Date:** 2026-02-20
+**Next Review Date:** 2026-05-20 (quarterly)

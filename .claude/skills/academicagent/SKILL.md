@@ -1,6 +1,6 @@
 # academicagent
 
-**Version:** 3.0
+**Version:** 3.2
 **Haupteinstiegspunkt für das Academic Agent Multi-Agent-Recherche-System**
 
 ## Konfiguration
@@ -291,14 +291,15 @@ Nachdem Orchestrator fertig ist:
 
 📁 Deine Dateien sind bereit:
 
-   📄 Zitatbibliothek:         runs/[run-id]/Quote_Library.csv
-   📚 Annotierte Bibliographie: runs/[run-id]/Annotated_Bibliography.md
-   📊 Such-Report:             runs/[run-id]/search_report.md
+   📄 Zitatbibliothek:         runs/[run-id]/outputs/quote_library.json
+   📚 Annotierte Bibliographie: runs/[run-id]/outputs/Annotated_Bibliography.md
+   📚 BibTeX-Bibliographie:     runs/[run-id]/outputs/bibliography.bib
+   📊 Such-Report:             runs/[run-id]/outputs/search_report.md
    📁 PDFs:                    runs/[run-id]/downloads/
 
 Nächste Schritte:
-1. Öffne Quote_Library.csv um deine Zitate zu prüfen
-2. Importiere Zitate in dein Dokument
+1. Öffne quote_library.json um deine Zitate zu prüfen
+2. Importiere bibliography.bib in dein LaTeX/Word-Dokument
 3. Prüfe search_report.md für Einblicke
 
 Möchtest du:

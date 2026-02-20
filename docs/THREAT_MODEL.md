@@ -1,9 +1,15 @@
 # 🛡️ Threat Model - AcademicAgent
 
-**Version:** 3.0
-**Last Updated:** 2026-02-18
+**Version:** 3.2
+**Last Updated:** 2026-02-20
 **System:** Academic Literature Research Agent System
 **Security Level:** Production-Ready
+
+**Changes in v3.2:**
+- ✅ Encryption-at-Rest now **MANDATORY** (was RECOMMENDED)
+- ✅ Agent Output Validation enforced via `validation_gate.py`
+- ✅ PII/Secret Redaction in logs (automatic, pattern-based)
+- ✅ Comprehensive credential hygiene documentation
 
 ---
 

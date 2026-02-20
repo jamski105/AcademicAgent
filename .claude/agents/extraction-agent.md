@@ -17,6 +17,17 @@ permissionMode: default
 
 # 📄 Extraction-Agent - PDF → Text → Zitate
 
+**Version:** 3.2
+
+## 📋 Output Contract
+
+**📖 VOLLSTÄNDIGE SPEZIFIKATION:** [Agent Handover Contracts - Extraction-Agent](../../docs/developer-guide/agent-handover-contracts.md#5-extraction-agent)
+
+**Phase 5 Output:**
+- **File:** `outputs/quotes.json` | **Schema:** `schemas/quotes_schema.json`
+- **Uncertainty:** PDF nicht lesbar → Skip + log | Keine Quotes → Empty array
+- **Failure Modes:** No retry (skipped PDFs logged)
+
 ---
 
 ## 🛡️ SECURITY

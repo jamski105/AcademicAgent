@@ -78,6 +78,169 @@ source ~/.zshrc  # oder source ~/.bashrc
 
 **Sicherheitshinweis:** Teile deinen API-Key niemals mit anderen oder committe ihn nicht in Git!
 
+### Schritt 3b: Credential Hygiene & Security Best Practices (WICHTIG!)
+
+**Sichere Verwaltung von Credentials und Tokens:**
+
+AcademicAgent arbeitet mit sensiblen Credentials (API-Keys, Universitäts-Logins, Session-Tokens). Folge diesen Best Practices:
+
+#### 1. Ephemeral (kurzlebige) Tokens verwenden
+
+**Problem:** Langlebige API-Keys sind ein Sicherheitsrisiko bei Diebstahl oder Kompromittierung.
+
+**Lösung:**
+- Erstelle API-Keys mit **kurzer Lebensdauer** (30-90 Tage)
+- Rotiere API-Keys regelmäßig:
+
+```bash
+# Alten Key widerrufen:
+# 1. Gehe zu console.anthropic.com → API Keys
+# 2. Lösche den alten Key
+# 3. Erstelle einen neuen Key
+# 4. Update deine Umgebungsvariable:
+export ANTHROPIC_API_KEY="sk-ant-api03-NEWKEYHERE..."
+```
+
+- **Für Universitäts-Sessions:** Lösche Session-Files nach jeder Recherche:
+
+```bash
+# Nach Recherche: temporäre Sessions löschen
+rm -f ~/.local/share/academicagent/dbis_session.json
+```
+
+#### 2. Least Privilege (minimale Berechtigungen)
+
+**Problem:** Agenten mit zu vielen Berechtigungen können versehentlich Schaden anrichten.
+
+**Lösung:**
+- AcademicAgent ist bereits **standardmäßig eingeschränkt**:
+  - ✅ Kann nur in `runs/**` schreiben
+  - ❌ Kann NICHT auf `.env`, `~/.ssh/`, `/etc/` zugreifen (geblockt durch [.claude/settings.json](../../.claude/settings.json))
+  - ❌ Kann NICHT auf unbekannte Domains zugreifen (Whitelist in [scripts/domain_whitelist.json](../../scripts/domain_whitelist.json))
+
+- **Prüfe die Permissions:**
+
+```bash
+# Zeige aktive Permissions an:
+grep -A 10 "\"allowedPaths\"" .claude/settings.json
+```
+
+- **Für API-Keys:** Wenn Anthropic Read-Only API-Keys unterstützt, verwende diese (derzeit nicht verfügbar).
+
+#### 3. Sichere Speicherung von Secrets
+
+**Problem:** Credentials in `.zshrc` oder `.bashrc` sind unverschlüsselt auf der Festplatte.
+
+**Lösung A (empfohlen): OS Keychain verwenden**
+
+**macOS:**
+```bash
+# API-Key in Keychain speichern:
+security add-generic-password -a "$USER" -s "anthropic_api_key" -w "sk-ant-api03-YOUR_KEY"
+
+# API-Key aus Keychain laden:
+export ANTHROPIC_API_KEY=$(security find-generic-password -a "$USER" -s "anthropic_api_key" -w)
+```
+
+**Linux (mit libsecret):**
+```bash
+# Installiere libsecret:
+# Ubuntu/Debian: sudo apt install libsecret-tools
+# Fedora: sudo dnf install libsecret
+
+# API-Key in Secret Service speichern:
+secret-tool store --label="Anthropic API Key" service anthropic key api_key
+
+# API-Key laden:
+export ANTHROPIC_API_KEY=$(secret-tool lookup service anthropic key api_key)
+```
+
+**Lösung B (Fallback): .env-Datei mit restriktiven Permissions**
+
+```bash
+# .env.example nach .env kopieren:
+cp .env.example .env
+
+# .env editieren und API-Key eintragen:
+nano .env  # oder: code .env
+
+# File-Permissions setzen (nur Owner kann lesen):
+chmod 600 .env
+
+# Prüfe Permissions (sollte -rw------- sein):
+ls -la .env
+
+# .env in Shell laden (nur für aktuelle Session):
+source .env
+```
+
+**WICHTIG:** `.env` ist bereits in `.gitignore` und wird NICHT committet!
+
+#### 4. Disk Encryption aktivieren
+
+**Problem:** Sensitive Research Data (PDFs, Zitate, Logs) sind auf Festplatte unverschlüsselt.
+
+**Lösung:**
+
+**macOS (FileVault):**
+```bash
+# Prüfe ob FileVault aktiv ist:
+fdesetup status
+
+# Falls "FileVault is Off":
+# System Settings → Privacy & Security → FileVault → Turn On
+```
+
+**Linux (LUKS):**
+```bash
+# Prüfe ob LUKS aktiv ist:
+lsblk -o NAME,SIZE,FSTYPE,MOUNTPOINT | grep crypto_LUKS
+
+# Falls nicht aktiv: siehe Distribution-spezifische Anleitungen
+```
+
+#### 5. Logs bereinigen (PII/Secrets)
+
+**Gut zu wissen:** AcademicAgent **redaktiert automatisch** Secrets in Logs (seit v3.2):
+- API-Keys werden maskiert: `sk-abc...` → `[REDACTED_API_KEY]`
+- Emails werden teilweise maskiert: `user@example.com` → `us***@example.com`
+- Session-Tokens werden entfernt
+
+**Trotzdem empfohlen:**
+- Lösche alte Logs regelmäßig (>30 Tage):
+
+```bash
+# Logs älter als 30 Tage löschen:
+find runs/ -name "*.log" -mtime +30 -delete
+```
+
+- **Vor dem Teilen von Logs** (z.B. in GitHub Issues): Manuelle Review durchführen:
+
+```bash
+# Suche nach potenziellen Secrets:
+grep -r "sk-\|AKIA\|password\|token" runs/*/logs/
+```
+
+#### 6. Zusammenfassung: Security Checklist
+
+Vor jeder Recherche:
+
+- [ ] API-Key ist aktuell (< 90 Tage alt)
+- [ ] `.env` hat Permissions 600 (`-rw-------`)
+- [ ] FileVault/LUKS ist aktiv (Disk Encryption)
+- [ ] VPN ist verbunden (für Uni-Datenbanken)
+- [ ] Chrome läuft im isolierten Debug-Profil
+
+Nach jeder Recherche:
+
+- [ ] Session-Files löschen: `rm ~/.local/share/academicagent/*.json`
+- [ ] Sensitive Logs prüfen (falls geteilt werden sollen)
+- [ ] Alte Runs archivieren/löschen (nach 30+ Tagen)
+
+**Weitere Infos:**
+- [SECURITY.md](../../SECURITY.md) – Vollständige Security-Dokumentation
+- [PRIVACY.md](../../PRIVACY.md) – Datenschutz und Compliance
+
 ---
 
 ## Chrome mit Remote-Debugging starten
