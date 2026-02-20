@@ -59,6 +59,11 @@ else
   FOUND_SECRETS=0
 
   for file in $FILES; do
+    # Überspringe Dokumentation, Beispieldateien und Test-Dateien
+    if [[ "$file" =~ ^docs/ ]] || [[ "$file" =~ ^README\.md$ ]] || [[ "$file" =~ ^PRIVACY\.md$ ]] || [[ "$file" =~ ^SECURITY\.md$ ]] || [[ "$file" =~ ^\.github/workflows/ ]] || [[ "$file" =~ ^scripts/setup_git_hooks\.sh$ ]] || [[ "$file" =~ ^tests/ ]]; then
+      continue
+    fi
+
     # Überspringe Binary-Dateien
     if file "$file" | grep -q "text"; then
       for pattern in "${PATTERNS[@]}"; do
@@ -179,10 +184,18 @@ if [ $FOUND_LARGE -eq 1 ]; then
   echo "  - Speicherung in runs/ Verzeichnis (gitignored)"
   echo "  - Externen Storage für Datasets"
   echo ""
-  read -p "Trotzdem fortfahren? (y/N) " -n 1 -r
-  echo
-  if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-    exit 1
+
+  # Prüfe ob wir in einer interaktiven Shell sind
+  if [ -t 0 ]; then
+    read -p "Trotzdem fortfahren? (y/N) " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+      exit 1
+    fi
+  else
+    # Nicht-interaktiv (z.B. VS Code): Warnung zeigen aber erlauben
+    echo -e "${YELLOW}⚠${NC}  Nicht-interaktive Umgebung erkannt - Commit wird zugelassen"
+    echo "   Bitte überprüfe die große(n) Datei(en) manuell!"
   fi
 else
   echo -e "${GREEN}✓${NC}"
