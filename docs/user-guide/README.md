@@ -106,8 +106,8 @@ Wenn du sofort loslegen möchtest:
 ## 💡 Hilfe & Support
 
 - **Probleme?** → [Troubleshooting-Guide](05-troubleshooting.md)
-- **Fehler melden:** [GitHub Issues](https://github.com/yourusername/AcademicAgent/issues)
-- **Fragen stellen:** [GitHub Discussions](https://github.com/yourusername/AcademicAgent/discussions)
+- **Fehler melden:** [GitHub Issues](https://github.com/jamski105/AcademicAgent/issues)
+- **Fragen stellen:** [GitHub Discussions](https://github.com/jamski105/AcademicAgent/discussions)
 
 ## 📄 Weitere Dokumentation
 

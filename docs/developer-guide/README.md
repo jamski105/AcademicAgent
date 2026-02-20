@@ -114,7 +114,7 @@ Wie man zum Projekt beiträgt.
 
 ```bash
 # 1. Repository forken und klonen
-git clone https://github.com/yourusername/AcademicAgent.git
+git clone https://github.com/jamski105/AcademicAgent.git
 cd AcademicAgent
 
 # 2. Development-Dependencies installieren
@@ -136,7 +136,7 @@ git checkout -b feature/my-feature
 ### Erster Beitrag
 
 1. **Issue finden** oder erstellen
-   - Siehe [GitHub Issues](https://github.com/yourusername/AcademicAgent/issues)
+   - Siehe [GitHub Issues](https://github.com/jamski105/AcademicAgent/issues)
    - Label "good first issue" für Anfänger
 
 2. **Lokale Änderungen machen**
@@ -391,8 +391,8 @@ Check: 52 ≥ 50 → Stop ✓
 
 ### Fragen stellen
 
-- **GitHub Discussions:** [github.com/yourusername/AcademicAgent/discussions](https://github.com/yourusername/AcademicAgent/discussions)
-- **Issues:** [github.com/yourusername/AcademicAgent/issues](https://github.com/yourusername/AcademicAgent/issues)
+- **GitHub Discussions:** [github.com/jamski105/AcademicAgent/discussions](https://github.com/jamski105/AcademicAgent/discussions)
+- **Issues:** [github.com/jamski105/AcademicAgent/issues](https://github.com/jamski105/AcademicAgent/issues)
 
 ### Beitragen
 
@@ -414,7 +414,7 @@ Wir erwarten:
 
 ### Aktuelle Priorities
 
-Siehe [GitHub Projects](https://github.com/yourusername/AcademicAgent/projects):
+Siehe [GitHub Projects](https://github.com/jamski105/AcademicAgent/projects):
 
 **High Priority:**
 - Neue Datenbanken (PsycINFO, ERIC, etc.)
@@ -432,8 +432,8 @@ Siehe [GitHub Projects](https://github.com/yourusername/AcademicAgent/projects):
 
 ### Wo beitragen?
 
-- **Good First Issues:** [Label: good-first-issue](https://github.com/yourusername/AcademicAgent/labels/good-first-issue)
-- **Help Wanted:** [Label: help-wanted](https://github.com/yourusername/AcademicAgent/labels/help-wanted)
+- **Good First Issues:** [Label: good-first-issue](https://github.com/jamski105/AcademicAgent/labels/good-first-issue)
+- **Help Wanted:** [Label: help-wanted](https://github.com/jamski105/AcademicAgent/labels/help-wanted)
 - **Dokumentation:** Immer willkommen!
 
 ---

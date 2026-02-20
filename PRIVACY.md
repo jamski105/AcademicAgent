@@ -286,7 +286,7 @@ rm -rf runs/*
 ## 10. Contact & Questions
 
 **For privacy questions:**
-- **GitHub Issues:** [Report privacy concerns](https://github.com/yourusername/AcademicAgent/issues) (public)
+- **GitHub Issues:** [Report privacy concerns](https://github.com/jamski105/AcademicAgent/issues) (public)
 - **Email:** your-email@example.com (private)
 
 **For Claude API data questions:**
