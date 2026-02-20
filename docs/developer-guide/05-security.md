@@ -555,10 +555,10 @@ chmod +x .git/hooks/pre-commit
 
 ```bash
 # Nur via Environment Variables
-export ANTHROPIC_API_KEY="sk-ant-..."
+export ANTHROPIC_API_KEY="<your-api-key-here>"
 
 # Nie hardcoded:
-# ❌ API_KEY = "sk-ant-123..."  # NEVER!
+# ❌ API_KEY = "your-secret-key"  # NEVER!
 ```
 
 ---

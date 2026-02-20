@@ -89,6 +89,14 @@ def validate_domain_proxy_mode(url: str, config: dict, referer: str = None, sess
     try:
         parsed = urlparse(url)
         hostname = parsed.hostname or parsed.netloc
+
+        # Check if URL is actually parseable and has hostname
+        if not hostname or not parsed.scheme:
+            return {
+                'allowed': False,
+                'reason': 'Invalid URL: missing hostname or scheme',
+                'risk_level': 'HIGH'
+            }
     except Exception as e:
         return {
             'allowed': False,
@@ -165,6 +173,14 @@ def validate_domain_legacy(url: str, config: dict) -> dict:
     try:
         parsed = urlparse(url)
         hostname = parsed.hostname or parsed.netloc
+
+        # Check if URL is actually parseable and has hostname
+        if not hostname or not parsed.scheme:
+            return {
+                'allowed': False,
+                'reason': 'Invalid URL: missing hostname or scheme',
+                'risk_level': 'HIGH'
+            }
     except Exception as e:
         return {
             'allowed': False,

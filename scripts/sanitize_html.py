@@ -201,8 +201,9 @@ def main():
             print(warning, file=sys.stderr)
         print("", file=sys.stderr)
 
-    # Gebe sauberen Text aus
+    # Gebe Result aus
     if output_file:
+        # Schreibe Text in output file
         with open(output_file, 'w', encoding='utf-8') as f:
             f.write(result['text'])
         print(f"✅ Sanitisierter Text geschrieben nach: {output_file}", file=sys.stderr)
@@ -217,7 +218,8 @@ def main():
                 'output_length': len(result['text'])
             }, f, indent=2)
     else:
-        print(result['text'])
+        # Output JSON to stdout
+        print(json.dumps(result, ensure_ascii=False))
 
 
 if __name__ == '__main__':

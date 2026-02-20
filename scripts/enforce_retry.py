@@ -31,17 +31,17 @@ import sys
 sys.path.insert(0, str(Path(__file__).parent))
 
 try:
-    from retry_strategy import RetryHandler, exponential_backoff
+    from retry_strategy import RetryHandler, exponential_backoff, RetryEnforcementError
     from logger import get_logger
 except ImportError:
     # Fallback if imports fail
     RetryHandler = None
     get_logger = None
 
-
-class RetryEnforcementError(Exception):
-    """Raised when retry enforcement fails"""
-    pass
+    # Define locally if import failed
+    class RetryEnforcementError(Exception):
+        """Raised when retry enforcement fails"""
+        pass
 
 
 def with_retry(

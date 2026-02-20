@@ -209,7 +209,7 @@ echo ""
 
 # Erstelle eine Test-Datei mit Fake-Secret
 TEST_FILE="$ROOT_DIR/.git/hooks/test_secret.txt"
-echo "ANTHROPIC_API_KEY=sk-ant-1234567890abcdef" > "$TEST_FILE"
+echo "ANTHROPIC_API_KEY=example_test_key_12345" > "$TEST_FILE"
 
 # Stage sie
 git -C "$ROOT_DIR" add "$TEST_FILE" 2>/dev/null || true

@@ -67,10 +67,10 @@ Nach der Installation musst du deinen Claude API Key konfigurieren:
 
 ```bash
 # API-Key in Umgebungsvariable speichern
-echo 'export ANTHROPIC_API_KEY="sk-ant-dein-key-hier"' >> ~/.zshrc
+echo 'export ANTHROPIC_API_KEY="<YOUR_ANTHROPIC_API_KEY>"' >> ~/.zshrc
 
 # Oder für Bash-Nutzer:
-echo 'export ANTHROPIC_API_KEY="sk-ant-dein-key-hier"' >> ~/.bashrc
+echo 'export ANTHROPIC_API_KEY="<YOUR_ANTHROPIC_API_KEY>"' >> ~/.bashrc
 
 # Terminal neu laden
 source ~/.zshrc  # oder source ~/.bashrc

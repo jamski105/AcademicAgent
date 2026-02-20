@@ -43,6 +43,7 @@ ALLOWED_PATTERNS = [
     (r'jq\s+', 'JSON processing'),
     (r'grep\s+', 'Text search'),
     (r'cat\s+(?!.*\.env|.*/\.ssh/|.*/secrets?/)', 'File reading (non-sensitive)'),
+    (r'pdftotext\s+', 'PDF text extraction'),
 ]
 
 # Allowed domains for WebFetch

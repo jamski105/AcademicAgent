@@ -24,6 +24,11 @@ from functools import wraps
 logger = logging.getLogger(__name__)
 
 
+class RetryEnforcementError(Exception):
+    """Raised when retry enforcement fails after exhausting all retries"""
+    pass
+
+
 def exponential_backoff(
     attempt: int,
     base_delay: float = 2.0,
@@ -223,7 +228,9 @@ class RetryHandler:
                         f"❌ Maximale Retries erreicht ({self.max_retries}). "
                         f"Letzte Exception: {type(e).__name__}: {str(e)}"
                     )
-                    raise
+                    raise RetryEnforcementError(
+                        f"Operation failed after {self.max_retries} retries"
+                    ) from e
 
                 # Berechne Delay und warte
                 delay = self.get_delay(attempt)
@@ -239,7 +246,12 @@ class RetryHandler:
                 time.sleep(delay)
 
         # Sollte nie erreicht werden, aber zur Sicherheit
-        raise last_exception
+        if last_exception:
+            raise RetryEnforcementError(
+                f"Operation failed after {self.max_retries} retries"
+            ) from last_exception
+        else:
+            raise RetryEnforcementError("Operation failed with unknown error")
 
 
 def retry_with_backoff(
