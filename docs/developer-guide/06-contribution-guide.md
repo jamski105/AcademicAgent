@@ -326,7 +326,7 @@ docs(developer-guide): add section on testing strategies
 - [Change 2]
 - [Change 3]
 
-## Testing
+## Tests
 
 - [ ] Unit tests added/updated
 - [ ] Integration tests added/updated

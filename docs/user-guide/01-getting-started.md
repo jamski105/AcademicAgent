@@ -37,7 +37,7 @@ Bevor du startest, stelle sicher, dass du folgendes hast:
 
 ```bash
 # Repository klonen
-git clone https://github.com/yourusername/AcademicAgent.git
+git clone https://github.com/jamski105/AcademicAgent.git
 
 # In das Verzeichnis wechseln
 cd AcademicAgent

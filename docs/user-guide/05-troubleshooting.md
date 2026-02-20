@@ -689,11 +689,11 @@ export ACADEMIC_AGENT_DEBUG=1
 
 ### 2. Community
 
-- **GitHub Issues:** [github.com/yourusername/AcademicAgent/issues](https://github.com/yourusername/AcademicAgent/issues)
+- **GitHub Issues:** [github.com/jamski105/AcademicAgent/issues](https://github.com/jamski105/AcademicAgent/issues)
   - Suche nach ähnlichen Problemen
   - Erstelle ein neues Issue mit Logs
 
-- **GitHub Discussions:** [github.com/yourusername/AcademicAgent/discussions](https://github.com/yourusername/AcademicAgent/discussions)
+- **GitHub Discussions:** [github.com/jamski105/AcademicAgent/discussions](https://github.com/jamski105/AcademicAgent/discussions)
   - Stelle Fragen
   - Teile Erfahrungen
 

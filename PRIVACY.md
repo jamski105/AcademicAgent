@@ -6,13 +6,13 @@
 
 ---
 
-## Summary
+## Zusammenfassung
 
 AcademicAgent is a **local-first, privacy-preserving** research tool. All data remains on your machine. No telemetry, no cloud sync, no tracking.
 
 ---
 
-## 1. Data Collection
+## 1. Datenerfassung
 
 ### 1.1 What Data We Collect
 
@@ -39,7 +39,7 @@ All data is stored **locally on your machine**:
 
 ---
 
-## 2. Third-Party Data Sharing
+## 2. Datenweitergabe an Dritte
 
 ### 2.1 External Services We Interact With
 
@@ -83,7 +83,7 @@ According to Anthropic's [Commercial Terms](https://www.anthropic.com/legal/comm
 
 ---
 
-## 4. Data Security
+## 4. Datensicherheit
 
 ### 4.1 Encryption
 
@@ -162,7 +162,7 @@ find runs/ -name "*.log" -mtime +30 -delete
 
 ---
 
-## 5. Data Retention
+## 5. Datenspeicherung
 
 ### 5.1 How Long Data Is Kept
 
@@ -193,7 +193,7 @@ rm -rf runs/ config/ logs/
 
 ---
 
-## 6. Compliance
+## 6. Rechtliche Compliance
 
 ### 6.1 GDPR (EU General Data Protection Regulation)
 
@@ -227,7 +227,7 @@ rm -rf runs/ config/ logs/
 
 ---
 
-## 7. User Rights
+## 7. Nutzerrechte
 
 ### 7.1 Your Rights
 
@@ -259,7 +259,7 @@ rm -rf runs/ config/ logs/
 
 ---
 
-## 8. Children's Privacy
+## 8. Datenschutz für Kinder
 
 AcademicAgent is **not intended for users under 13 years old**. We do not knowingly collect data from children.
 
@@ -270,7 +270,7 @@ rm -rf runs/*
 
 ---
 
-## 9. Changes to This Policy
+## 9. Änderungen an dieser Richtlinie
 
 **Update Frequency:** This policy is reviewed quarterly.
 
@@ -283,10 +283,10 @@ rm -rf runs/*
 
 ---
 
-## 10. Contact & Questions
+## 10. Kontakt & Fragen
 
 **For privacy questions:**
-- **GitHub Issues:** [Report privacy concerns](https://github.com/yourusername/AcademicAgent/issues) (public)
+- **GitHub Issues:** [Report privacy concerns](https://github.com/jamski105/AcademicAgent/issues) (public)
 - **Email:** your-email@example.com (private)
 
 **For Claude API data questions:**

@@ -42,7 +42,7 @@ AcademicAgent ist ein Claude-basierter Forschungsassistent, der den gesamten Lit
 
 ```bash
 # Repository klonen
-git clone https://github.com/yourusername/AcademicAgent.git
+git clone https://github.com/jamski105/AcademicAgent.git
 cd AcademicAgent
 
 # Setup ausführen (installiert alle Abhängigkeiten)
@@ -857,8 +857,8 @@ MIT License - Siehe LICENSE-Datei für Details
 
 ## 📞 Support & Kontakt
 
-- **Issues**: [GitHub Issues](https://github.com/yourusername/AcademicAgent/issues)
-- **Diskussionen**: [GitHub Discussions](https://github.com/yourusername/AcademicAgent/discussions)
+- **Issues**: [GitHub Issues](https://github.com/jamski105/AcademicAgent/issues)
+- **Diskussionen**: [GitHub Discussions](https://github.com/jamski105/AcademicAgent/discussions)
 - **E-Mail**: your-email@example.com
 - **Dokumentation**: Siehe Docs in diesem Repository
 
