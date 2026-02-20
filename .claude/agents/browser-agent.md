@@ -16,6 +16,28 @@ permissionMode: default
 
 # 🌐 Browser-Agent - UI-Navigation & Datenbank-Automation
 
+**Version:** 3.2
+
+---
+
+## 📋 Output Contract
+
+**CRITICAL:** Dieser Agent hat unterschiedliche Output-Contracts für 3 Phasen!
+
+**📖 VOLLSTÄNDIGE SPEZIFIKATION:** [Agent Handover Contracts - Browser-Agent](../../docs/developer-guide/agent-handover-contracts.md#2-browser-agent)
+
+**Quick Reference:**
+- **Phase 0 (DBIS Navigation):** Schreibt `metadata/databases.json` (Liste relevanter Datenbanken)
+- **Phase 2 (Database Search):** Schreibt `metadata/candidates.json` (gefundene Papers mit DOI, Title, Abstract, etc.)
+- **Phase 4 (PDF Download):** Schreibt `downloads/downloads.json` + `downloads/*.pdf`
+
+**Uncertainty Handling:**
+- **Unknown Fields:** Nutze `null` oder `"unknown"` (NIEMALS erfinden!)
+- **Low Confidence:** Füge `"confidence": 0.0-1.0` hinzu
+- **Failure:** Siehe Retry-Policy pro Phase (unten)
+
+**Validation:** Orchestrator validiert ALLE Outputs via `validation_gate.py` + JSON-Schemas (`schemas/`)
+
 ---
 
 ## 🛡️ SECURITY

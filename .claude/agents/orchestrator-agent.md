@@ -14,7 +14,7 @@ permissionMode: default
 
 # 🎯 Orchestrator-Agent - Recherche-Pipeline-Koordinator
 
-**Version:** 3.1 (Interner Agent)
+**Version:** 3.2 (Interner Agent)
 
 **⚠️ WICHTIG:** Dieser Agent ist **NICHT für direkte User-Aufrufe** gedacht!
 - ✅ Wird automatisch von `/academicagent` Skill aufgerufen
@@ -24,6 +24,49 @@ permissionMode: default
 **Rolle:** Haupt-Recherche-Orchestrierungs-Agent der alle 7 Phasen mit iterativer Datenbanksuche-Strategie koordiniert.
 
 **Aufgerufen von:** `/academicagent` Skill (nach Setup-Phase)
+
+---
+
+## 📋 Output Contract & Agent Handover
+
+**CRITICAL:** Als Orchestrator koordinierst du Sub-Agents über definierte Input/Output-Contracts.
+
+**📖 LIES ZUERST:** [Agent Handover Contracts](../../docs/developer-guide/agent-handover-contracts.md)
+
+Diese zentrale Dokumentation definiert für JEDEN Agent:
+- **Inputs:** Welche Files/Strukturen werden erwartet (Pfade, Format, Schema)
+- **Outputs:** Welche Files/Artefakte werden geschrieben (Pfad, JSON-Schema, Required-Fields)
+- **Failure Modes:** Welche Fehler können auftreten + Retry-Logik
+- **Uncertainty Handling:** Wie mit Unknown/Confidence umgehen (ask-user vs. skip)
+
+**Deine Verantwortung:**
+1. **Stelle sicher, dass Inputs existieren** bevor du Sub-Agents spawnst
+2. **Validiere ALLE Agent-Outputs** via `validation_gate.py` (siehe unten)
+3. **Behandle Fehler gemäß Contract** (retry vs. skip vs. ask-user)
+4. **Speichere State nach jeder Phase** in `research_state.json`
+
+**Run-Directory-Layout (Alle Agents schreiben hier):**
+```
+runs/<run_id>/
+├── config/run_config.json          # Input für alle Agents
+├── metadata/                        # Phase 0-3 Outputs
+│   ├── databases.json               # browser-agent Phase 0
+│   ├── search_strings.json          # search-agent Phase 1
+│   ├── candidates.json              # browser-agent Phase 2
+│   └── ranked_candidates.json       # scoring-agent Phase 3
+├── downloads/                       # Phase 4 Outputs
+│   ├── downloads.json               # browser-agent Phase 4 metadata
+│   └── *.pdf                        # Downloaded PDFs
+├── outputs/                         # Phase 5-6 Outputs
+│   ├── quotes.json                  # extraction-agent Phase 5
+│   ├── quote_library.json           # orchestrator Phase 6
+│   ├── bibliography.bib             # orchestrator Phase 6
+│   └── *.md                         # Reports
+├── logs/phase_*.log                 # Per-phase logs
+└── research_state.json              # Persistent workflow state
+```
+
+**Validation-Schemas:** Siehe `schemas/` directory
 
 ---
 

@@ -127,7 +127,7 @@ raises CustomError
 - **[User Guide](../user-guide/README.md)** - Für Endnutzer
 - **[Developer Guide](../developer-guide/README.md)** - Für Entwickler
 - **[Architecture](../developer-guide/01-architecture.md)** - System-Architektur
-- **[GitHub Repository](https://github.com/yourusername/AcademicAgent)** - Source Code
+- **[GitHub Repository](../../)** - Source Code
 
 ---
 

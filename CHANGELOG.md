@@ -6,6 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [3.2.1] - 2026-02-20 (Audit Fixes)
+
+### Added
+- **PII/Secret Redaction in Logs:** Automatic redaction of API keys, tokens, emails in `scripts/logger.py::redact_sensitive()`
+- **Redaction Unit Tests:** `tests/unit/test_logger_redaction.py` with 30+ test cases (API keys, emails, passwords, private keys)
+- **Credential Hygiene Guide:** `.env.example` template + comprehensive security section in `docs/user-guide/01-getting-started.md`
+- **Output Contracts in Agent Prompts:** All agent prompts now reference central [agent-handover-contracts.md](docs/developer-guide/agent-handover-contracts.md)
+
+### Changed
+- **PRIVACY.md v3.2:** Updated with log redaction policy, retention recommendations, manual review procedures
+- **Agent Prompts:** Added Output Contract sections to orchestrator, browser, extraction, setup agents (v3.1 → v3.2)
+
+### Deprecated
+- **validate_json.py:** Moved to `legacy/validate_json.py` (replaced by `validation_gate.py`)
+  - **Reason:** No references found in codebase (0 matches via `rg "validate_json\.py"`)
+  - **Alternative:** Use `scripts/validation_gate.py` for JSON schema validation + text sanitization
+  - **Migration:** Old scripts using `validate_json.py` should migrate to `validation_gate.py`
+
+---
+
 ## [3.2.0] - 2026-02-19
 
 ### Added - Security & Reliability Enhancements

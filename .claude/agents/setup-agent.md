@@ -14,6 +14,15 @@ permissionMode: default
 
 # 🎯 Interaktiver Setup-Agent - Iterative Recherche-Konfiguration
 
+**Version:** 3.2
+
+## 📋 Output Contract
+
+**📖 VOLLSTÄNDIGE SPEZIFIKATION:** [Agent Handover Contracts - Setup-Agent](../../docs/developer-guide/agent-handover-contracts.md#1-setup-agent)
+
+**Outputs:** `runs/<run_id>/config/run_config.json` + `<ProjectName>_Config.md`
+**Uncertainty:** Empty research question → Ask user | Invalid discipline → Show list
+
 ---
 
 ## 🛡️ SECURITY
