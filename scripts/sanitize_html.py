@@ -106,8 +106,9 @@ def sanitize_html(html: str, max_length: int = 50000) -> dict:
     html = re.sub(r'<style[^>]*>.*?</style>', '', html, flags=re.DOTALL | re.IGNORECASE)
 
     # Entferne HTML-Kommentare (häufiges Versteck)
+    # Support both <!-- and <\!-- (escaped version that may come from shell)
     # First detect injections in comments BEFORE removing them
-    comments = re.findall(r'<!--(.*?)-->', html, flags=re.DOTALL)
+    comments = re.findall(r'<\\?!--(.*?)-->', html, flags=re.DOTALL)
     comment_injections = []
     for comment in comments:
         # Check for injection patterns in comment
@@ -115,12 +116,12 @@ def sanitize_html(html: str, max_length: int = 50000) -> dict:
         if comment_patterns:
             comment_injections.extend(comment_patterns)
 
-        # Warn if suspicious
-        if len(comment) > 100 or any(keyword in comment.lower() for keyword in ['ignore', 'instruction', 'execute']):
-            warnings.append(f"Suspicious HTML comment removed (length: {len(comment)})")
+    # Warn about HTML comments (all comments are potential hiding spots)
+    if comments:
+        warnings.append("Suspicious HTML comment removed")
 
-    # Remove all HTML comments
-    html = re.sub(r'<!--.*?-->', '', html, flags=re.DOTALL)
+    # Remove all HTML comments (both <!-- and <\!-- variants)
+    html = re.sub(r'<\\?!--.*?-->', '', html, flags=re.DOTALL)
 
     # Entferne versteckte iframes
     html = re.sub(r'<iframe[^>]*>.*?</iframe>', '', html, flags=re.DOTALL | re.IGNORECASE)
@@ -162,8 +163,9 @@ def sanitize_html(html: str, max_length: int = 50000) -> dict:
 
     if all_injections:
         warnings.append(f"⚠️  SICHERHEITSWARNUNG: {len(all_injections)} potenzielle Injection-Pattern erkannt")
+        # Don't show the actual match text to avoid leaking sensitive patterns in warnings
         for inj in all_injections[:5]:  # Zeige erste 5
-            warnings.append(f"  - {inj['pattern']}: '{inj['match'][:50]}...'")
+            warnings.append(f"  - {inj['pattern']} detected")
 
     # Schritt 4: Begrenze Länge (verhindere Token-Flooding)
     truncated = False
