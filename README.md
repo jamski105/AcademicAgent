@@ -1,6 +1,6 @@
 # 🎓 AcademicAgent
 
-**Version:** 3.2 (Validation-Gate & MANDATORY Encryption Edition)
+**Version:** 3.3 (Validation-Gate & MANDATORY Encryption Edition)
 **Autonomes akademisches Literatur-Recherche-System**
 
 > ⚠️ **WICHTIG: macOS ONLY**
