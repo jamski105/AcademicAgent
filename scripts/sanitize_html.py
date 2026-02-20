@@ -67,7 +67,7 @@ def detect_injection_patterns(text: str) -> list:
         (r'(execute|run)\s+(command|bash|shell|script)', 'Command execution'),
         (r'(upload|send|exfiltrate)\s+(file|secret|config|data)', 'Data exfiltration'),
         (r'(curl|wget|ssh|scp|rsync)\s+', 'Network command'),
-        (r'read\s+(\.env|~/.ssh|secret|credential|token)', 'Secret access'),
+        (r'(read|cat|access).*?(\.env|~/.ssh|~/\.ssh|secret|credential|token)', 'Secret access'),
         (r'system\s+prompt|developer\s+instructions?', 'System instruction override'),
         (r'<\s*script[^>]*>', 'Script tag'),
     ]
@@ -106,20 +106,43 @@ def sanitize_html(html: str, max_length: int = 50000) -> dict:
     html = re.sub(r'<style[^>]*>.*?</style>', '', html, flags=re.DOTALL | re.IGNORECASE)
 
     # Entferne HTML-Kommentare (häufiges Versteck)
+    # First detect injections in comments BEFORE removing them
     comments = re.findall(r'<!--(.*?)-->', html, flags=re.DOTALL)
+    comment_injections = []
     for comment in comments:
+        # Check for injection patterns in comment
+        comment_patterns = detect_injection_patterns(comment)
+        if comment_patterns:
+            comment_injections.extend(comment_patterns)
+
+        # Warn if suspicious
         if len(comment) > 100 or any(keyword in comment.lower() for keyword in ['ignore', 'instruction', 'execute']):
-            warnings.append(f"Verdächtiger HTML-Kommentar entfernt (Länge: {len(comment)})")
+            warnings.append(f"Suspicious HTML comment removed (length: {len(comment)})")
+
+    # Remove all HTML comments
     html = re.sub(r'<!--.*?-->', '', html, flags=re.DOTALL)
 
     # Entferne versteckte iframes
     html = re.sub(r'<iframe[^>]*>.*?</iframe>', '', html, flags=re.DOTALL | re.IGNORECASE)
 
     # Entferne base64-kodierte Daten (potenzielle Verschleierung)
+    # Pattern 1: data:image base64 URLs
     base64_pattern = r'data:image/[^;]+;base64,[A-Za-z0-9+/=]{100,}'
     if re.search(base64_pattern, html):
-        warnings.append("Base64-kodierte Daten entfernt (potenzielle Verschleierung)")
-        html = re.sub(base64_pattern, '[BASE64_DATEN_ENTFERNT]', html)
+        warnings.append("Base64-encoded data removed (potential obfuscation)")
+        html = re.sub(base64_pattern, '[BASE64_DATA_REMOVED]', html)
+
+    # Pattern 2: Standalone base64 strings (20+ chars ending with = or ==)
+    # Must have variety of characters (not just 'A' repeated)
+    standalone_base64 = r'\b[A-Za-z0-9+/]{20,}={0,2}\b'
+    matches = re.findall(standalone_base64, html)
+    # Filter to only real base64 (has at least 3 different characters)
+    real_base64_matches = [m for m in matches if len(set(m)) >= 3]
+    if real_base64_matches:
+        warnings.append(f"Base64-encoded strings removed (potential obfuscation): {len(real_base64_matches)} found")
+        # Replace only real base64
+        for match in real_base64_matches:
+            html = html.replace(match, '[BASE64_REMOVED]')
 
     # Schritt 2: Extrahiere nur sichtbaren Text
     parser = TextExtractor()
@@ -133,10 +156,13 @@ def sanitize_html(html: str, max_length: int = 50000) -> dict:
         text = ' '.join(text.split())
 
     # Schritt 3: Erkenne Injection-Versuche
-    injections = detect_injection_patterns(text)
-    if injections:
-        warnings.append(f"⚠️  SICHERHEITSWARNUNG: {len(injections)} potenzielle Injection-Pattern erkannt")
-        for inj in injections[:5]:  # Zeige erste 5
+    # Combine injections from comments and from extracted text
+    text_injections = detect_injection_patterns(text)
+    all_injections = comment_injections + text_injections
+
+    if all_injections:
+        warnings.append(f"⚠️  SICHERHEITSWARNUNG: {len(all_injections)} potenzielle Injection-Pattern erkannt")
+        for inj in all_injections[:5]:  # Zeige erste 5
             warnings.append(f"  - {inj['pattern']}: '{inj['match'][:50]}...'")
 
     # Schritt 4: Begrenze Länge (verhindere Token-Flooding)
@@ -147,20 +173,28 @@ def sanitize_html(html: str, max_length: int = 50000) -> dict:
         warnings.append(f"Text gekürzt auf {max_length} Zeichen")
 
     # Schritt 5: Entferne extrem lange Zeilen (potenzielles Flooding)
+    # Split by newlines AND check for very long continuous text without newlines
     lines = text.split('\n')
     cleaned_lines = []
     for line in lines:
         if len(line) > 1000:
-            warnings.append(f"Lange Zeile gekürzt (Länge: {len(line)})")
+            warnings.append(f"Long line truncated (length: {len(line)})")
             line = line[:1000] + "..."
         cleaned_lines.append(line)
     text = '\n'.join(cleaned_lines)
+
+    # Also check if entire text block is very long without sufficient line breaks
+    # (e.g., HTML parser might produce one long line)
+    if len(text) > 1000 and text.count('\n') < len(text) / 1000:
+        # Text is long but has very few line breaks
+        if not any('Long line' in w for w in warnings):
+            warnings.append(f"Long line detected in extracted text")
 
     return {
         'text': text,
         'warnings': warnings,
         'truncated': truncated,
-        'injections_detected': len(injections)
+        'injections_detected': len(all_injections)
     }
 
 

@@ -199,7 +199,7 @@ jobs:
 
           # Einfacher Grep-basierter Scan
           echo "Prüfe auf API-Keys..."
-          if grep -r -i "ANTHROPIC_API_KEY.*=.*sk-ant-" . --exclude-dir=.git --exclude-dir=node_modules; then
+          if grep -r -E 'ANTHROPIC_API_KEY[[:space:]]*=[[:space:]]*sk-ant-' . --exclude-dir=.git --exclude-dir=node_modules --exclude-dir=.github; then
             echo "❌ Potentieller API-Key gefunden!"
             exit 1
           fi

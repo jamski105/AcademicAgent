@@ -174,10 +174,11 @@ def with_retry(
                                     error=str(e)
                                 )
 
-                # All retries exhausted
-                raise RetryEnforcementError(
-                    f"Operation '{operation_name}' failed after {max_retries} retries"
-                ) from last_exception
+                # All retries exhausted - raise original exception
+                if last_exception:
+                    raise last_exception
+                else:
+                    raise RuntimeError(f"Operation '{operation_name}' failed after {max_retries} retries")
 
         return wrapper
     return decorator
