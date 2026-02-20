@@ -118,15 +118,27 @@ def with_retry(
                     return result
 
                 except Exception as e:
+                    # Check if this is a retryable exception that exhausted retries
+                    is_retryable = any(isinstance(e, exc_type) for exc_type in retryable_exceptions)
+
                     # Log failure
                     if logger:
                         logger.error(
                             f"Operation failed after retries",
                             operation=operation_name,
                             max_retries=max_retries,
-                            error=str(e)
+                            error=str(e),
+                            retryable=is_retryable
                         )
-                    raise
+
+                    # Wrap retryable exceptions in RetryEnforcementError
+                    if is_retryable:
+                        raise RetryEnforcementError(
+                            f"Operation '{operation_name}' failed after {max_retries} retries"
+                        ) from e
+                    else:
+                        # Non-retryable exception, re-raise as is
+                        raise
 
             # Fallback: Manual retry implementation
             else:
@@ -174,11 +186,15 @@ def with_retry(
                                     error=str(e)
                                 )
 
-                # All retries exhausted - raise original exception
+                # All retries exhausted - wrap in RetryEnforcementError
                 if last_exception:
-                    raise last_exception
+                    raise RetryEnforcementError(
+                        f"Operation '{operation_name}' failed after {max_retries} retries"
+                    ) from last_exception
                 else:
-                    raise RuntimeError(f"Operation '{operation_name}' failed after {max_retries} retries")
+                    raise RetryEnforcementError(
+                        f"Operation '{operation_name}' failed after {max_retries} retries"
+                    )
 
         return wrapper
     return decorator
