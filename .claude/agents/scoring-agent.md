@@ -115,7 +115,7 @@ logger.phase_start(3, "Screening & Ranking")
 
 ---
 
-**Version:** 3.0
+**Version:** 3.2
 **Zweck:** Quellen bewerten, ranken, Portfolio-Balance prüfen
 
 ---

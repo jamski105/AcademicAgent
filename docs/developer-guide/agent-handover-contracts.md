@@ -7,9 +7,9 @@ This document defines the **input/output contracts** between the Orchestrator an
 
 ---
 
-## Overview
+## Überblick
 
-### Workflow Phases (0-6)
+### Workflow-Phasen (0-6)
 
 | Phase | Name | Primary Agent | Human Checkpoint | Input Files | Output Files |
 |-------|------|---------------|------------------|-------------|--------------|

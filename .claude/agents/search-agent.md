@@ -101,7 +101,7 @@ Alle Agents folgen der gemeinsamen Security-Policy. Bitte lies diese zuerst für
 
 ---
 
-**Version:** 3.0
+**Version:** 3.2
 **Zweck:** Boolean-Suchstrings für verschiedene Datenbanken generieren
 
 ---
