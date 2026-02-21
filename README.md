@@ -85,16 +85,6 @@ Das war's! Der Agent wird:
 |-------|-------------|----------------|
 | **`/academicagent`** | Haupt-Orchestrator - führt alle 7 Phasen aus | Immer für neue Recherchen |
 
-### Debug-Skills (Optional)
-
-| Skill | Beschreibung | Wann verwenden |
-|-------|-------------|----------------|
-| `/setup-agent` | Interaktive Konfig-Generierung | Konfigs erstellen ohne Recherche zu starten |
-| `/browser-agent` | Browser-Automatisierungs-Tests | CDP/UI-Navigationsprobleme debuggen |
-| `/search-agent` | Boolean-Suchstring-Tests | Query-Generierung debuggen |
-| `/scoring-agent` | 5D-Ranking-Tests | Kandidaten-Ranking debuggen |
-| `/extraction-agent` | PDF-Extraktions-Tests | Zitat-Extraktion debuggen |
-
 ---
 
 ## 🎯 Der 7-Phasen-Workflow
@@ -242,8 +232,8 @@ Konfigurationen werden in [config/](config/) als Markdown-Dateien gespeichert. E
 # Agent führt dich durch die Konfig-Erstellung
 
 # Option 2: Manuelles Setup
-/setup-agent
-# Erstellt Konfig ohne Recherche zu starten
+config/academic_context.md
+# Manuell bearbeiten und löschen
 
 # Option 3: Beispiel-Template verwenden
 cp config/.example/academic_context_cs_example.md config/my_research.md
@@ -789,45 +779,6 @@ except SafeBashError as e:
 
 Beiträge sind willkommen!
 
-### ✅ Kürzlich Implementiert (v3.0)
-
-Die folgenden Infrastruktur-Verbesserungen wurden bereits umgesetzt:
-- ✅ CI/CD-Pipeline mit GitHub Actions (7 automatisierte Jobs)
-- ✅ Unit-Tests mit pytest (50+ Tests, Coverage-Tracking)
-- ✅ Kosten-Tracking für Claude API-Nutzung
-- ✅ Performance-Metriken-System (strukturiertes Logging)
-- ✅ Retry-Mechanismen mit Exponential Backoff
-- ✅ Threat-Model und Sicherheitsanalyse
-- ✅ CDP-Wrapper für sichere Browser-Automatisierung
-- ✅ Git-Hooks für Secret-Scanning
-
-### 🎯 Offene Verbesserungsbereiche
-
-1. **Datenbank-Abdeckung**
-   - Disziplin-spezifische Datenbanken hinzufügen (z.B. PsycINFO, ERIC, MedLine)
-   - DBIS-Relevanz-Scoring mit ML verbessern
-   - Alternative Zugangsmethoden für Paywall-Datenbanken
-
-2. **Bewertungsalgorithmus**
-   - H-Index für Journalqualität integrieren
-   - Domain-spezifisches Relevanz-Scoring (trainiert auf Fachbegriffen)
-   - Automatische Duplikatserkennung zwischen Datenbanken
-
-3. **Internationalisierung**
-   - Mehrsprachige Suchstrings (automatische Übersetzung)
-   - Unterstützung nicht-englischer Datenbanken (z.B. CNKI für Chinesisch)
-   - Lokalisierte Konfigurations-Templates
-
-4. **Ausgabeformate**
-   - Zitierstile (APA, MLA, Chicago, IEEE)
-   - Export zu Zotero, Mendeley, EndNote (RIS/BibTeX-Import)
-   - Annotierte Bibliographie-Generierung
-
-5. **Benutzeroberfläche**
-   - Webbasierte Konfigurations-UI (React/Next.js)
-   - Echtzeit-Fortschritts-Dashboard mit Streaming-Updates
-   - Visuelle Zitat-Bibliothek mit Highlighting
-
 ---
 
 ## 🐛 Bekannte Einschränkungen
@@ -843,15 +794,6 @@ Die folgenden Infrastruktur-Verbesserungen wurden bereits umgesetzt:
 ## 📄 Lizenz
 
 MIT License - Siehe LICENSE-Datei für Details
-
----
-
-## 🙏 Danksagungen
-
-- **Anthropic** - Claude Code und Agent SDK
-- **DBIS** - Database Information System (Universität Regensburg)
-- **Poppler** - PDF-Textextraktions-Bibliothek
-- **Playwright** - Chrome DevTools Protocol Client
 
 ---
 
