@@ -256,19 +256,6 @@ cp runs/[timestamp]/outputs/bibliography.bib ~/Desktop/
 rm -rf runs/ config/ logs/
 ```
 
----
-
-## 8. Datenschutz für Kinder
-
-AcademicAgent is **not intended for users under 13 years old**. We do not knowingly collect data from children.
-
-If you believe a child has used this tool, delete all research data:
-```bash
-rm -rf runs/*
-```
-
----
-
 ## 9. Änderungen an dieser Richtlinie
 
 **Update Frequency:** This policy is reviewed quarterly.
@@ -282,18 +269,6 @@ rm -rf runs/*
 
 ---
 
-## 10. Kontakt & Fragen
-
-**For privacy questions:**
-- **GitHub Issues:** [Report privacy concerns](https://github.com/jamski105/AcademicAgent/issues) (public)
-- **Email:** your-email@example.com (private)
-
-**For Claude API data questions:**
-- **Anthropic Support:** privacy@anthropic.com
-- **Anthropic Privacy Policy:** https://www.anthropic.com/legal/privacy
-
----
-
 ## 11. Summary (TL;DR)
 
 ✅ **Local-first:** All your data stays on your machine
@@ -302,7 +277,6 @@ rm -rf runs/*
 ✅ **Encryption:** Use FileVault/LUKS (recommended)
 ✅ **Your control:** Delete data anytime with `rm -rf runs/*`
 
-**Questions?** Open an issue or email your-email@example.com
 
 ---
 

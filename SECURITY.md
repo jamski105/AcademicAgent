@@ -494,39 +494,11 @@ Falls ein Sicherheitsvorfall auftritt:
 
 ---
 
-## Verantwortungsvolle Offenlegung
-
-Falls du eine Sicherheitslücke findest:
-
-1. **NICHT** öffentlich publizieren
-2. Email: [your-email@example.com]
-3. Inkludiere:
-   - Beschreibung des Angriffsvektors
-   - Proof-of-Concept (falls sicher)
-   - Vorgeschlagene Gegenmaßnahme
-4. Erwartete Antwort: 48 Stunden
-5. Fix-Zeitplan: 7 Tage für kritisch, 30 Tage für hoch
-
----
-
-## Sicherheits-Audit-Historie
-
-| Datum | Version | Auditor | Score | Notizen |
-|------|---------|---------|-------|-------|
-| 2026-02-17 | 2.3 | Intern | 9/10 | Initiale Härtung abgeschlossen |
-
----
-
 ## Referenzen
 
 - [OWASP LLM Top 10](https://owasp.org/www-project-top-10-for-large-language-model-applications/)
 - [Prompt Injection Primer](https://simonwillison.net/2023/Apr/14/worst-that-can-happen/)
 - [Claude Code Security Best Practices](https://docs.anthropic.com/en/docs/agents-and-agentic-systems)
-
----
-
-**Letzte Überprüfung:** 2026-02-19
-**Nächste Überprüfung:** 2026-03-19 (monatlich)
 
 ---
 
