@@ -33,11 +33,11 @@ from jsonschema import validate, ValidationError
 
 # Blockierte Muster in Textfeldern (potenzielle Injection)
 INJECTION_PATTERNS = [
-    (r'ignore\s+(?:all\s+)?(?:(?:previous|prior)\s+)?instructions?', 'Anweisungen ignorieren'),
-    (r'you\s+are\s+now\s+(a|an)\s+\w+', 'Rollenübernahme'),
-    (r'(execute|run)\s+(command|bash|shell|script)', 'Befehlsausführung'),
-    (r'(curl|wget|ssh|scp)\s+', 'Netzwerkbefehl'),
-    (r'read\s+(\.env|~/.ssh|secret|credential)', 'Secrets-Zugriff'),
+    (r'ignore\s+(?:all\s+)?(?:(?:previous|prior)\s+)?instructions?', 'Ignore instructions'),
+    (r'you\s+are\s+now\s+(a|an)\s+\w+', 'Role takeover'),
+    (r'(execute|run)\s+(command|bash|shell|script)', 'Command execution'),
+    (r'(curl|wget|ssh|scp)\s+', 'Network command'),
+    (r'read\s+(\.env|~/.ssh|secret|credential)', 'Secrets access'),
 ]
 
 
@@ -161,7 +161,7 @@ def validate_agent_output(
         with open(output_file, 'r', encoding='utf-8') as f:
             data = json.load(f)
     except FileNotFoundError:
-        errors.append(f"Output-Datei nicht gefunden: {output_file}")
+        errors.append(f"Output file not found: {output_file}")
         return {'valid': False, 'errors': errors, 'warnings': warnings}
     except json.JSONDecodeError as e:
         errors.append(f"Ungültiges JSON in Output-Datei: {e}")

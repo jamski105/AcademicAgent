@@ -22,16 +22,16 @@ from typing import Dict, Any
 
 # Blockierte Befehlsmuster
 BLOCKED_PATTERNS = [
-    (r'(curl|wget|fetch)\s+.*https?://', 'Netzwerkanfrage an externe URL', 'HIGH'),
-    (r'(ssh|scp|rsync)\s+', 'Versuch einer Remote-Verbindung', 'HIGH'),
-    (r'(cat|grep|head|tail)\s+.*\.env', 'Zugriff auf Secrets-Datei (.env)', 'CRITICAL'),
-    (r'(cat|grep|head|tail)\s+.*/\.ssh/', 'Zugriff auf Secrets-Datei (SSH-Keys)', 'CRITICAL'),
-    (r'(cat|grep|head|tail)\s+.*/secrets?/', 'Zugriff auf Secrets-Verzeichnis', 'CRITICAL'),
-    (r'rm\s+-rf?\s+/', 'Destruktive Dateisystemoperation', 'CRITICAL'),
-    (r'dd\s+if=.*of=', 'Raw-Disk-Operation', 'CRITICAL'),
-    (r'mkfs\s+', 'Dateisystem-Erstellung (destruktiv)', 'CRITICAL'),
-    (r'sudo\s+', 'Versuch der Rechteausweitung', 'CRITICAL'),
-    (r'chmod\s+\+x.*evil|malware|backdoor', 'Verdächtige Executable-Erstellung', 'HIGH'),
+    (r'(curl|wget|fetch)\s+.*https?://', 'Network request to external URL', 'HIGH'),
+    (r'(ssh|scp|rsync)\s+', 'Remote connection attempt', 'HIGH'),
+    (r'(cat|grep|head|tail)\s+.*\.env', 'Secret file access (.env)', 'CRITICAL'),
+    (r'(cat|grep|head|tail)\s+.*/\.ssh/', 'SSH keys access', 'CRITICAL'),
+    (r'(cat|grep|head|tail)\s+.*/secrets?/', 'Secrets directory access', 'CRITICAL'),
+    (r'rm\s+-rf?\s+/', 'Destructive filesystem operation', 'CRITICAL'),
+    (r'dd\s+if=.*of=', 'Raw disk operation', 'CRITICAL'),
+    (r'mkfs\s+', 'Filesystem creation (destructive)', 'CRITICAL'),
+    (r'sudo\s+', 'Privilege escalation attempt', 'CRITICAL'),
+    (r'chmod\s+\+x.*evil|malware|backdoor', 'Suspicious executable creation', 'HIGH'),
 ]
 
 # Erlaubte Befehlsmuster (Whitelist)
@@ -124,7 +124,7 @@ def validate_action(
     if source == 'external_content':
         return {
             'decision': 'BLOCK',
-            'reason': 'Aktion stammt aus externem Inhalt (Web/PDF). Nur Benutzer- oder System-Anweisungen können Aktionen auslösen.',
+            'reason': 'Action originates from external content (Web/PDF). Only user or system instructions can trigger actions.',
             'risk_level': 'HIGH'
         }
 
