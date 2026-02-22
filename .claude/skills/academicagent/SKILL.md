@@ -13,7 +13,33 @@
 
 ## Parameter
 
-- `$ARGUMENTS`: Optionale Flags (--quick, --resume <run-id>)
+- `$ARGUMENTS`: Optionale Flags (--quick, --resume <run-id>, --interactive)
+
+## 🎨 Interaktiver TUI-Modus (NEU)
+
+**Für eine bessere User Experience gibt es jetzt einen interaktiven TUI-Modus:**
+
+```bash
+# Direkt starten:
+bash scripts/academicagent_wrapper.sh --interactive
+
+# Oder via Wrapper (zeigt Auswahlmenü):
+bash scripts/academicagent_wrapper.sh
+```
+
+**Vorteile:**
+- ✅ Benutzerfreundlicher Setup mit Pfeiltasten-Navigation
+- ✅ Automatische Keyword-Extraktion
+- ✅ Visuelle Konfigurations-Übersicht
+- ✅ Reduziert Chat-Messages drastisch
+
+**Hinweis für den Agent:**
+Wenn User nach einem "schnellen" oder "einfachen" Setup fragt, empfehle den interaktiven Modus:
+```bash
+bash scripts/academicagent_wrapper.sh --interactive
+```
+
+---
 
 ## 🛡️ Security
 
@@ -46,7 +72,7 @@ Zeige eine Willkommensnachricht:
 ║                                                              ║
 ║           🎓 Academic Agent - Recherche-Assistent            ║
 ║                                                              ║
-║                        Version 4.0                           ║
+║                        Version 4.1                           ║
 ║                                                              ║
 ╚══════════════════════════════════════════════════════════════╝
 
@@ -152,6 +178,96 @@ fi
 Fahre fort mit Setup...
 ```
 
+#### Schritt 2.6: Permission & Workflow-Info (WICHTIG)
+
+**WICHTIG:** Informiere den User über den bevorstehenden Workflow:
+
+```
+╔══════════════════════════════════════════════════════════════╗
+║                                                              ║
+║              🔒 WORKFLOW-INFORMATIONEN                       ║
+║                                                              ║
+╚══════════════════════════════════════════════════════════════╝
+
+Dieser Workflow nutzt mehrere spezialisierte Sub-Agents:
+
+  • setup-agent      - Interaktive Recherche-Konfiguration
+  • orchestrator     - Koordination aller Phasen
+  • browser-agent    - Automatisierte Datenbanksuche
+  • scoring-agent    - Paper-Ranking
+  • extraction-agent - Zitat-Extraktion
+
+⚠️  WICHTIG:
+    • Browser-Agent kann während der Suche Login-Prompts
+      für DBIS/Datenbanken zeigen - halte Uni-Zugangsdaten bereit.
+    • Die Run-Struktur wird automatisch erstellt, um
+      Permission-Prompts zu minimieren.
+    • Alle Agents arbeiten im runs/ Verzeichnis.
+
+✓ Bereit zum Start
+
+```
+
+**Hinweis:** Die vollständige Run-Struktur wird vom setup-agent automatisch erstellt.
+
+#### Schritt 2.7: Session-Wide Permission Request (KRITISCH)
+
+**WICHTIG:** Frage User EINMALIG um Genehmigung für alle Sub-Agent-Operations:
+
+Verwende das AskUserQuestion-Tool:
+
+```
+AskUserQuestion(
+  questions=[{
+    "question": "Dieser Workflow spawnt mehrere Sub-Agents (setup, orchestrator, browser, scoring, extraction). Alle Sub-Agents automatisch genehmigen?",
+    "header": "Permissions",
+    "multiSelect": false,
+    "options": [
+      {
+        "label": "Ja - Alle Sub-Agents auto-genehmigen (Empfohlen)",
+        "description": "Reduziert Permission-Prompts drastisch. Sub-Agents arbeiten nur im runs/ Verzeichnis und sind durch Auto-Permission-System geschützt."
+      },
+      {
+        "label": "Nein - Jeden Agent einzeln bestätigen",
+        "description": "Du wirst bei jedem Agent-Spawn gefragt. Empfohlen nur für Tests oder wenn du jeden Schritt kontrollieren möchtest."
+      }
+    ]
+  }]
+)
+```
+
+**Verarbeite Antwort:**
+
+```python
+# Wenn User "Ja" gewählt hat:
+if answer == "Ja - Alle Sub-Agents auto-genehmigen (Empfohlen)":
+    export CLAUDE_SESSION_AUTO_APPROVE_AGENTS=true
+    export ACADEMIC_AGENT_BATCH_MODE=true
+
+    echo "✅ Session-Permission aktiviert"
+    echo "   → Sub-Agents werden automatisch genehmigt"
+    echo "   → Nur File-Operations außerhalb runs/ erfordern Bestätigung"
+    echo ""
+
+# Wenn User "Nein" gewählt hat:
+else:
+    echo "ℹ️  Interaktiver Modus aktiv"
+    echo "   → Du wirst bei jedem Agent-Spawn gefragt"
+    echo "   → Erwarte 3-5 Permission-Prompts während der Recherche"
+    echo ""
+```
+
+**Environment-Variablen für spätere Agents:**
+
+Diese Variablen werden an alle Sub-Agents weitergegeben:
+- `CLAUDE_SESSION_AUTO_APPROVE_AGENTS=true` - Signalisiert Auto-Approve-Modus
+- `ACADEMIC_AGENT_BATCH_MODE=true` - Aktiviert Batch-Verarbeitung ohne zusätzliche Prompts
+
+**Hinweis:** Selbst im Auto-Approve-Modus sind kritische Operations geschützt:
+- Kein Zugriff auf `.env`, `~/.ssh/`, `secrets/`
+- Kein Write außerhalb `runs/` ohne explizite Bestätigung
+- Gefährliche Bash-Commands (rm -rf, sudo) erfordern Bestätigung
+
 #### Schritt 3: Setup-Agent starten
 
 ```
@@ -230,9 +346,109 @@ Fehlerbehebung:
 Erneut versuchen? (Ja/Nein)
 ```
 
-#### Schritt 5: Übergabe an Orchestrator
+#### Schritt 5: Übergabe an Orchestrator (mit Live-Status-Monitoring)
 
 Falls Konfig erfolgreich erstellt wurde:
+
+**OPTIONAL: tmux Live-Monitoring Setup**
+
+Frage User ob Live-Monitoring gewünscht ist:
+
+```
+╭───────────────────────────────────────────────────────────╮
+│ 💡 Live-Status-Monitoring verfügbar!                      │
+├───────────────────────────────────────────────────────────┤
+│ Du kannst den Recherche-Fortschritt in Echtzeit           │
+│ verfolgen mit einem Split-Screen-Dashboard.               │
+│                                                           │
+│ Features:                                                 │
+│  ✓ Echtzeit Phase-Updates                                 │
+│  ✓ Iterations-Tracking (Phase 2)                          │
+│  ✓ Budget-Monitoring                                      │
+│  ✓ Live-Logs                                              │
+│  ✓ Progress-Bars                                          │
+│                                                           │
+│ Möchtest du das Live-Dashboard aktivieren?                │
+│  1) Ja - Starte mit tmux Split-Screen (empfohlen)         │
+│  2) Nein - Normale Ausführung ohne Live-Monitoring        │
+╰───────────────────────────────────────────────────────────╯
+
+Deine Wahl [1-2]:
+```
+
+**WENN User "Ja" wählt (Option 1):**
+
+```bash
+# Prüfe ob tmux verfügbar ist
+if ! command -v tmux &> /dev/null; then
+    echo "⚠️  tmux nicht installiert. Installiere mit:"
+    echo "   macOS: brew install tmux"
+    echo "   Ubuntu/Debian: apt install tmux"
+    echo ""
+    echo "Fahre mit normaler Ausführung fort..."
+    TMUX_AVAILABLE=false
+else
+    TMUX_AVAILABLE=true
+fi
+
+if [ "$TMUX_AVAILABLE" = true ] && [ -z "$TMUX" ]; then
+    echo "🖥️  Starte tmux für Live-Status-Monitoring..."
+
+    RUN_ID="[run-id vom Setup]"
+    SESSION_NAME="academic_${RUN_ID//[^a-zA-Z0-9]/_}"  # Sanitize für tmux
+
+    # Erstelle tmux Session mit Split-Screen
+    tmux new-session -d -s "$SESSION_NAME"
+
+    # Split vertical (50:50)
+    tmux split-window -h -t "$SESSION_NAME"
+
+    # Links: Orchestrator-Agent (Main Process)
+    tmux send-keys -t "$SESSION_NAME:0.0" \
+        "cd $(pwd) && echo 'Starte Orchestrator-Agent...' && sleep 2" C-m
+
+    # Rechts: Status Watcher
+    tmux send-keys -t "$SESSION_NAME:0.1" \
+        "cd $(pwd) && bash scripts/status_watcher.sh $RUN_ID" C-m
+
+    # Setze Pane-Titel (optional, wenn tmux-Versionen es unterstützen)
+    tmux select-pane -t "$SESSION_NAME:0.0" -T "Orchestrator"
+    tmux select-pane -t "$SESSION_NAME:0.1" -T "Live Status"
+
+    # Attach zur Session
+    echo "✅ tmux Session erstellt: $SESSION_NAME"
+    echo "   Linkes Panel: Orchestrator-Agent"
+    echo "   Rechtes Panel: Live-Status-Dashboard"
+    echo ""
+    echo "Hinweis: Zum Beenden: Strg+B, dann 'X' drücken"
+    echo ""
+
+    # Attach (blockiert bis Session beendet wird)
+    tmux attach -t "$SESSION_NAME"
+
+    # Nach detach: Cleanup
+    echo "🧹 Räume tmux Session auf..."
+    tmux kill-session -t "$SESSION_NAME" 2>/dev/null
+
+    exit 0
+fi
+```
+
+**WENN User "Nein" wählt ODER tmux nicht verfügbar:**
+
+Informiere User über alternative Monitoring-Option:
+
+```
+ℹ️  Alternative: Öffne ein zweites Terminal und führe aus:
+   python3 scripts/live_monitor.py runs/[run-id]
+
+   Oder: Manuelles Tail auf State-File:
+   watch -n 3 'jq . runs/[run-id]/metadata/research_state.json'
+
+Fahre fort mit normaler Ausführung...
+```
+
+**Starte Orchestrator-Agent:**
 
 ```bash
 # Starte Orchestrator-Agent mit der generierten Konfig
@@ -245,6 +461,12 @@ Task(
   Konfig: runs/[run-id]/run_config.json
 
   Verwende die iterative Datenbanksuche-Strategie aus der Konfig.
+
+  WICHTIG - Live-Status-Updates:
+  - Schreibe research_state.json NACH JEDER PHASE
+  - Schreibe research_state.json NACH JEDER ITERATION (Phase 2)
+  - Update phase_2_state für Iterations-Tracking
+  - Update budget_tracking nach jedem Agent-Spawn
 
   Phasenablauf:
   1. Datenbank-Identifikation (oder überspringe falls bereits ausgewählt)

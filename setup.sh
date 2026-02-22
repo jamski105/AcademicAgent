@@ -168,6 +168,22 @@ fi
 echo ""
 
 # ============================================
+# 7b. Installiere tmux (Terminal-Multiplexer für Live-Monitoring)
+# ============================================
+echo -e "${BLUE}🖥️  Installiere tmux...${NC}"
+echo -e "${YELLOW}Hinweis: tmux wird für Live-Status-Monitoring verwendet (Split-Screen-Dashboard)${NC}"
+
+if command -v tmux &> /dev/null; then
+  TMUX_VERSION=$(tmux -V)
+  echo -e "${GREEN}✅ tmux bereits installiert ($TMUX_VERSION)${NC}"
+else
+  brew install tmux
+  echo -e "${GREEN}✅ tmux installiert${NC}"
+fi
+
+echo ""
+
+# ============================================
 # 8. Installiere git (falls nicht vorhanden)
 # ============================================
 echo -e "${BLUE}📦 Prüfe git...${NC}"
@@ -397,6 +413,14 @@ else
   VERIFICATION_FAILED=true
 fi
 
+echo -n "  Prüfe tmux... "
+if command -v tmux &> /dev/null; then
+  echo -e "${GREEN}✅${NC}"
+else
+  echo -e "${RED}❌${NC}"
+  VERIFICATION_FAILED=true
+fi
+
 echo -n "  Prüfe git... "
 if command -v git &> /dev/null; then
   echo -e "${GREEN}✅${NC}"
@@ -506,6 +530,10 @@ echo "     → Cmd+Shift+P → 'Claude Code: Start Chat'"
 echo ""
 echo "  5. Eine Recherche starten:"
 echo -e "     ${YELLOW}/academicagent${NC}"
+echo ""
+echo "  6. (Optional) Live-Status-Monitoring aktivieren:"
+echo "     → Wähle Option 1 beim Start von /academicagent"
+echo "     → Oder manuell: bash scripts/status_watcher.sh <run-id>"
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""

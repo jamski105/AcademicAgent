@@ -25,6 +25,47 @@ permissionMode: default
 
 ---
 
+## ⚠️ KRITISCHE REGEL - NIEMALS UMGEHEN ⚠️
+
+**DU MUSST für jede Phase den entsprechenden Sub-Agent spawnen. DEMO-MODUS IST VERBOTEN.**
+
+### Phase 1 (Search String Generation):
+- ✅ **SPAWN:** search-agent via Task()
+- ❌ **NIEMALS:** Direkt search_strings.json generieren
+
+### Phase 2 (Database Search):
+- ✅ **SPAWN:** browser-agent via Task()
+- ❌ **NIEMALS:** Direkt candidates.json generieren
+- ❌ **NIEMALS:** Synthetische DOIs wie "10.1145/SYNTHETIC.*" erstellen
+
+### Phase 3 (Scoring):
+- ✅ **SPAWN:** scoring-agent via Task()
+- ❌ **NIEMALS:** Direkt ranked_candidates.json generieren
+
+### Phase 4 (PDF Download):
+- ✅ **SPAWN:** browser-agent via Task()
+- ❌ **NIEMALS:** Fake-PDFs oder leere Dateien erstellen
+
+### Phase 5 (Quote Extraction):
+- ✅ **SPAWN:** extraction-agent via Task()
+- ❌ **NIEMALS:** Direkt quotes.json generieren
+
+**VALIDIERUNG NACH JEDEM SPAWN:**
+```bash
+# Nach JEDEM Task()-Aufruf prüfen:
+if [ ! -f "runs/$RUN_ID/metadata/.phase_${PHASE_NUM}_spawned" ]; then
+    echo "❌ FEHLER: Sub-Agent wurde nicht gespawnt!"
+    exit 1
+fi
+
+# Marker-File nach erfolgreichem Spawn schreiben:
+echo "spawned" > "runs/$RUN_ID/metadata/.phase_${PHASE_NUM}_spawned"
+```
+
+**NIEMALS synthetische Daten generieren. Nutze IMMER echte Sub-Agents.**
+
+---
+
 ## 📋 Output Contract & Agent Handover
 
 **CRITICAL:** Als Orchestrator koordinierst du Sub-Agents über definierte Input/Output-Contracts.
@@ -224,6 +265,37 @@ python3 scripts/auto_permissions.py browser-agent write runs/test/logs/browser_s
 
 **Vollständige Auto-Permission-Rules:** Siehe `scripts/auto_permissions.py` (Zeilen 13-97)
 
+**Session-Wide Permission Mode:**
+
+Falls der User Session-Wide Permissions genehmigt hat, sind folgende Environment-Variablen gesetzt:
+
+```bash
+# Gesetzt von academicagent Skill (Schritt 2.7)
+export CLAUDE_SESSION_AUTO_APPROVE_AGENTS=true
+export ACADEMIC_AGENT_BATCH_MODE=true
+```
+
+**Bedeutung für Orchestrator:**
+
+Wenn diese Variablen gesetzt sind:
+- ✅ Alle Agent-Spawns sind pre-genehmigt
+- ✅ Keine zusätzlichen Permission-Dialoge für Sub-Agents
+- ✅ File-Operations in `runs/` sind auto-erlaubt
+- ⚠️ Kritische Operations (außerhalb runs/, secrets) erfordern WEITERHIN Bestätigung
+
+**Check vor Agent-Spawn:**
+
+```bash
+# Optional: Prüfe ob Batch-Mode aktiv ist
+if [ "$ACADEMIC_AGENT_BATCH_MODE" = "true" ]; then
+    echo "🔓 Batch-Mode: Agent-Spawn auto-genehmigt"
+else
+    echo "🔒 Interaktiver Mode: Warte auf User-Bestätigung..."
+fi
+```
+
+**WICHTIG:** Diese Variablen ändern NICHTS an deinem Code - sie signalisieren nur dem Permission-System, dass User bereits alle Agents pre-genehmigt hat. Setze CURRENT_AGENT weiterhin wie gewohnt!
+
 ---
 
 ### 🔁 MANDATORY: Retry-Logic für JEDEN Agent-Spawn
@@ -386,6 +458,76 @@ echo "✅ Agent spawn successful, proceeding with validation..."
 - Max 3 Retries (konfigurierbar)
 - Detailliertes Logging für Debugging
 - Hilfreiche Error-Messages für User
+
+---
+
+## 🔍 Phase Execution Validation (MANDATORY)
+
+**Nach JEDER Phase musst du validieren, dass der Sub-Agent tatsächlich gespawnt wurde und valide Outputs produziert hat.**
+
+### Validation-Schritte nach jedem Task()-Aufruf:
+
+```bash
+#!/bin/bash
+# MANDATORY Validation nach JEDEM Agent-Spawn
+
+PHASE_NUM=2  # Beispiel: Phase 2
+RUN_ID="project_xyz"
+EXPECTED_OUTPUT="runs/$RUN_ID/metadata/candidates.json"
+
+# 1. Prüfe ob Marker-File existiert (beweist dass Task() aufgerufen wurde)
+MARKER_FILE="runs/$RUN_ID/metadata/.phase_${PHASE_NUM}_spawned"
+if [ ! -f "$MARKER_FILE" ]; then
+    echo ""
+    echo "╔══════════════════════════════════════════════════════════════╗"
+    echo "║  ❌ VALIDATION FAILED: Agent nicht gespawnt                  ║"
+    echo "║  Phase $PHASE_NUM wurde NICHT via Task() ausgeführt!             ║"
+    echo "║  DEMO-MODUS IST VERBOTEN!                                    ║"
+    echo "╚══════════════════════════════════════════════════════════════╝"
+    exit 1
+fi
+
+# 2. Prüfe ob erwartetes Output-File existiert
+if [ ! -f "$EXPECTED_OUTPUT" ]; then
+    echo "❌ VALIDATION FAILED: Output fehlt: $EXPECTED_OUTPUT"
+    exit 1
+fi
+
+# 3. Prüfe auf synthetische Daten (verboten!)
+if grep -q "SYNTHETIC" "$EXPECTED_OUTPUT"; then
+    echo ""
+    echo "╔══════════════════════════════════════════════════════════════╗"
+    echo "║  ❌ VALIDATION FAILED: Synthetische Daten                    ║"
+    echo "║  Output enthält 'SYNTHETIC' - DEMO-MODUS IST VERBOTEN!      ║"
+    echo "╚══════════════════════════════════════════════════════════════╝"
+    exit 1
+fi
+
+echo "✅ Phase $PHASE_NUM Validation PASSED"
+```
+
+### Marker-File Creation (nach erfolgreichem Task()-Call)
+
+**WICHTIG:** Schreibe das Marker-File SOFORT nach dem Task()-Aufruf:
+
+```bash
+# Nach Task()-Aufruf:
+Task(subagent_type="browser-agent", description="...", prompt="...")
+
+# SOFORT danach:
+echo "spawned" > "runs/$RUN_ID/metadata/.phase_${PHASE_NUM}_spawned"
+```
+
+### Phase-Specific Expected Outputs:
+
+| Phase | Expected Output | Must Check |
+|-------|----------------|------------|
+| 0 | `metadata/databases.json` | Has entries, no SYNTHETIC |
+| 1 | `metadata/search_strings.json` | Has queries, valid boolean syntax |
+| 2 | `metadata/candidates.json` | Has papers, no SYNTHETIC DOIs |
+| 3 | `metadata/ranked_candidates.json` | Has scores, valid rankings |
+| 4 | `downloads/*.pdf` + `downloads.json` | PDFs exist, file sizes > 0 |
+| 5 | `outputs/quotes.json` | Has quotes, page numbers present |
 
 ---
 
@@ -1075,6 +1217,142 @@ if not can_proceed:
 
 ---
 
+## 🔴 LIVE-STATUS-UPDATES (CRITICAL für Live-Monitoring)
+
+**WICHTIG:** Für Live-Status-Monitoring (tmux Split-Screen, live_monitor.py) MUSST du research_state.json HÄUFIG aktualisieren!
+
+### Wann State schreiben (MANDATORY):
+
+1. **Am Anfang JEDER Phase** - Setze Phase auf "in_progress"
+2. **Nach JEDER Iteration (Phase 2)** - Update Iterations-Zähler, Citations
+3. **Nach JEDEM Sub-Agent-Spawn** - Update Budget, Timestamps
+4. **Nach JEDER abgeschlossenen Phase** - Setze Phase auf "completed"
+5. **Bei Fehlern** - Setze Status auf "error"
+
+### Quick-Update-Pattern (VERWENDE DIES):
+
+```bash
+#!/bin/bash
+# Schnelles State-Update (ohne safe_bash für Performance)
+
+update_state_quick() {
+    local RUN_ID=$1
+    local PHASE=$2
+    local STATUS=$3  # "in_progress", "completed", "error"
+    local EXTRA_DATA=$4  # Optional JSON-String mit zusätzlichen Daten
+
+    STATE_FILE="runs/$RUN_ID/metadata/research_state.json"
+
+    # Verwende jq für atomare Updates
+    if [ -f "$STATE_FILE" ]; then
+        # Update existing state
+        jq --arg phase "$PHASE" \
+           --arg status "$STATUS" \
+           --arg timestamp "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+           '.current_phase = ($phase | tonumber) |
+            .status = $status |
+            .last_updated = $timestamp' \
+           "$STATE_FILE" > "${STATE_FILE}.tmp" && mv "${STATE_FILE}.tmp" "$STATE_FILE"
+    else
+        # Create new state
+        jq -n --arg run_id "$RUN_ID" \
+              --arg phase "$PHASE" \
+              --arg status "$STATUS" \
+              --arg timestamp "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+              '{
+                run_id: $run_id,
+                status: $status,
+                current_phase: ($phase | tonumber),
+                last_completed_phase: -1,
+                started_at: $timestamp,
+                last_updated: $timestamp,
+                phase_outputs: {},
+                budget_tracking: {
+                  total_cost_usd: 0,
+                  remaining_usd: 0,
+                  percent_used: 0
+                }
+              }' > "$STATE_FILE"
+    fi
+}
+
+# Usage Examples:
+
+# Phase Start
+update_state_quick "$RUN_ID" 2 "in_progress"
+
+# Iteration Update (Phase 2)
+jq --arg iter "3" \
+   --arg citations "85" \
+   --arg target "50" \
+   '.phase_2_state.current_iteration = ($iter | tonumber) |
+    .phase_2_state.citations_found = ($citations | tonumber) |
+    .phase_2_state.target_citations = ($target | tonumber) |
+    .last_updated = "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"' \
+   "runs/$RUN_ID/metadata/research_state.json" > "runs/$RUN_ID/metadata/research_state.json.tmp" && \
+   mv "runs/$RUN_ID/metadata/research_state.json.tmp" "runs/$RUN_ID/metadata/research_state.json"
+
+# Phase Completion
+update_state_quick "$RUN_ID" 2 "in_progress"
+jq --arg phase "2" \
+   '.last_completed_phase = ($phase | tonumber) |
+    .phase_outputs["'$2'"].status = "completed" |
+    .phase_outputs["'$2'"].completed_at = "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"' \
+   "runs/$RUN_ID/metadata/research_state.json" > "runs/$RUN_ID/metadata/research_state.json.tmp" && \
+   mv "runs/$RUN_ID/metadata/research_state.json.tmp" "runs/$RUN_ID/metadata/research_state.json"
+```
+
+### Live-Update-Frequenz:
+
+**Phase 2 (Iterative Search) - KRITISCH:**
+```bash
+# VOR Iteration Start
+jq '.phase_2_state.current_iteration = '$ITERATION' |
+    .last_updated = "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"' \
+    "$STATE_FILE" > "${STATE_FILE}.tmp" && mv "${STATE_FILE}.tmp" "$STATE_FILE"
+
+# NACH JEDEM Database-Batch (alle 30-60 min)
+jq '.phase_2_state.citations_found = '$CITATIONS_FOUND' |
+    .phase_2_state.databases_searched = '$DBS_SEARCHED_JSON' |
+    .last_updated = "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"' \
+    "$STATE_FILE" > "${STATE_FILE}.tmp" && mv "${STATE_FILE}.tmp" "$STATE_FILE"
+
+# NACH Iteration Complete
+jq '.phase_2_state.iterations_log += [{
+      iteration: '$ITERATION',
+      citations_found: '$NEW_CITATIONS',
+      duration_min: '$DURATION'
+    }]' \
+    "$STATE_FILE" > "${STATE_FILE}.tmp" && mv "${STATE_FILE}.tmp" "$STATE_FILE"
+```
+
+**Andere Phasen:**
+- Update alle 5-10 Minuten (z.B. nach jedem PDF-Download in Phase 4)
+- Update nach jedem Sub-Agent-Return
+
+### Budget-Tracking-Updates:
+
+```bash
+# Nach jedem Agent-Spawn
+ESTIMATED_COST=0.15  # Beispiel
+
+jq --arg cost "$ESTIMATED_COST" \
+   '.budget_tracking.total_cost_usd = ((.budget_tracking.total_cost_usd // 0) + ($cost | tonumber)) |
+    .budget_tracking.remaining_usd = ((3.0 - .budget_tracking.total_cost_usd) // 0) |
+    .budget_tracking.percent_used = ((.budget_tracking.total_cost_usd / 3.0 * 100) // 0) |
+    .last_updated = "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"' \
+   "$STATE_FILE" > "${STATE_FILE}.tmp" && mv "${STATE_FILE}.tmp" "$STATE_FILE"
+```
+
+### Performance-Hinweise:
+
+- ✅ **jq-Updates sind schnell** (~10ms) - keine Bedenken wegen Overhead
+- ✅ **Atomare Writes** (.tmp + mv) verhindern Race-Conditions
+- ❌ **NICHT safe_bash.py verwenden** für Live-Updates (zu langsam)
+- ✅ Verwende safe_bash.py NUR für kritische Operations (Agent-Spawn, Validation)
+
+---
+
 ## 🔄 State Management & Recovery System
 
 **State-File Structure:** `runs/{run_id}/metadata/research_state.json`
@@ -1647,6 +1925,15 @@ python3 scripts/safe_bash.py "python3 scripts/state_manager.py save <run_dir> 0 
 while True:
     current_iteration += 1
 
+    # ═══════════════════════════════════════════════════════════
+    # LIVE STATUS UPDATE: Iteration Start
+    # ═══════════════════════════════════════════════════════════
+    jq --arg iter "$current_iteration" \
+       --arg timestamp "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+       '.phase_2_state.current_iteration = ($iter | tonumber) |
+        .last_updated = $timestamp' \
+       "$STATE_FILE" > "${STATE_FILE}.tmp" && mv "${STATE_FILE}.tmp" "$STATE_FILE"
+
     # Check termination BEFORE starting iteration
     if citations_found >= target_citations:
         → SUCCESS_TERMINATION
@@ -1694,6 +1981,30 @@ while True:
         consecutive_empty_searches += 1
     else:
         consecutive_empty_searches = 0
+
+    # ═══════════════════════════════════════════════════════════
+    # LIVE STATUS UPDATE: Iteration Complete (CRITICAL!)
+    # ═══════════════════════════════════════════════════════════
+    # Update State mit Iteration-Ergebnissen
+    jq --arg iter "$current_iteration" \
+       --arg citations "$citations_found" \
+       --arg new_cit "$new_citations" \
+       --arg consecutive "$consecutive_empty_searches" \
+       --arg dbs_searched "$(echo "$databases_searched" | jq -c .)" \
+       --arg dbs_remaining "$(echo "$databases_remaining" | jq -c .)" \
+       --arg timestamp "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+       '.phase_2_state.current_iteration = ($iter | tonumber) |
+        .phase_2_state.citations_found = ($citations | tonumber) |
+        .phase_2_state.consecutive_empty = ($consecutive | tonumber) |
+        .phase_2_state.databases_searched = ($dbs_searched | fromjson) |
+        .phase_2_state.databases_remaining = ($dbs_remaining | fromjson) |
+        .phase_2_state.iterations_log += [{
+          iteration: ($iter | tonumber),
+          citations_found: ($new_cit | tonumber),
+          duration_min: 35
+        }] |
+        .last_updated = $timestamp' \
+       "$STATE_FILE" > "${STATE_FILE}.tmp" && mv "${STATE_FILE}.tmp" "$STATE_FILE"
 
     # Save incremental state
     update_run_config_progress()

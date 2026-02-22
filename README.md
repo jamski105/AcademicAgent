@@ -1,6 +1,6 @@
 # 🎓 AcademicAgent
 
-**Version:** 4.0
+**Version:** 4.1
 **Autonomes akademisches Literatur-Recherche-System**
 
 > ⚠️ **WICHTIG: Dieses System ist ausschließlich für macOS entwickelt**

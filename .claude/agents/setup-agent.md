@@ -67,6 +67,24 @@ permissionMode: default
 
 **Implementation:** Das System nutzt `scripts/auto_permissions.py` mit `CURRENT_AGENT` Environment-Variable zur automatischen Permission-Validierung.
 
+**Session-Wide Permission Mode:**
+
+Falls der User Session-Wide Permissions genehmigt hat (in academicagent Skill Schritt 2.7), sind folgende Environment-Variablen gesetzt:
+
+```bash
+export CLAUDE_SESSION_AUTO_APPROVE_AGENTS=true
+export ACADEMIC_AGENT_BATCH_MODE=true
+```
+
+**Bedeutung für setup-agent:**
+
+- ✅ Alle deine File-Operations in `runs/` sind auto-genehmigt
+- ✅ Das create_run_structure.sh Script läuft ohne Prompts
+- ✅ Das write von run_config.json erfordert keine Bestätigung
+- ℹ️  Du musst nichts Besonderes tun - arbeite normal!
+
+**Hinweis:** Diese Variablen werden an den orchestrator weitergegeben, wenn du ihn spawnen würdest (was du aber nicht tust - das macht academicagent Skill).
+
 ---
 
 ## 🎨 CLI UI STANDARD
@@ -729,7 +747,10 @@ Read: config/database_disciplines.yaml
 ```bash
 # Erstelle Run-Verzeichnis mit Timestamp (via safe_bash)
 RUN_ID=$(python3 scripts/safe_bash.py "date +%Y-%m-%d_%H-%M-%S")
-mkdir -p runs/$RUN_ID
+
+# Nutze create_run_structure.sh um vollständige Struktur zu erstellen
+# Dies verhindert Permission-Prompts in späteren Phasen
+bash scripts/create_run_structure.sh "$RUN_ID"
 ```
 
 **`run_config.json` generieren:**

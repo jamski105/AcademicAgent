@@ -37,6 +37,8 @@
       "Bash(sh scripts/*)",
       "Bash(chmod +x scripts/*)",
       "Bash(export CURRENT_AGENT=*)",
+      "Bash(export CLAUDE_SESSION_AUTO_APPROVE_AGENTS=*)",
+      "Bash(export ACADEMIC_AGENT_BATCH_MODE=*)",
       "Bash(ls *)",
       "Bash(cat runs/**)",
       "Bash(head runs/**)",
