@@ -4,6 +4,7 @@
 # Environment files
 .env
 .env.*
+!.env.example
 
 # Secrets
 secrets/
@@ -26,6 +27,7 @@ __pycache__/
 *.egg-info/
 .venv/
 venv/
+.pytest_cache/
 
 # Node
 node_modules/
@@ -50,6 +52,3 @@ Thumbs.db
 # Logs
 *.log
 logs/*.log
-__pycache__/
-*.pyc
-*.pyo

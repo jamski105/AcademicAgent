@@ -298,12 +298,144 @@ fi
 
 ### Validierung
 
-```bash
-# VOR jedem File-Write:
-python3 scripts/safe_bash.py "python3 scripts/validate_path.py --write '$FILE_PATH'"
+Das **Auto-Permission-System** validiert automatisch alle File-Pfade gegen Path-Traversal-Angriffe:
 
-# VOR jedem File-Read (wenn sensibel):
-python3 scripts/safe_bash.py "python3 scripts/validate_path.py --read '$FILE_PATH'"
+**Automatische Prüfungen durch `auto_permissions.py`:**
+- ✅ Keine `..` Sequenzen (path traversal)
+- ✅ Keine absoluten Pfade außerhalb erlaubter Bereiche
+- ✅ Nur erlaubte Verzeichnisse (runs/, config/, schemas/, /tmp/)
+- ✅ Secret-Pfade blockiert (~/.ssh/, .env, credentials/)
+
+**Keine manuelle Validierung nötig** - das System blockiert automatisch verdächtige Pfade.
+
+### 🤖 Auto-Permission System
+
+**Ab v2.2:** Agent-spezifische Auto-Allowed Paths reduzieren Permission-Dialoge!
+
+**System:** `scripts/auto_permissions.py`
+
+**Wie es funktioniert:**
+1. Jeder Agent hat definierte "sichere" Pfade
+2. Write/Read zu diesen Pfaden = Auto-Allow (kein Dialog)
+3. Orchestrator setzt `CURRENT_AGENT` Environment-Variable
+4. Alle anderen Pfade = User-Frage wie bisher
+
+**Agent-Spezifische Auto-Allowed Paths:**
+
+#### setup-agent
+
+**Auto-Write:**
+
+- ✅ `runs/<run_id>/run_config.json` (Primary Output)
+- ✅ `runs/<run_id>/config/*.json`
+- ✅ `runs/<run_id>/metadata/search_strategy.txt`
+- ✅ `runs/<run_id>/logs/setup_*.log`
+
+**Auto-Read:**
+
+- ✅ `config/academic_context.md`
+- ✅ `config/database_disciplines.yaml`
+- ✅ `.claude/agents/*.md`
+
+#### orchestrator-agent
+
+**Auto-Write:**
+
+- ✅ `runs/<run_id>/metadata/research_state.json` (State Management)
+- ✅ `runs/<run_id>/errors/*.json`
+- ✅ `runs/<run_id>/logs/orchestrator_*.jsonl`
+- ✅ `runs/<run_id>/metadata/*.json`
+
+**Auto-Read:**
+
+- ✅ `runs/<run_id>/*.json` (alle JSON-Files im Run)
+- ✅ `config/*`
+- ✅ `schemas/*.json`
+
+#### browser-agent
+
+**Auto-Write:**
+
+- ✅ `runs/<run_id>/logs/browser_*.(log|jsonl|png)`
+- ✅ `runs/<run_id>/screenshots/*.png`
+
+**Auto-Read:**
+
+- ✅ `runs/<run_id>/metadata/(databases|search_strings|ranked_top27).json`
+- ✅ `scripts/database_patterns.json`
+
+#### extraction-agent
+
+**Auto-Write:**
+
+- ✅ `runs/<run_id>/outputs/quotes.json` (Primary Output)
+- ✅ `runs/<run_id>/txt/*.txt` (PDF conversions)
+- ✅ `runs/<run_id>/logs/extraction_*.jsonl`
+- ✅ `runs/<run_id>/errors/extraction_error_*.json`
+
+**Auto-Read:**
+
+- ✅ `runs/<run_id>/pdfs/*.pdf`
+- ✅ `runs/<run_id>/txt/*.txt`
+- ✅ `runs/<run_id>/run_config.json`
+
+#### scoring-agent
+
+**Auto-Write:**
+
+- ✅ `runs/<run_id>/metadata/ranked_*.json` (Ranking Results)
+- ✅ `runs/<run_id>/logs/scoring_*.jsonl`
+
+**Auto-Read:**
+
+- ✅ `runs/<run_id>/metadata/candidates.json`
+- ✅ `runs/<run_id>/run_config.json`
+
+#### search-agent
+
+**Auto-Write:**
+
+- ✅ `runs/<run_id>/metadata/search_strings.json` (Primary Output)
+- ✅ `runs/<run_id>/logs/search_*.jsonl`
+
+**Auto-Read:**
+
+- ✅ `runs/<run_id>/metadata/databases.json`
+- ✅ `runs/<run_id>/run_config.json`
+
+#### Global Safe Paths (alle Agents)
+
+**Auto-Write:**
+
+- ✅ `/tmp/*`
+- ✅ `runs/<run_id>/logs/*`
+
+**Auto-Read:**
+
+- ✅ `config/*`
+- ✅ `docs/*`
+- ✅ `schemas/*`
+- ✅ `.claude/shared/*`
+
+**Testing:**
+
+```bash
+# Test ob setup-agent run_config.json schreiben darf (sollte: yes)
+python3 scripts/auto_permissions.py setup-agent write runs/test/run_config.json
+# Output: ✅ ALLOWED: Auto-allowed for setup-agent (write)
+
+# Test ob blocked path geht (sollte: no)
+python3 scripts/auto_permissions.py setup-agent read ~/.ssh/id_rsa
+# Output: ❌ DENIED: Path is blocked (security)
+```
+
+**Integration:**
+
+Orchestrator setzt vor jedem Agent-Spawn:
+
+```bash
+export CURRENT_AGENT="setup-agent"
+Task(subagent_type="setup-agent", ...)
 ```
 
 ---
@@ -432,7 +564,6 @@ Vor jeder Agent-Ausführung:
 ## 📖 Weitere Ressourcen
 
 - **[Threat Model](../../docs/THREAT_MODEL.md)** - Vollständige Bedrohungsanalyse
-- **[Security Guide](../../docs/developer-guide/05-security.md)** - Developer-Security-Best-Practices
 - **[Red Team Tests](../../tests/red_team/)** - Security-Test-Suite
 
 ---

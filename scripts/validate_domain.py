@@ -143,9 +143,21 @@ def validate_domain_proxy_mode(url: str, config: dict, referer: str = None, sess
 
     # Rule 5: Check session tracking
     session = check_session_tracking(session_file)
-    session_from_dbis = session.get('started_from_dbis', False)
+    session_from_dbis = session.get('started_from_dbis', False) or session.get('started_at_dbis', False)
+    allowed_redirects = session.get('allowed_redirects', [])
 
-    # Rule 6: Allow database if from DBIS
+    # Rule 6: Check if domain is in allowed_redirects (NEW)
+    if hostname in allowed_redirects:
+        return {
+            'allowed': True,
+            'reason': f'Domain in session allowed_redirects (came from DBIS): {hostname}',
+            'risk_level': 'LOW',
+            'mode': 'proxy',
+            'via_proxy': True,
+            'came_from_dbis': True
+        }
+
+    # Rule 7: Allow database if from DBIS (referer or session)
     if referer_is_dbis or session_from_dbis:
         return {
             'allowed': True,
@@ -157,7 +169,7 @@ def validate_domain_proxy_mode(url: str, config: dict, referer: str = None, sess
             'session_from_dbis': session_from_dbis
         }
 
-    # Rule 7: Block direct navigation to databases
+    # Rule 8: Block direct navigation to databases
     # If we get here, it's direct navigation (no DBIS referer/session)
     return {
         'allowed': False,

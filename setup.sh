@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # 🛠️ AcademicAgent - Vollständiges Setup-Script
-# Version: 3.1 (Enhanced Security Edition)
-# Letztes Update: 2026-02-18
+# Version: 3.3 (Validation-Gate & Python Dependencies Edition)
+# Letztes Update: 2026-02-22
 # Zweck: Frische Installation auf neuer VM mit allen Abhängigkeiten
 
 set -euo pipefail  # Bei Fehler abbrechen, uninitialisierte Variablen erkennen, Pipe-Fehler nicht ignorieren
@@ -230,7 +230,24 @@ fi
 echo ""
 
 # ============================================
-# 12. Installiere Playwright (Nur CDP-Client)
+# 12. Installiere Python-Abhängigkeiten
+# ============================================
+echo -e "${BLUE}📦 Installiere Python-Abhängigkeiten...${NC}"
+
+if [ -f "requirements.txt" ]; then
+  echo -e "${YELLOW}Installiere Python-Pakete via pip...${NC}"
+  pip3 install -r requirements.txt
+  echo -e "${GREEN}✅ Python-Abhängigkeiten installiert (jsonschema)${NC}"
+else
+  echo -e "${RED}❌ requirements.txt nicht gefunden!${NC}"
+  echo "Bitte stelle sicher dass requirements.txt im Projekt-Root vorhanden ist."
+  exit 1
+fi
+
+echo ""
+
+# ============================================
+# 13. Installiere Playwright (Nur CDP-Client)
 # ============================================
 echo -e "${BLUE}🎭 Installiere Playwright...${NC}"
 echo -e "${YELLOW}Hinweis: Playwright wird NUR als CDP-Client verwendet um sich mit echtem Chrome zu verbinden${NC}"
@@ -262,7 +279,7 @@ fi
 echo ""
 
 # ============================================
-# 13. Verzeichnisstruktur erstellen
+# 14. Verzeichnisstruktur erstellen
 # ============================================
 echo -e "${BLUE}📁 Erstelle Verzeichnisstruktur...${NC}"
 
@@ -282,7 +299,7 @@ echo "   - logs/     (Globale Logs)"
 echo ""
 
 # ============================================
-# 14. Berechtigungen setzen
+# 15. Berechtigungen setzen
 # ============================================
 echo -e "${BLUE}🔒 Setze Berechtigungen...${NC}"
 
@@ -295,7 +312,7 @@ echo -e "${GREEN}✅ Berechtigungen gesetzt${NC}"
 echo ""
 
 # ============================================
-# 14b. Installiere Git Pre-Commit Hooks
+# 15b. Installiere Git Pre-Commit Hooks
 # ============================================
 echo -e "${BLUE}🔒 Installiere Git Pre-Commit Hooks...${NC}"
 
@@ -309,7 +326,7 @@ fi
 echo ""
 
 # ============================================
-# 15. Verifizierung
+# 16. Verifizierung
 # ============================================
 echo -e "${BLUE}🧪 Verifiziere Installation...${NC}"
 echo ""
@@ -365,6 +382,14 @@ else
   VERIFICATION_FAILED=true
 fi
 
+echo -n "  Prüfe jsonschema (Python)... "
+if python3 -c "import jsonschema" 2> /dev/null; then
+  echo -e "${GREEN}✅${NC}"
+else
+  echo -e "${RED}❌${NC}"
+  VERIFICATION_FAILED=true
+fi
+
 echo -n "  Prüfe jq... "
 if command -v jq &> /dev/null; then
   echo -e "${GREEN}✅${NC}"
@@ -411,7 +436,7 @@ if [ "$VERIFICATION_FAILED" = true ]; then
 fi
 
 # ============================================
-# 16. Encryption-at-Rest Check (MANDATORY für Production)
+# 17. Encryption-at-Rest Check (MANDATORY für Production)
 # ============================================
 echo ""
 echo -e "${BLUE}🔒 Prüfe Disk-Encryption (MANDATORY für Production)...${NC}"
@@ -458,7 +483,7 @@ fi
 echo ""
 
 # ============================================
-# 17. Erfolgsmeldung
+# 18. Erfolgsmeldung
 # ============================================
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

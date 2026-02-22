@@ -208,7 +208,11 @@ read
 
 ```bash
 # Validation failed for agent output
-python3 scripts/validate_json.py --file metadata/candidates.json --schema schemas/candidates_schema.json
+python3 scripts/validation_gate.py \
+  --agent browser-agent \
+  --phase 2 \
+  --output-file metadata/candidates.json \
+  --run-id $RUN_ID
 
 if [ $? -ne 0 ]; then
   # Validation failed - log error

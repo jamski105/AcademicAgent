@@ -9,6 +9,7 @@
       "Read(.env.*)",
       "Read(./secrets/**)",
       "Read(secrets/**)",
+      "Read(~/.ssh/**)",
       "Bash(curl *)",
       "Bash(wget *)",
       "Bash(nc *)",
@@ -22,6 +23,42 @@
       "Bash(dd *)",
       "Bash(mkfs*)"
     ],
+    "allow": [
+      "Read",
+      "Grep",
+      "Glob",
+      "Write(runs/**)",
+      "Write(/tmp/*)",
+      "Edit(runs/**)",
+      "Bash(python3 scripts/*)",
+      "Bash(python scripts/*)",
+      "Bash(node scripts/*)",
+      "Bash(bash scripts/*)",
+      "Bash(sh scripts/*)",
+      "Bash(chmod +x scripts/*)",
+      "Bash(export CURRENT_AGENT=*)",
+      "Bash(ls *)",
+      "Bash(cat runs/**)",
+      "Bash(head runs/**)",
+      "Bash(tail runs/**)",
+      "Bash(jq *)",
+      "Bash(grep *)",
+      "Bash(find runs/**)",
+      "Bash(mkdir -p runs/**)",
+      "Bash(mv runs/** runs/**)",
+      "Bash(cp runs/** runs/**)",
+      "Bash(date *)",
+      "Bash(echo *)",
+      "Bash(pwd)",
+      "Bash(which *)",
+      "Bash(wc *)",
+      "Bash(sort *)",
+      "Bash(uniq *)",
+      "Bash(sleep *)",
+      "Bash(test *)",
+      "Bash([ *)",
+      "Bash(pdftotext *)"
+    ],
     "ask": [
       "Edit",
       "Write",
@@ -29,13 +66,6 @@
       "WebFetch",
       "WebSearch",
       "Task(*)"
-    ],
-    "allow": [
-      "Read",
-      "Grep",
-      "Glob",
-      "Write(runs/**)",
-      "Edit(runs/**)"
     ]
   }
 }

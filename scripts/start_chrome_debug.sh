@@ -49,26 +49,44 @@ echo ""
 # Beende existierendes Chrome auf Port 9222
 lsof -ti:$DEBUG_PORT | xargs kill -9 2>/dev/null || true
 
-# Starte Chrome
-"$CHROME_PATH" \
+# Starte Chrome im sichtbaren Modus (macOS-native)
+# open -a bringt Chrome automatisch in den Vordergrund
+open -a "Google Chrome" --new --args \
   --remote-debugging-port=$DEBUG_PORT \
   --user-data-dir="$USER_DATA_DIR" \
   --no-first-run \
   --no-default-browser-check \
-  > /dev/null 2>&1 &
+  2>&1
 
-CHROME_PID=$!
+# Warte kurz, damit Chrome starten kann
+sleep 2
 
-# Warte bis Chrome gestartet ist
-sleep 3
+# Ermittle PID des gestarteten Chrome-Prozesses
+CHROME_PID=$(lsof -ti:$DEBUG_PORT 2>/dev/null | head -1)
 
-# Prüfe ob Chrome gestartet ist
-if ! lsof -i:$DEBUG_PORT > /dev/null 2>&1; then
-  echo "❌ Chrome konnte nicht gestartet werden"
-  exit 1
-fi
+# Prüfe ob Chrome erfolgreich gestartet ist
+RETRY_COUNT=0
+MAX_RETRIES=5
 
-echo "✅ Chrome gestartet (PID: $CHROME_PID)"
+while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+  if lsof -i:$DEBUG_PORT > /dev/null 2>&1; then
+    CHROME_PID=$(lsof -ti:$DEBUG_PORT 2>/dev/null | head -1)
+    echo "✅ Chrome gestartet und sichtbar (PID: $CHROME_PID)"
+    echo "   Chrome-Fenster sollte jetzt auf deinem Desktop erscheinen!"
+    break
+  fi
+
+  RETRY_COUNT=$((RETRY_COUNT + 1))
+  if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+    echo "⏳ Warte auf Chrome-Start (Versuch $RETRY_COUNT/$MAX_RETRIES)..."
+    sleep 2
+  else
+    echo "❌ Chrome konnte nicht gestartet werden"
+    echo "   Prüfe ob Google Chrome installiert ist unter:"
+    echo "   $CHROME_PATH"
+    exit 1
+  fi
+done
 echo ""
 echo "📋 Verwendung:"
 echo ""

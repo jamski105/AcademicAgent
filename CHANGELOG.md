@@ -6,6 +6,69 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [3.2.2] - 2026-02-22 (Orchestrator Robustness Fixes)
+
+### Orchestrator Robustness Enhancements
+
+#### Tool-Call-First Pattern (CRITICAL)
+
+- **NEW Section:** "CRITICAL EXECUTION PATTERN (MANDATORY)" in orchestrator-agent.md
+- **Problem solved:** Agent stopping mid-workflow (announcing actions but not executing them)
+- **Implementation:** Mandatory order documented: Tool-Call → Wait → Text → Continue
+- **Examples:** WRONG vs. CORRECT patterns with detailed explanations
+- **Location:** [orchestrator-agent.md:98-180](../.claude/agents/orchestrator-agent.md#L98-L180)
+
+**Impact:** Prevents workflow stops between phases - enables autonomous operation
+
+#### Retry-Logic for Agent-Spawns (HIGH)
+
+- **NEW Section:** "MANDATORY: Retry-Logic für JEDEN Agent-Spawn" in orchestrator-agent.md
+- **Problem solved:** Transient errors (timeouts, network issues, CDP crashes) causing workflow aborts
+- **Implementation:** Full Bash retry-pattern (132 lines) with exponential backoff (1s, 2s, 4s)
+- **Features:**
+  - Max 3 retries per agent spawn
+  - Structured logging (Info, Warning, Critical)
+  - CLI-box formatting for user feedback
+  - Troubleshooting guide on final failure
+- **Location:** [orchestrator-agent.md:182-313](../.claude/agents/orchestrator-agent.md#L182-L313)
+
+**Impact:** Production-grade reliability - workflow continues despite transient errors
+
+#### No User-Wait Between Phases (HIGH)
+
+- **NEW Section:** "BETWEEN PHASES: NO USER QUESTIONS ALLOWED" in orchestrator-agent.md
+- **Problem solved:** Agent waiting for user confirmation between phases
+- **Implementation:**
+  - Explicit list of 6 forbidden user prompts
+  - Checkpoint table defining where user-input IS allowed (Phases 0, 1, 3, 5, 6)
+  - Code examples (CORRECT vs. WRONG patterns)
+  - Automatic phase-transition logic
+- **Location:** [orchestrator-agent.md:315-420](../.claude/agents/orchestrator-agent.md#L315-L420)
+
+**Impact:** Fully autonomous workflow - no manual "Continue" clicks required
+
+### Changed
+
+- **orchestrator-agent.md:** Enhanced with 3 new robustness sections (322 new lines)
+- **docs/IMPLEMENTATION_STATUS.md:** New tracking document for robustness fixes
+- **Robustness Score:** Improved from "partially implemented" to "fully implemented"
+
+### Documentation
+
+- **NEW:** `docs/IMPLEMENTATION_STATUS.md` - Complete status tracking for all 7 robustness problems
+- **Updated:** `.claude/agents/orchestrator-agent.md` - Comprehensive robustness patterns
+- **Reference:** `.claude/shared/ORCHESTRATOR_ROBUSTNESS_FIXES.md` - Original problem definitions
+
+### Testing
+
+Required E2E tests (documented in IMPLEMENTATION_STATUS.md):
+
+- [ ] Workflow ohne Stops (validate autonomous Phase 0→6 execution)
+- [ ] Retry-Mechanismus (simulate agent timeout, verify automatic retry)
+- [ ] Keine User-Prompts zwischen Phasen (verify only checkpoints prompt user)
+
+---
+
 ## [3.2.1] - 2026-02-20 (Audit Fixes)
 
 ### Added

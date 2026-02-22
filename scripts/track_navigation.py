@@ -24,8 +24,10 @@ def load_session(session_file: Path) -> dict:
         return {
             'session_active': False,
             'started_from_dbis': False,
+            'started_at_dbis': False,
             'navigation_count': 0,
             'navigation_history': [],
+            'allowed_redirects': [],  # NEW: Domains erlaubt via DBIS
             'first_url': None,
             'created_at': datetime.now().isoformat()
         }
@@ -63,6 +65,7 @@ def track_navigation(url: str, session_file: Path) -> dict:
         if is_dbis_domain(url):
             session['session_active'] = True
             session['started_from_dbis'] = True
+            session['started_at_dbis'] = True  # NEW: Compatibility mit validate_domain.py
             session['first_url'] = url
             session['navigation_count'] = 1
             session['navigation_history'] = [
@@ -89,6 +92,20 @@ def track_navigation(url: str, session_file: Path) -> dict:
 
     # Subsequent navigation
     session['navigation_count'] += 1
+
+    # Extract domain for allowed_redirects tracking (NEW)
+    try:
+        parsed_url = urlparse(url)
+        domain = parsed_url.hostname
+
+        # Add domain to allowed_redirects if not already there
+        if domain and domain not in session.get('allowed_redirects', []):
+            if 'allowed_redirects' not in session:
+                session['allowed_redirects'] = []
+            session['allowed_redirects'].append(domain)
+    except:
+        pass  # Ignore parsing errors
+
     session['navigation_history'].append({
         'url': url,
         'timestamp': datetime.now().isoformat(),

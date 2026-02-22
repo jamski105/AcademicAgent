@@ -769,7 +769,6 @@ except SafeBashError as e:
 
 ### ⚙️ Konfiguration & Technisches
 
-- **[docs/DBIS_USAGE.md](docs/DBIS_USAGE.md)** - Technische DBIS-Integration (für Agents)
 - **[UPGRADE.md](UPGRADE.md)** - Upgrade-Anleitung zwischen Versionen
 - **[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)** - Community-Verhaltenskodex
 

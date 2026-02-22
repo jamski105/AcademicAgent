@@ -1,0 +1,13 @@
+{
+  "name": "academic-agent",
+  "version": "1.0.0",
+  "description": "Academic research automation with browser control",
+  "private": true,
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "playwright": "^1.49.0"
+  },
+  "scripts": {
+    "start-browser": "bash scripts/start_chrome_debug.sh"
+  }
+}
