@@ -1,16 +1,16 @@
 #!/bin/bash
 
 # 🌐 Smart Chrome Setup with Auto-DBIS Check
-# Version 2.1 - Interactive Mode (macOS ONLY)
+# Interactive Mode (macOS ONLY)
 
 set -euo pipefail
 
-# Colors for output
+# Farben für Ausgabe
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+NC='\033[0m' # Keine Farbe
 
 # macOS-Only Check
 if [[ "$OSTYPE" != "darwin"* ]]; then
@@ -25,23 +25,23 @@ fi
 echo -e "${BLUE}🌐 Smart Chrome Setup - AcademicAgent${NC}"
 echo ""
 
-# Chrome executable path
+# Chrome-Pfad
 CHROME_PATH="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 
-# Check if Chrome is installed
+# Prüfe ob Chrome installiert ist
 if [ ! -f "$CHROME_PATH" ]; then
-  echo -e "${RED}❌ Google Chrome not found${NC}"
+  echo -e "${RED}❌ Google Chrome nicht gefunden${NC}"
   echo ""
-  echo "Please install Google Chrome first:"
+  echo "Bitte installiere zuerst Google Chrome:"
   echo "  https://www.google.com/chrome/"
   exit 1
 fi
 
-# User data directory (separate from normal Chrome profile)
+# User-Data-Verzeichnis (getrennt vom normalen Chrome-Profil)
 USER_DATA_DIR="/tmp/chrome-debug-academic-agent"
 mkdir -p "$USER_DATA_DIR"
 
-# Temp directory for screenshots
+# Temp-Verzeichnis für Screenshots
 TEMP_DIR="/tmp/academic-agent-setup"
 mkdir -p "$TEMP_DIR"
 
@@ -49,43 +49,43 @@ mkdir -p "$TEMP_DIR"
 # Hinweis: USER_DATA_DIR bleibt erhalten damit Chrome-Session persistent ist
 trap 'rm -rf "$TEMP_DIR"' EXIT
 
-# Remote debugging port
+# Remote-Debugging-Port
 DEBUG_PORT=9222
 
-# Check if Chrome already running
+# Prüfe ob Chrome bereits läuft
 if lsof -i:$DEBUG_PORT > /dev/null 2>&1; then
-  echo -e "${YELLOW}⚠️  Chrome already running on port $DEBUG_PORT${NC}"
+  echo -e "${YELLOW}⚠️  Chrome läuft bereits auf Port $DEBUG_PORT${NC}"
   echo ""
-  echo "Options:"
-  echo "  1. Use existing instance (recommended)"
-  echo "  2. Restart Chrome"
+  echo "Optionen:"
+  echo "  1. Existierende Instanz verwenden (empfohlen)"
+  echo "  2. Chrome neu starten"
   echo ""
-  read -p "Choose (1/2): " choice
+  read -p "Wähle (1/2): " choice
 
   if [ "$choice" == "2" ]; then
     echo ""
-    echo -e "${YELLOW}Restarting Chrome...${NC}"
+    echo -e "${YELLOW}Starte Chrome neu...${NC}"
     lsof -ti:$DEBUG_PORT | xargs kill -9 2>/dev/null || true
     sleep 2
   else
     echo ""
-    echo -e "${GREEN}✅ Using existing Chrome instance${NC}"
+    echo -e "${GREEN}✅ Verwende existierende Chrome-Instanz${NC}"
     echo ""
-    # Jump to verification
+    # Springe zur Verifikation
     CHROME_PID=$(lsof -ti:$DEBUG_PORT)
     REUSED_CHROME=true
   fi
 fi
 
-# Start Chrome if not running
+# Starte Chrome falls nicht laufend
 if [ "$REUSED_CHROME" != "true" ]; then
-  echo -e "${BLUE}[1/4] Starting Chrome with Remote Debugging...${NC}"
+  echo -e "${BLUE}[1/4] Starte Chrome mit Remote-Debugging...${NC}"
 
-  # Kill any existing Chrome on port (safety)
+  # Beende existierendes Chrome auf Port (Sicherheit)
   lsof -ti:$DEBUG_PORT | xargs kill -9 2>/dev/null || true
   sleep 1
 
-  # Start Chrome
+  # Starte Chrome
   "$CHROME_PATH" \
     --remote-debugging-port=$DEBUG_PORT \
     --user-data-dir="$USER_DATA_DIR" \
@@ -95,64 +95,64 @@ if [ "$REUSED_CHROME" != "true" ]; then
 
   CHROME_PID=$!
 
-  # Wait for Chrome to start
-  echo -n "  Starting"
+  # Warte bis Chrome gestartet ist
+  echo -n "  Starte"
   for i in {1..5}; do
     sleep 1
     echo -n "."
   done
   echo ""
 
-  # Check if Chrome started
+  # Prüfe ob Chrome gestartet ist
   if ! lsof -i:$DEBUG_PORT > /dev/null 2>&1; then
-    echo -e "${RED}❌ Chrome failed to start${NC}"
+    echo -e "${RED}❌ Chrome konnte nicht gestartet werden${NC}"
     exit 1
   fi
 
-  echo -e "${GREEN}✅ Chrome started (PID: $CHROME_PID)${NC}"
+  echo -e "${GREEN}✅ Chrome gestartet (PID: $CHROME_PID)${NC}"
   echo ""
 
-  # Save PID
+  # Speichere PID
   echo $CHROME_PID > /tmp/chrome-debug-pid.txt
 fi
 
-# Test CDP connection
-echo -e "${BLUE}[2/4] Testing CDP connection...${NC}"
+# Teste CDP-Verbindung
+echo -e "${BLUE}[2/4] Teste CDP-Verbindung...${NC}"
 
 CDP_TEST=$(curl -s http://localhost:$DEBUG_PORT/json/version 2>/dev/null || echo "FAILED")
 
 if [[ "$CDP_TEST" == "FAILED" ]]; then
-  echo -e "${RED}❌ CDP connection failed${NC}"
+  echo -e "${RED}❌ CDP-Verbindung fehlgeschlagen${NC}"
   echo ""
-  echo "Troubleshooting:"
-  echo "  1. Check if Chrome is running: lsof -i:$DEBUG_PORT"
-  echo "  2. Try restarting this script"
+  echo "Fehlerbehebung:"
+  echo "  1. Prüfe ob Chrome läuft: lsof -i:$DEBUG_PORT"
+  echo "  2. Versuche dieses Script neu zu starten"
   exit 1
 fi
 
-echo -e "${GREEN}✅ CDP connection working${NC}"
+echo -e "${GREEN}✅ CDP-Verbindung funktioniert${NC}"
 echo ""
 
-# Open DBIS in browser
-echo -e "${BLUE}[3/4] Opening DBIS...${NC}"
+# Öffne DBIS im Browser
+echo -e "${BLUE}[3/4] Öffne DBIS...${NC}"
 
-# Use Node.js helper to navigate
+# Nutze Node.js Helper zur Navigation
 if [ -f "scripts/browser_cdp_helper.js" ]; then
   node scripts/browser_cdp_helper.js navigate "https://dbis.ur.de" 2>/dev/null || true
   sleep 3
-  echo -e "${GREEN}✅ DBIS opened in Chrome${NC}"
+  echo -e "${GREEN}✅ DBIS in Chrome geöffnet${NC}"
 else
-  echo -e "${YELLOW}⚠️  Browser helper not found, opening manually${NC}"
+  echo -e "${YELLOW}⚠️  Browser-Helper nicht gefunden, öffne manuell${NC}"
   open -a "Google Chrome" "https://dbis.ur.de" 2>/dev/null || true
 fi
 
 echo ""
 
-# Check DBIS login status
-echo -e "${BLUE}[4/4] Checking DBIS login status...${NC}"
+# Prüfe DBIS-Login-Status
+echo -e "${BLUE}[4/4] Prüfe DBIS-Login-Status...${NC}"
 echo ""
 
-# Take screenshot
+# Erstelle Screenshot
 SCREENSHOT_PATH="$TEMP_DIR/dbis_check.png"
 
 if [ -f "scripts/browser_cdp_helper.js" ]; then
@@ -160,73 +160,73 @@ if [ -f "scripts/browser_cdp_helper.js" ]; then
   sleep 1
 fi
 
-# Check if screenshot exists
+# Prüfe ob Screenshot existiert
 if [ -f "$SCREENSHOT_PATH" ]; then
-  echo -e "${GREEN}✅ Screenshot captured${NC}"
+  echo -e "${GREEN}✅ Screenshot erfasst${NC}"
   echo ""
-  echo "Please check the Chrome window:"
-  echo "  - If you see a login page: Please log in now"
-  echo "  - If already logged in: Continue"
+  echo "Bitte prüfe das Chrome-Fenster:"
+  echo "  - Falls eine Login-Seite angezeigt wird: Bitte jetzt einloggen"
+  echo "  - Falls bereits eingeloggt: Fortfahren"
 else
-  echo -e "${YELLOW}⚠️  Could not capture screenshot${NC}"
+  echo -e "${YELLOW}⚠️  Screenshot konnte nicht erstellt werden${NC}"
 fi
 
 echo ""
-echo -e "${YELLOW}📋 Please verify in Chrome window:${NC}"
+echo -e "${YELLOW}📋 Bitte verifiziere im Chrome-Fenster:${NC}"
 echo ""
-echo "  1. DBIS is loaded (https://dbis.ur.de)"
-echo "  2. You are logged in (or can access databases)"
-echo "  3. If login required: Log in now"
+echo "  1. DBIS ist geladen (https://dbis.ur.de)"
+echo "  2. Du bist eingeloggt (oder kannst auf Datenbanken zugreifen)"
+echo "  3. Falls Login erforderlich: Jetzt einloggen"
 echo ""
-read -p "Press ENTER when ready to continue..."
+read -p "Drücke ENTER wenn bereit zum Fortfahren..."
 
 echo ""
-echo -e "${BLUE}🔍 Verifying DBIS access...${NC}"
+echo -e "${BLUE}🔍 Verifiziere DBIS-Zugriff...${NC}"
 
-# Take another screenshot after user confirms
+# Erstelle einen weiteren Screenshot nach Benutzerbestätigung
 SCREENSHOT_PATH_2="$TEMP_DIR/dbis_verified.png"
 if [ -f "scripts/browser_cdp_helper.js" ]; then
   node scripts/browser_cdp_helper.js screenshot "$SCREENSHOT_PATH_2" 2>/dev/null || true
 fi
 
-echo -e "${GREEN}✅ DBIS access verified${NC}"
+echo -e "${GREEN}✅ DBIS-Zugriff verifiziert${NC}"
 echo ""
 
-# Summary
+# Zusammenfassung
 echo -e "${GREEN}═══════════════════════════════════════════════════${NC}"
-echo -e "${GREEN}✅ Setup Complete!${NC}"
+echo -e "${GREEN}✅ Setup abgeschlossen!${NC}"
 echo -e "${GREEN}═══════════════════════════════════════════════════${NC}"
 echo ""
-echo -e "${BLUE}📋 Summary:${NC}"
-echo "  ✅ Chrome running (PID: $CHROME_PID)"
-echo "  ✅ CDP port: http://localhost:$DEBUG_PORT"
-echo "  ✅ DBIS access: Verified"
+echo -e "${BLUE}📋 Zusammenfassung:${NC}"
+echo "  ✅ Chrome läuft (PID: $CHROME_PID)"
+echo "  ✅ CDP-Port: http://localhost:$DEBUG_PORT"
+echo "  ✅ DBIS-Zugriff: Verifiziert"
 echo ""
-echo -e "${BLUE}🚀 Next Steps:${NC}"
+echo -e "${BLUE}🚀 Nächste Schritte:${NC}"
 echo ""
-echo "  1. Open VS Code in your AcademicAgent directory:"
+echo "  1. Öffne VS Code in deinem AcademicAgent-Verzeichnis:"
 echo "     cd ~/AcademicAgent && code ."
 echo ""
-echo "  2. Start Claude Code Chat"
+echo "  2. Starte Claude Code Chat"
 echo ""
-echo "  3. Run the Interactive Setup Agent:"
+echo "  3. Führe den Interactive Setup Agent aus:"
 echo "     \"Start interactive research setup\""
 echo ""
-echo -e "${YELLOW}⚠️  Keep this Chrome window open during research!${NC}"
+echo -e "${YELLOW}⚠️  Halte dieses Chrome-Fenster während der Recherche geöffnet!${NC}"
 echo ""
-echo -e "${BLUE}📚 Useful Commands:${NC}"
+echo -e "${BLUE}📚 Nützliche Befehle:${NC}"
 echo ""
-echo "  Test CDP:     curl http://localhost:$DEBUG_PORT/json/version"
+echo "  CDP testen:   curl http://localhost:$DEBUG_PORT/json/version"
 echo "  Chrome PID:   echo $CHROME_PID"
-echo "  Stop Chrome:  kill $CHROME_PID"
+echo "  Chrome stoppen:  kill $CHROME_PID"
 echo ""
-echo -e "${GREEN}Ready to start researching! 🎉${NC}"
+echo -e "${GREEN}Bereit zum Recherchieren! 🎉${NC}"
 echo ""
 
-# Export CDP URL for current shell
+# Exportiere CDP-URL für aktuelle Shell
 export PLAYWRIGHT_CDP_URL="http://localhost:$DEBUG_PORT"
 
-# Create status file for agent to read
+# Erstelle Status-Datei für Agent
 STATUS_FILE="$TEMP_DIR/chrome_status.json"
 cat > "$STATUS_FILE" << EOF
 {
@@ -239,5 +239,5 @@ cat > "$STATUS_FILE" << EOF
 }
 EOF
 
-echo -e "${GREEN}Status saved: $STATUS_FILE${NC}"
+echo -e "${GREEN}Status gespeichert: $STATUS_FILE${NC}"
 echo ""

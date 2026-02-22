@@ -1,7 +1,8 @@
 # 📁 AcademicAgent - Projektstruktur
 
-**Version:** 3.3
 **Letzte Aktualisierung:** 2026-02-22
+
+> 📌 **Hinweis:** Dieses Dokument beschreibt die Dateistruktur für Nutzer UND Entwickler. Für normale Nutzung genügt die [README.md](../README.md).
 
 Diese Dokumentation beschreibt die Ordnerstruktur und den Zweck aller Verzeichnisse und wichtigen Dateien im AcademicAgent-Projekt.
 
@@ -142,7 +143,7 @@ runs/
         └── llm_costs.jsonl
 ```
 
-**WICHTIG:** Dieses Verzeichnis ist in `.gitignore` (enthält große PDFs).
+**WICHTIG:** Dieses Verzeichnis ist in `.gitignore` enthalten (enthält große PDFs).
 
 ---
 
@@ -271,11 +272,11 @@ tests/
 
 ### Test-Kategorien
 
-| Kategorie | Beschreibung | Coverage |
-|-----------|--------------|----------|
+| Kategorie | Beschreibung | Abdeckung |
+|-----------|--------------|-----------|
 | **Unit Tests** | Einzelne Module isoliert testen | 85%+ |
 | **E2E Tests** | Voller Workflow Phase 0-6 | Manuell |
-| **Red-Team Tests** | Injection, XSS, Command-Injection | 90%+ Pass |
+| **Red-Team Tests** | Injection, XSS, Command-Injection | 90%+ Erfolg |
 | **Security Tests** | Domain-Validation, Safe-Bash | 100% |
 
 **Ausführen:**
@@ -301,13 +302,13 @@ GitHub Actions Workflows für automatisierte Tests und Validierung.
 |-----|--------------|
 | `setup-test` | Installiert Dependencies (Python, Node, Homebrew) |
 | `unit-tests` | Führt pytest mit Coverage aus |
-| `security-tests` | Red-Team-Tests (90% Pass-Rate erforderlich) |
+| `security-tests` | Red-Team-Tests (90% Erfolgsquote erforderlich) |
 | `script-validation` | Syntax-Checks für Python/Bash |
 | `secrets-scan` | Scannt nach API-Keys und Secrets |
 | `build-validation` | Prüft Dateistruktur, Agent-Configs |
 | `status-report` | Aggregiert alle Ergebnisse |
 
-**Trigger:**
+**Auslöser:**
 
 - Push zu `main` oder `develop`
 - Pull Requests zu `main`
@@ -436,11 +437,12 @@ Wenn du **AcademicAgent erweitern** möchtest:
 ## 🔗 Weiterführende Ressourcen
 
 - **Haupt-README:** [README.md](../README.md)
-- **Sicherheit:** [SECURITY.md](../SECURITY.md)
-- **Fehlerbehandlung:** [ERROR_RECOVERY.md](../ERROR_RECOVERY.md)
-- **Changelog:** [CHANGELOG.md](../CHANGELOG.md)
-- **GitHub Issues:** https://github.com/jamski105/AcademicAgent/issues
+- **Sicherheit:** [SECURITY.md](SECURITY.md)
+- **Fehlerbehandlung:** [ERROR_RECOVERY.md](ERROR_RECOVERY.md)
+- **Datenschutz:** [PRIVACY.md](PRIVACY.md)
+- **Bedrohungsmodell:** [THREAT_MODEL.md](THREAT_MODEL.md)
+- **GitHub Issues:** [github.com/jamski105/AcademicAgent/issues](https://github.com/jamski105/AcademicAgent/issues)
 
 ---
 
-**Letzte Aktualisierung:** 2026-02-22 | **Version:** 3.3
+**Letzte Aktualisierung:** 2026-02-22

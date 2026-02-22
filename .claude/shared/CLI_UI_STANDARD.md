@@ -1,6 +1,5 @@
 # CLI UI Standard für alle Academic Agents
 
-**Version:** 2.2
 **Gilt für:** Alle Agents (setup, orchestrator, browser, extraction, scoring, search)
 
 ---

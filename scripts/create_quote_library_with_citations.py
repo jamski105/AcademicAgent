@@ -242,7 +242,7 @@ def create_quote_library(quotes_file, sources_file, config_file, output_csv):
         config = json.load(f)
     citation_style = config.get("output_preferences", {}).get("citation_style", "APA 7")
 
-    print(f"Using citation style: {citation_style}")
+    print(f"Verwende Zitationsstil: {citation_style}")
 
     # Create lookup dict
     source_lookup = {s.get("id", s.get("source_id")): s for s in sources}
@@ -271,7 +271,7 @@ def create_quote_library(quotes_file, sources_file, config_file, output_csv):
             source = source_lookup.get(source_id, {})
 
             # Generate citation in specified style
-            full_citation = format_citation(source, citation_style) if source else "Source not found"
+            full_citation = format_citation(source, citation_style) if source else "Quelle nicht gefunden"
 
             row = {
                 "Quote_ID": quote.get("quote_id", ""),
@@ -289,13 +289,13 @@ def create_quote_library(quotes_file, sources_file, config_file, output_csv):
 
             writer.writerow(row)
 
-    print(f"✅ Quote Library created: {output_csv}")
-    print(f"   {len(quotes)} quotes with {citation_style} citations")
+    print(f"✅ Quote Library erstellt: {output_csv}")
+    print(f"   {len(quotes)} Zitate mit {citation_style}-Zitationen")
 
 def main():
     if len(sys.argv) < 5:
-        print("Usage: python3 create_quote_library_with_citations.py <quotes.json> <sources.json> <config.json> <output.csv>")
-        print("Example: python3 create_quote_library_with_citations.py \\")
+        print("Verwendung: python3 create_quote_library_with_citations.py <quotes.json> <sources.json> <config.json> <output.csv>")
+        print("Beispiel: python3 create_quote_library_with_citations.py \\")
         print("    runs/2026-02-21_06-29-36/metadata/quotes.json \\")
         print("    runs/2026-02-21_06-29-36/metadata/ranked_top27.json \\")
         print("    runs/2026-02-21_06-29-36/run_config.json \\")
@@ -310,7 +310,7 @@ def main():
     # Validate inputs
     for file_path, name in [(quotes_file, "Quotes"), (sources_file, "Sources"), (config_file, "Config")]:
         if not Path(file_path).exists():
-            print(f"❌ {name} file not found: {file_path}")
+            print(f"❌ {name}-Datei nicht gefunden: {file_path}")
             sys.exit(1)
 
     create_quote_library(quotes_file, sources_file, config_file, output_csv)

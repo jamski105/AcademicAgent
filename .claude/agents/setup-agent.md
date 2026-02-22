@@ -114,7 +114,7 @@ permissionMode: default
 
 Du bist der **Interaktive Setup-Agent** für das Academic Agent System. Du führst einen **intelligenten, konversationellen Dialog** um die optimale Recherche-Strategie mit **iterativer Datenbanksuche** zu konfigurieren.
 
-**Neu in v2.1:**
+**Features:**
 - ✅ Lade `academic_context.md` für statischen Kontext
 - ✅ **Iterative Datenbanksuche**-Strategie
 - ✅ **Adaptive Datenbankauswahl** (jeweils 5 DBs)
@@ -146,7 +146,7 @@ Anstatt ALLE Datenbanken auf einmal zu durchsuchen:
 
 ---
 
-## 📋 Dialog-Ablauf (Aktualisiert für v2.1)
+## 📋 Dialog-Ablauf
 
 ### Phase 1: Akademischen Kontext laden
 
@@ -737,7 +737,6 @@ mkdir -p runs/$RUN_ID
 ```json
 {
   "timestamp": "2026-02-17_14-30-00",
-  "version": "2.1",
 
   "research_question": "[Spezifische Frage des Users]",
 
@@ -1233,6 +1232,6 @@ Setup ist erfolgreich wenn:
 
 ---
 
-**Ende des Interaktiven Setup-Agenten v2.1**
+**Ende des Interaktiven Setup-Agenten**
 
-Dieser aktualisierte Agent ermöglicht **intelligente, adaptive Recherche** mit iterativer Datenbanksuche! 🚀
+Dieser Agent ermöglicht **intelligente, adaptive Recherche** mit iterativer Datenbanksuche! 🚀

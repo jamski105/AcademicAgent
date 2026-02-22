@@ -1,6 +1,5 @@
 {
-  "version": "2.0",
-  "description": "Domain whitelist for AcademicAgent web access with DBIS proxy support",
+  "description": "Domain-Whitelist für AcademicAgent Webzugriff mit DBIS-Proxy-Unterstützung",
   "proxy_mode": "dbis_only",
   "trusted_proxies": [
     "dbis.ur.de",
@@ -14,7 +13,7 @@
     "allow_redirects_from_trusted_proxies": true,
     "session_tracking_required": true,
     "direct_navigation_blocked": true,
-    "description": "Only allow database access via DBIS. Direct navigation to databases is blocked to ensure university license compliance."
+    "description": "Erlaube Datenbankzugriff nur via DBIS. Direkte Navigation zu Datenbanken wird blockiert um Universitätslizenz-Compliance sicherzustellen."
   },
   "allowed_domains": [
     "ieeexplore.ieee.org",
@@ -70,11 +69,11 @@
     "https://arxiv.org/abs/*"
   ],
   "notes": {
-    "proxy_mode": "DBIS proxy mode ensures all database access goes through university authentication",
-    "trusted_proxies": "University proxy servers and authentication systems (DBIS, EZProxy, Shibboleth)",
-    "allowed_domains": "Legacy list - only used if session originated from DBIS",
-    "blocked_domains": "Copyright-infringing sites and pirate repositories",
-    "allowed_patterns": "Specific URL patterns that are always safe (e.g., DOI resolvers)",
-    "security": "Direct navigation to databases bypasses university license - only DBIS entry allowed"
+    "proxy_mode": "DBIS-Proxy-Modus stellt sicher, dass aller Datenbankzugriff über Universitätsauthentifizierung läuft",
+    "trusted_proxies": "Universitäts-Proxy-Server und Authentifizierungssysteme (DBIS, EZProxy, Shibboleth)",
+    "allowed_domains": "Legacy-Liste - wird nur verwendet wenn Session von DBIS stammt",
+    "blocked_domains": "Urheberrechtsverletzende Seiten und Piraterie-Repositories",
+    "allowed_patterns": "Spezifische URL-Muster die immer sicher sind (z.B. DOI-Resolver)",
+    "security": "Direkte Navigation zu Datenbanken umgeht Universitätslizenz - nur DBIS-Einstieg erlaubt"
   }
 }

@@ -53,31 +53,31 @@ def validate_schema(data: Dict[str, Any]) -> tuple[bool, Optional[str]]:
     # Check required fields
     for field in STATE_SCHEMA["required"]:
         if field not in data:
-            return False, f"Missing required field: {field}"
+            return False, f"Fehlendes Pflichtfeld: {field}"
 
     # Validate current_phase
     phase = data.get("current_phase")
     if not isinstance(phase, int) or phase < 0 or phase > 6:
-        return False, f"Invalid current_phase: {phase} (must be 0-6)"
+        return False, f"Ungültige current_phase: {phase} (muss 0-6 sein)"
 
     # Validate phases
     phases = data.get("phases", {})
     if not isinstance(phases, dict):
-        return False, "Field 'phases' must be an object"
+        return False, "Feld 'phases' muss ein Objekt sein"
 
     for phase_num, phase_data in phases.items():
         if not phase_num.isdigit() or int(phase_num) < 0 or int(phase_num) > 6:
-            return False, f"Invalid phase number: {phase_num}"
+            return False, f"Ungültige Phasennummer: {phase_num}"
 
         if not isinstance(phase_data, dict):
-            return False, f"Phase {phase_num} data must be an object"
+            return False, f"Phase {phase_num} Daten müssen ein Objekt sein"
 
         if "status" not in phase_data:
-            return False, f"Phase {phase_num} missing 'status' field"
+            return False, f"Phase {phase_num} fehlt 'status'-Feld"
 
         status = phase_data["status"]
         if status not in ["pending", "in_progress", "completed", "failed"]:
-            return False, f"Phase {phase_num} has invalid status: {status}"
+            return False, f"Phase {phase_num} hat ungültigen Status: {status}"
 
     return True, None
 
@@ -85,13 +85,13 @@ def validate_schema(data: Dict[str, Any]) -> tuple[bool, Optional[str]]:
 def validate_checksum(data: Dict[str, Any]) -> tuple[bool, Optional[str]]:
     """Validate checksum."""
     if "checksum" not in data:
-        return False, "Missing checksum field"
+        return False, "Fehlendes Checksum-Feld"
 
     stored_checksum = data["checksum"]
     calculated_checksum = calculate_checksum(data)
 
     if stored_checksum != calculated_checksum:
-        return False, f"Checksum mismatch! File may be corrupted."
+        return False, f"Checksum stimmt nicht überein! Datei könnte beschädigt sein."
 
     return True, None
 
@@ -105,30 +105,30 @@ def validate_state_file(state_file: Path) -> tuple[bool, Optional[str], Optional
     """
     # Check file exists
     if not state_file.exists():
-        return False, f"State file not found: {state_file}", None
+        return False, f"State-Datei nicht gefunden: {state_file}", None
 
-    # Check file is readable
+    # Prüfe ob Datei lesbar ist
     if not state_file.is_file():
-        return False, f"Not a file: {state_file}", None
+        return False, f"Keine Datei: {state_file}", None
 
     # Parse JSON
     try:
         with open(state_file, 'r') as f:
             data = json.load(f)
     except json.JSONDecodeError as e:
-        return False, f"Invalid JSON: {e}", None
+        return False, f"Ungültiges JSON: {e}", None
     except Exception as e:
-        return False, f"Failed to read file: {e}", None
+        return False, f"Fehler beim Lesen der Datei: {e}", None
 
-    # Validate schema
+    # Validiere Schema
     is_valid, error = validate_schema(data)
     if not is_valid:
-        return False, f"Schema validation failed: {error}", data
+        return False, f"Schema-Validierung fehlgeschlagen: {error}", data
 
-    # Validate checksum
+    # Validiere Checksum
     is_valid, error = validate_checksum(data)
     if not is_valid:
-        return False, f"Checksum validation failed: {error}", data
+        return False, f"Checksum-Validierung fehlgeschlagen: {error}", data
 
     return True, None, data
 
@@ -148,14 +148,14 @@ def add_checksum(state_file: Path) -> bool:
 
         return True
     except Exception as e:
-        print(f"❌ Failed to add checksum: {e}", file=sys.stderr)
+        print(f"❌ Fehler beim Hinzufügen der Checksum: {e}", file=sys.stderr)
         return False
 
 
 def main():
     """Main entry point."""
     if len(sys.argv) < 2:
-        print("Usage: validate_state.py <state_file> [--add-checksum]", file=sys.stderr)
+        print("Verwendung: validate_state.py <state_file> [--add-checksum]", file=sys.stderr)
         sys.exit(1)
 
     state_file = Path(sys.argv[1])
@@ -164,7 +164,7 @@ def main():
     if add_checksum_flag:
         # Add checksum mode
         if add_checksum(state_file):
-            print(f"✅ Checksum added to {state_file}")
+            print(f"✅ Checksum zu {state_file} hinzugefügt")
             sys.exit(0)
         else:
             sys.exit(1)
@@ -173,19 +173,19 @@ def main():
     is_valid, error, data = validate_state_file(state_file)
 
     if is_valid:
-        print(f"✅ State file is valid: {state_file}")
-        print(f"   Run ID: {data['run_id']}")
-        print(f"   Current Phase: {data['current_phase']}")
+        print(f"✅ State-Datei ist gültig: {state_file}")
+        print(f"   Run-ID: {data['run_id']}")
+        print(f"   Aktuelle Phase: {data['current_phase']}")
 
-        # Show phase status
+        # Zeige Phasen-Status
         phases = data.get('phases', {})
         completed = sum(1 for p in phases.values() if p.get('status') == 'completed')
-        print(f"   Completed Phases: {completed}/7")
+        print(f"   Abgeschlossene Phasen: {completed}/7")
 
         sys.exit(0)
     else:
-        print(f"❌ State file validation failed: {state_file}", file=sys.stderr)
-        print(f"   Error: {error}", file=sys.stderr)
+        print(f"❌ State-Datei-Validierung fehlgeschlagen: {state_file}", file=sys.stderr)
+        print(f"   Fehler: {error}", file=sys.stderr)
         sys.exit(1)
 
 

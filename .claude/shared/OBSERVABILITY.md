@@ -2,7 +2,6 @@
 
 **Zweck:** Standardisiertes Logging und Metriken für alle Academic Agent System Agents
 
-**Version:** 1.0
 **Erstellt:** 2026-02-22
 
 ---

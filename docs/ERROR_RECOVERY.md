@@ -1,6 +1,8 @@
 # 🚨 Fehlerbehandlungs-Anleitung
 
-Quick-Referenz für Fehlerbehandlung und Resume-Funktionalität.
+**Letzte Aktualisierung:** 2026-02-22
+
+Schnellreferenz für Fehlerbehandlung und Resume-Funktionalität.
 
 ---
 
@@ -93,8 +95,9 @@ python3 scripts/validate_state.py runs/[Timestamp]/metadata/research_state.json
 # 2. Chrome starten
 bash scripts/start_chrome_debug.sh
 
-# 3. VS Code öffnen
-code .
+# 3. Claude Code öffnen
+cd ~/AcademicAgent
+claude .
 
 # 4. Im Claude Code Chat:
 /academicagent
@@ -268,16 +271,16 @@ Der Agent wendet automatisch diese Strategien an:
 3. **Issue erstellen:**
    - Anhängen: `state.json` + `debug.tar.gz`
    - Error-Message kopieren
-   - GitHub Issues: [Link]
+   - GitHub Issues: https://github.com/jamski105/AcademicAgent/issues
 
 ---
 
 ## 📚 Related Documentation
 
-- **[SECURITY.md](SECURITY.md)** - Sicherheitsmaßnahmen & Red-Team-Tests
+- **[SECURITY.md](../SECURITY.md)** - Sicherheitsmaßnahmen & Red-Team-Tests
 - **[PRIVACY.md](PRIVACY.md)** - Datenschutz & Compliance
-- **[UPGRADE.md](UPGRADE.md)** - Upgrade-Anleitung (bei Version-Wechsel)
-- **[README.md](README.md)** - Vollständiger Feature-Guide
+- **[THREAT_MODEL.md](THREAT_MODEL.md)** - Bedrohungsmodell & Security-Analyse
+- **[README.md](../README.md)** - Vollständiger Feature-Guide
 
 ---
 

@@ -93,34 +93,34 @@ def check_threshold(metric_name, value, logger=None):
         # Alert if value is TOO LOW
         if value <= t["critical"]:
             if logger:
-                logger.critical(f"{metric_name} CRITICAL threshold",
+                logger.critical(f"{metric_name} KRITISCHE Schwelle",
                     value=value,
                     threshold=t["critical"],
-                    action="Immediate intervention required")
+                    action="Sofortiges Eingreifen erforderlich")
             return "critical"
         elif value <= t["warning"]:
             if logger:
-                logger.warning(f"{metric_name} warning threshold",
+                logger.warning(f"{metric_name} Warnschwelle",
                     value=value,
                     threshold=t["warning"],
-                    action="Review and consider adjustments")
+                    action="Überprüfung und Anpassung erwägen")
             return "warning"
 
     elif t["direction"] == "high":
         # Alert if value is TOO HIGH
         if value >= t["critical"]:
             if logger:
-                logger.critical(f"{metric_name} CRITICAL threshold exceeded",
+                logger.critical(f"{metric_name} KRITISCHE Schwelle überschritten",
                     value=value,
                     threshold=t["critical"],
-                    action="Stop and review")
+                    action="Stoppen und überprüfen")
             return "critical"
         elif value >= t["warning"]:
             if logger:
-                logger.warning(f"{metric_name} warning threshold exceeded",
+                logger.warning(f"{metric_name} Warnschwelle überschritten",
                     value=value,
                     threshold=t["warning"],
-                    action="Monitor closely")
+                    action="Eng überwachen")
             return "warning"
 
     return "ok"
@@ -154,27 +154,27 @@ if __name__ == "__main__":
     import argparse
     import sys
 
-    parser = argparse.ArgumentParser(description="Check metric threshold")
-    parser.add_argument("metric", help="Metric name")
-    parser.add_argument("value", type=float, help="Metric value")
-    parser.add_argument("--list", action="store_true", help="List all metrics")
+    parser = argparse.ArgumentParser(description="Prüfe Metrik-Schwellenwert")
+    parser.add_argument("metric", help="Metrik-Name")
+    parser.add_argument("value", type=float, help="Metrik-Wert")
+    parser.add_argument("--list", action="store_true", help="Alle Metriken auflisten")
 
     args = parser.parse_args()
 
     if args.list:
-        print("Available metrics:")
+        print("Verfügbare Metriken:")
         for metric in list_all_metrics():
             info = get_threshold_info(metric)
-            print(f"  {metric}: {info['direction']} threshold")
+            print(f"  {metric}: {info['direction']}-Schwelle")
         sys.exit(0)
 
     status = check_threshold(args.metric, args.value)
 
     if status == "critical":
-        print(f"❌ CRITICAL: {args.metric} = {args.value}")
+        print(f"❌ KRITISCH: {args.metric} = {args.value}")
         sys.exit(2)
     elif status == "warning":
-        print(f"⚠️  WARNING: {args.metric} = {args.value}")
+        print(f"⚠️  WARNUNG: {args.metric} = {args.value}")
         sys.exit(1)
     else:
         print(f"✅ OK: {args.metric} = {args.value}")

@@ -20,30 +20,30 @@ import argparse
 from typing import Dict, Any
 
 
-# Blocked command patterns
+# Blockierte Befehlsmuster
 BLOCKED_PATTERNS = [
-    (r'(curl|wget|fetch)\s+.*https?://', 'Network request to external URL', 'HIGH'),
-    (r'(ssh|scp|rsync)\s+', 'Remote connection attempt', 'HIGH'),
-    (r'(cat|grep|head|tail)\s+.*\.env', 'Secret file access (.env)', 'CRITICAL'),
-    (r'(cat|grep|head|tail)\s+.*/\.ssh/', 'Secret file access (SSH keys)', 'CRITICAL'),
-    (r'(cat|grep|head|tail)\s+.*/secrets?/', 'Secret directory access', 'CRITICAL'),
-    (r'rm\s+-rf?\s+/', 'Destructive filesystem operation', 'CRITICAL'),
-    (r'dd\s+if=.*of=', 'Raw disk operation', 'CRITICAL'),
-    (r'mkfs\s+', 'Filesystem creation (destructive)', 'CRITICAL'),
-    (r'sudo\s+', 'Privilege escalation attempt', 'CRITICAL'),
-    (r'chmod\s+\+x.*evil|malware|backdoor', 'Suspicious executable creation', 'HIGH'),
+    (r'(curl|wget|fetch)\s+.*https?://', 'Netzwerkanfrage an externe URL', 'HIGH'),
+    (r'(ssh|scp|rsync)\s+', 'Versuch einer Remote-Verbindung', 'HIGH'),
+    (r'(cat|grep|head|tail)\s+.*\.env', 'Zugriff auf Secrets-Datei (.env)', 'CRITICAL'),
+    (r'(cat|grep|head|tail)\s+.*/\.ssh/', 'Zugriff auf Secrets-Datei (SSH-Keys)', 'CRITICAL'),
+    (r'(cat|grep|head|tail)\s+.*/secrets?/', 'Zugriff auf Secrets-Verzeichnis', 'CRITICAL'),
+    (r'rm\s+-rf?\s+/', 'Destruktive Dateisystemoperation', 'CRITICAL'),
+    (r'dd\s+if=.*of=', 'Raw-Disk-Operation', 'CRITICAL'),
+    (r'mkfs\s+', 'Dateisystem-Erstellung (destruktiv)', 'CRITICAL'),
+    (r'sudo\s+', 'Versuch der Rechteausweitung', 'CRITICAL'),
+    (r'chmod\s+\+x.*evil|malware|backdoor', 'Verdächtige Executable-Erstellung', 'HIGH'),
 ]
 
-# Allowed command patterns (whitelisted)
+# Erlaubte Befehlsmuster (Whitelist)
 ALLOWED_PATTERNS = [
-    (r'python3\s+scripts/', 'Python script in scripts/ directory'),
-    (r'node\s+scripts/', 'Node script in scripts/ directory'),
-    (r'bash\s+scripts/', 'Bash script in scripts/ directory'),
-    (r'sh\s+scripts/', 'Shell script in scripts/ directory'),
-    (r'jq\s+', 'JSON processing'),
-    (r'grep\s+', 'Text search'),
-    (r'cat\s+(?!.*\.env|.*/\.ssh/|.*/secrets?/)', 'File reading (non-sensitive)'),
-    (r'pdftotext\s+', 'PDF text extraction'),
+    (r'python3\s+scripts/', 'Python-Script im scripts/-Verzeichnis'),
+    (r'node\s+scripts/', 'Node-Script im scripts/-Verzeichnis'),
+    (r'bash\s+scripts/', 'Bash-Script im scripts/-Verzeichnis'),
+    (r'sh\s+scripts/', 'Shell-Script im scripts/-Verzeichnis'),
+    (r'jq\s+', 'JSON-Verarbeitung'),
+    (r'grep\s+', 'Textsuche'),
+    (r'cat\s+(?!.*\.env|.*/\.ssh/|.*/secrets?/)', 'Datei-Lesen (nicht-sensibel)'),
+    (r'pdftotext\s+', 'PDF-Textextraktion'),
 ]
 
 # Allowed domains for WebFetch
@@ -91,8 +91,8 @@ def check_domain_allowed(url: str) -> tuple[bool, str]:
     """
     for domain in ALLOWED_DOMAINS:
         if domain in url:
-            return True, f"Domain {domain} is whitelisted"
-    return False, f"Domain not in whitelist: {url}"
+            return True, f"Domain {domain} ist in Whitelist"
+    return False, f"Domain nicht in Whitelist: {url}"
 
 
 def validate_action(
@@ -120,42 +120,42 @@ def validate_action(
         }
     """
 
-    # Rule 1: BLOCK if source is external_content
+    # Regel 1: BLOCK wenn source external_content ist
     if source == 'external_content':
         return {
             'decision': 'BLOCK',
-            'reason': 'Action originated from external content (web/PDF). Only user or system instructions can trigger actions.',
+            'reason': 'Aktion stammt aus externem Inhalt (Web/PDF). Nur Benutzer- oder System-Anweisungen können Aktionen auslösen.',
             'risk_level': 'HIGH'
         }
 
-    # Rule 2: Validate bash commands
+    # Regel 2: Validiere Bash-Befehle
     if action == 'bash' and command:
-        # Check blocked patterns first
+        # Prüfe blockierte Muster zuerst
         is_blocked, reason, risk_level = check_blocked_patterns(command)
         if is_blocked:
             return {
                 'decision': 'BLOCK',
-                'reason': f"Blocked pattern detected: {reason}",
+                'reason': f"Blockiertes Muster erkannt: {reason}",
                 'risk_level': risk_level
             }
 
-        # Check allowed patterns
+        # Prüfe erlaubte Muster
         is_allowed, reason = check_allowed_patterns(command)
         if is_allowed:
             return {
                 'decision': 'ALLOW',
-                'reason': f"Whitelisted command: {reason}",
+                'reason': f"Befehl in Whitelist: {reason}",
                 'risk_level': 'LOW'
             }
 
-        # If not explicitly allowed, be cautious
+        # Wenn nicht explizit erlaubt, sei vorsichtig
         return {
             'decision': 'BLOCK',
-            'reason': 'Command not in whitelist. Use scripts in scripts/ directory.',
+            'reason': 'Befehl nicht in Whitelist. Verwende Scripts im scripts/-Verzeichnis.',
             'risk_level': 'MEDIUM'
         }
 
-    # Rule 3: Validate WebFetch URLs
+    # Regel 3: Validiere WebFetch-URLs
     if action == 'webfetch' and url:
         is_allowed, reason = check_domain_allowed(url)
         if is_allowed:
@@ -171,43 +171,43 @@ def validate_action(
                 'risk_level': 'HIGH'
             }
 
-    # Rule 4: Write operations - only allow in runs/ directory
+    # Regel 4: Schreiboperationen - nur im runs/-Verzeichnis erlaubt
     if action == 'write':
         if command and 'runs/' in command:
             return {
                 'decision': 'ALLOW',
-                'reason': 'Write operation in runs/ directory',
+                'reason': 'Schreiboperation im runs/-Verzeichnis',
                 'risk_level': 'LOW'
             }
         else:
             return {
                 'decision': 'BLOCK',
-                'reason': 'Write operations only allowed in runs/ directory',
+                'reason': 'Schreiboperationen nur im runs/-Verzeichnis erlaubt',
                 'risk_level': 'MEDIUM'
             }
 
-    # Default: allow with low risk
+    # Standard: Erlauben mit niedrigem Risiko
     return {
         'decision': 'ALLOW',
-        'reason': 'Action validated by default rules',
+        'reason': 'Aktion durch Standard-Regeln validiert',
         'risk_level': 'LOW'
     }
 
 
 def main():
-    """Main entry point"""
-    parser = argparse.ArgumentParser(description='Action Gate - Security Validator')
-    parser.add_argument('command_type', choices=['validate'], help='Command type')
-    parser.add_argument('--action', required=True, help='Action type (bash, webfetch, write)')
-    parser.add_argument('--command', help='Command to execute')
-    parser.add_argument('--url', help='URL to fetch')
-    parser.add_argument('--user-intent', help='Original user task')
+    """Haupteinstiegspunkt"""
+    parser = argparse.ArgumentParser(description='Action Gate - Sicherheits-Validator')
+    parser.add_argument('command_type', choices=['validate'], help='Befehlstyp')
+    parser.add_argument('--action', required=True, help='Aktionstyp (bash, webfetch, write)')
+    parser.add_argument('--command', help='Auszuführender Befehl')
+    parser.add_argument('--url', help='Abzurufende URL')
+    parser.add_argument('--user-intent', help='Ursprüngliche Benutzeraufgabe')
     parser.add_argument('--source', default='system', choices=['system', 'user', 'external_content'],
-                        help='Source of action')
+                        help='Quelle der Aktion')
 
     args = parser.parse_args()
 
-    # Validate
+    # Validieren
     result = validate_action(
         action=args.action,
         command=args.command,
@@ -216,10 +216,10 @@ def main():
         source=args.source
     )
 
-    # Output JSON
+    # JSON ausgeben
     print(json.dumps(result, indent=2))
 
-    # Exit code: 0 for ALLOW, 1 for BLOCK
+    # Exit-Code: 0 für ALLOW, 1 für BLOCK
     sys.exit(0 if result['decision'] == 'ALLOW' else 1)
 
 

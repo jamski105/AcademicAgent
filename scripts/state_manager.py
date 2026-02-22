@@ -18,7 +18,7 @@ def save_state(run_dir, phase, status, data=None):
     state_file = run_path / STATE_FILE
     state_file.parent.mkdir(parents=True, exist_ok=True)
 
-    # Load existing state if exists
+    # Lade existierenden State falls vorhanden
     if state_file.exists():
         with open(state_file, 'r') as f:
             state = json.load(f)
@@ -29,7 +29,7 @@ def save_state(run_dir, phase, status, data=None):
             "phases": {}
         }
 
-    # Update phase state
+    # Aktualisiere Phasen-State
     state["phases"][f"phase_{phase}"] = {
         "status": status,  # pending, in_progress, completed, failed
         "updated_at": datetime.now().isoformat(),
@@ -39,7 +39,7 @@ def save_state(run_dir, phase, status, data=None):
     state["current_phase"] = phase
     state["last_updated"] = datetime.now().isoformat()
 
-    # Save
+    # Speichern
     with open(state_file, 'w') as f:
         json.dump(state, f, indent=2)
 
@@ -83,7 +83,7 @@ def get_resume_point(run_dir):
             "message": "No previous state found. Starting from Phase 0."
         }
 
-    # Check for failed phases
+    # Prüfe auf fehlgeschlagene Phasen
     for phase_key, phase_data in state.get("phases", {}).items():
         if phase_data["status"] == "failed":
             phase_num = int(phase_key.split("_")[1])
@@ -93,7 +93,7 @@ def get_resume_point(run_dir):
                 "message": f"Phase {phase_num} failed previously. Resume from Phase {phase_num}?"
             }
 
-    # Check for in_progress phases
+    # Prüfe auf laufende Phasen
     for phase_key, phase_data in state.get("phases", {}).items():
         if phase_data["status"] == "in_progress":
             phase_num = int(phase_key.split("_")[1])
@@ -103,14 +103,14 @@ def get_resume_point(run_dir):
                 "message": f"Phase {phase_num} was interrupted. Resume from Phase {phase_num}?"
             }
 
-    # All completed
+    # Alle abgeschlossen
     if last_completed == 6:
         return {
             "should_resume": False,
             "message": "All phases completed. Research finished!"
         }
 
-    # Resume from next phase
+    # Fortsetzen ab nächster Phase
     next_phase = last_completed + 1
     return {
         "should_resume": True,

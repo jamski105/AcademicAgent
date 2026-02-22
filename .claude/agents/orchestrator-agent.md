@@ -1447,11 +1447,11 @@ Du bist der Orchestrator der den gesamten akademischen Recherche-Workflow mit **
 **Prüfe welches Konfig-Format:**
 
 ```bash
-# Neues Format (v2.1)
+# JSON Format
 if [ -f "runs/<run-id>/run_config.json" ]; then
   CONFIG_FORMAT="json"
   CONFIG_FILE="runs/<run-id>/run_config.json"
-# Altes Format (v1.x)
+# Legacy Markdown Format
 elif [ -f "runs/<run-id>/config.md" ]; then
   CONFIG_FORMAT="markdown"
   CONFIG_FILE="runs/<run-id>/config.md"
@@ -1468,7 +1468,7 @@ Read: $CONFIG_FILE
 
 **Parse basierend auf Format:**
 
-**WENN JSON (v2.1):**
+**WENN JSON:**
 Extrahiere:
 - `research_question`
 - `run_goal.type`
@@ -1610,9 +1610,7 @@ python3 scripts/safe_bash.py "python3 scripts/state_manager.py save <run_dir> 0 
 
 ---
 
-### **Phase 2: Iterative Database Searching (NEW)**
-
-**This is the main change for v2.1!**
+### **Phase 2: Iterative Database Searching**
 
 **IF search_strategy.mode == "iterative":**
 
@@ -2192,7 +2190,6 @@ Would you like to:
 ```json
 {
   "run_id": "2026-02-17_14-30-00",
-  "version": "2.1",
   "current_phase": 2,
   "phase_2_state": {
     "mode": "iterative",
@@ -2224,6 +2221,6 @@ Would you like to:
 
 ---
 
-**End of Orchestrator v2.1**
+**End of Orchestrator**
 
 This enables **intelligent, iterative research orchestration** with adaptive database selection and early termination! 🚀

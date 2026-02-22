@@ -1,6 +1,5 @@
 {
   "description": "Red Team test payloads for prompt injection detection",
-  "version": "1.0",
   "test_cases": [
     {
       "id": "INJ-001",

@@ -1,23 +1,21 @@
 # 🛡️ Sicherheitsdokumentation - AcademicAgent
 
-**Zuletzt aktualisiert:** 2026-02-19
+**Zuletzt aktualisiert:** 2026-02-22
 **Sicherheitslevel:** Produktionsreif mit vollständiger Defense-in-Depth
 
 ---
 
 ## Zusammenfassung
 
-AcademicAgent ist gegen **(Indirekte) Prompt-Injection**-Angriffe von externen Quellen (Websites, PDFs, Datenbankergebnisse) gehärtet. Dieses Dokument beschreibt alle implementierten Sicherheitsmaßnahmen.
+AcademicAgent ist gegen **(indirekte) Prompt-Injection**-Angriffe von externen Quellen (Websites, PDFs, Datenbankergebnisse) gehärtet. Dieses Dokument beschreibt alle implementierten Sicherheitsmaßnahmen.
 
 **Sicherheits-Score:** 9.8/10 (98% der Maßnahmen implementiert)
 
-**Neu in v3.2:**
+**Wichtige Sicherheitsfeatures:**
 - ✅ Validation-Gate für MANDATORY Agent-Output-Validation
 - ✅ Encryption-at-Rest jetzt MANDATORY (enforced via setup.sh Check)
 - ✅ 100% automatisierte Red-Team-Tests (12/12)
 - ✅ Unit-Tests für alle Security-Components
-
-**Aus v3.1:**
 - ✅ Safe-Bash-Wrapper (framework-enforced Action-Gate)
 - ✅ PDF Security Validator (Deep Analysis)
 - ✅ CDP Fallback Manager (Auto-Recovery)
@@ -127,24 +125,24 @@ python3 scripts/sanitize_html.py input.html output.txt
 
 ---
 
-### 3. Action Gate (CRITICAL)
+### 3. Action Gate (KRITISCH)
 
-**Location:** [scripts/action_gate.py](scripts/action_gate.py)
+**Ort:** [scripts/action_gate.py](scripts/action_gate.py)
 
-**Purpose:** Validates tool calls before execution
+**Zweck:** Validiert Tool-Aufrufe vor der Ausführung
 
-**Blocked Patterns:**
+**Blockierte Muster:**
 - Network requests (`curl`, `wget`, `ssh`, `scp`, `rsync`)
 - Secret file access (`.env`, `~/.ssh/`, `secrets/`)
 - Destructive operations (`rm -rf`, `dd`, `mkfs`, `sudo`)
 - Any action from `source=external_content`
 
-**Allowed Patterns:**
-- Scripts in `scripts/` directory (`python3 scripts/*`, `node scripts/*`)
-- Safe commands (`jq`, `grep`, `pdftotext`)
-- Writes only in `runs/**` directory
+**Erlaubte Muster:**
+- Scripts im `scripts/`-Verzeichnis (`python3 scripts/*`, `node scripts/*`)
+- Sichere Befehle (`jq`, `grep`, `pdftotext`)
+- Schreibzugriff nur im `runs/**`-Verzeichnis
 
-**Usage:**
+**Verwendung:**
 ```bash
 # Validate before executing bash command
 python3 scripts/action_gate.py validate \
@@ -160,33 +158,33 @@ python3 scripts/action_gate.py validate \
 # }
 ```
 
-**Exit Codes:**
-- 0 = ALLOW
-- 1 = BLOCK
+**Exit-Codes:**
+- 0 = ERLAUBEN
+- 1 = BLOCKIEREN
 
 **Test:** [tests/red_team/run_tests.sh](tests/red_team/run_tests.sh) (INJ-005, INJ-006, WHITELIST-002)
 
 ---
 
-### 4. Domain Whitelist (HIGH)
+### 4. Domain Whitelist (HOCH)
 
-**Location:** [scripts/domain_whitelist.json](scripts/domain_whitelist.json)
+**Ort:** [scripts/domain_whitelist.json](scripts/domain_whitelist.json)
 
-**Allowed Domains (33 domains):**
+**Erlaubte Domains (33 Domains):**
 - Academic databases: IEEE, ACM, Springer, Scopus, PubMed, etc.
 - Open Access: arXiv, ResearchGate, DOAJ
 - University portals: DBIS
 - DOI resolvers: doi.org, dx.doi.org
 
-**Blocked Domains:**
+**Blockierte Domains:**
 - Sci-Hub (*.sci-hub.*)
 - LibGen (*.libgen.*, gen.lib.rus.ec)
 - Z-Library (*.z-library.*)
 - B-OK (*.b-ok.org)
 
-**Validation Script:** [scripts/validate_domain.py](scripts/validate_domain.py)
+**Validierungs-Script:** [scripts/validate_domain.py](scripts/validate_domain.py)
 
-**Usage:**
+**Verwendung:**
 ```bash
 # Validate URL before navigation
 python3 scripts/validate_domain.py "https://ieeexplore.ieee.org"
@@ -199,17 +197,17 @@ python3 scripts/validate_domain.py "https://ieeexplore.ieee.org"
 # }
 ```
 
-**Integration:** Browser-agent must call `validate_domain.py` before every navigation.
+**Integration:** Browser-Agent muss `validate_domain.py` vor jeder Navigation aufrufen.
 
 **Test:** [tests/red_team/run_tests.sh](tests/red_team/run_tests.sh) (INJ-007, WHITELIST-001)
 
 ---
 
-### 5. Least Privilege Permissions (HIGH)
+### 5. Least Privilege Berechtigungen (HOCH)
 
-**Location:** [.claude/settings.local.json](.claude/settings.local.json)
+**Ort:** [.claude/settings.local.json](.claude/settings.local.json)
 
-**Allowed (No Approval Required):**
+**Erlaubt (keine Genehmigung erforderlich):**
 - `Bash(python3 scripts/*)` - Python scripts in scripts/ directory
 - `Bash(node scripts/*)` - Node scripts in scripts/ directory
 - `Bash(bash scripts/*)` - Bash scripts in scripts/ directory
@@ -218,7 +216,7 @@ python3 scripts/validate_domain.py "https://ieeexplore.ieee.org"
 - `Write(runs/**)`, `Edit(runs/**)` - Writes only in runs/ directory
 - `Glob(**)`
 
-**Denied (Always Blocked):**
+**Verweigert (immer blockiert):**
 - `Read(.env*)` - Environment variables
 - `Read(~/.ssh/**)`, `Read(~/.aws/**)` - Credentials
 - `Read(secrets/**)` - Secret files
@@ -228,39 +226,39 @@ python3 scripts/validate_domain.py "https://ieeexplore.ieee.org"
 - `Bash(rm -rf *)`, `Bash(dd *)`, `Bash(mkfs *)` - Destructive operations
 - `Write(.env*)`, `Write(~/**)` - Writing outside workspace
 
-**Benefit:** Agents can execute whitelisted scripts without constant user approval.
+**Vorteil:** Agents können gelistete Scripts ausführen ohne ständige Benutzer-Genehmigung.
 
 ---
 
-### 6. Reader/Actor Separation (MEDIUM)
+### 6. Reader/Actor-Trennung (MITTEL)
 
-**Implementation:**
+**Implementierung:**
 - ✅ **Extraction-Agent:** Read-only (Read, Grep, Glob)
 - ✅ **Scoring-Agent:** Read-only (Read, Grep, Glob)
 - ⚠️ **Browser-Agent:** Has Bash access (required for CDP)
 - ⚠️ **Search-Agent:** Has WebSearch access
 - ✅ **Orchestrator:** Write access only to `runs/**`
 
-**Mitigation:**
-- Browser-Agent MUST use action-gate before Bash calls
-- Browser-Agent MUST validate domains before navigation
-- Search-Agent limited to read-only web searches
+**Gegenmaßnahmen:**
+- Browser-Agent MUSS Action-Gate vor Bash-Aufrufen verwenden
+- Browser-Agent MUSS Domains vor Navigation validieren
+- Search-Agent beschränkt auf Read-only-Websuchen
 
 ---
 
-### 7. Secrets Protection (GOOD)
+### 7. Secrets-Schutz (GUT)
 
-**Blocked Access:**
+**Blockierter Zugriff:**
 - `.env`, `.env.*` files
 - `~/.ssh/` directory (SSH keys)
 - `~/.aws/` directory (AWS credentials)
 - `secrets/` directory
 - Environment variables (via permissions)
 
-**Agent Policies:**
-- All agents have explicit "NEVER read secrets" rules
-- Browser-Agent does NOT access Chrome cookies/session storage programmatically
-- Manual logins by user (agent doesn't handle credentials)
+**Agent-Richtlinien:**
+- Alle Agents haben explizite "NIEMALS Secrets lesen"-Regeln
+- Browser-Agent greift NICHT programmatisch auf Chrome-Cookies/Session-Storage zu
+- Manuelle Logins durch Benutzer (Agent verwaltet keine Zugangsdaten)
 
 **Test:** [tests/red_team/run_tests.sh](tests/red_team/run_tests.sh) (INJ-006)
 
@@ -268,9 +266,9 @@ python3 scripts/validate_domain.py "https://ieeexplore.ieee.org"
 
 ### 8. Encryption at Rest (MANDATORY)
 
-**Status:** ✅ **MANDATORY** für Production (enforced via [setup.sh](setup.sh) Check seit v3.2)
+**Status:** ✅ **VERPFLICHTEND** für Produktion (erzwungen via [setup.sh](setup.sh) Check)
 
-**Current State:** PDFs und extrahierte Zitate werden in Plaintext gespeichert (`runs/*/downloads/`, `runs/*/outputs/`).
+**Aktueller Stand:** PDFs und extrahierte Zitate werden in Klartext gespeichert (`runs/*/downloads/`, `runs/*/outputs/`).
 
 **Risiko:**
 - PDFs können sensitive/proprietary Forschungsinhalte enthalten
@@ -278,9 +276,9 @@ python3 scripts/validate_domain.py "https://ieeexplore.ieee.org"
 - Laptop-Verlust/Disk-Theft = komplette Recherche kompromittiert
 - **GDPR/ISO-27001-Non-Compliance** ohne Encryption-at-Rest für PII
 
-**MANDATORY Setup (enforced by setup.sh):**
+**VERPFLICHTENDES Setup (erzwungen durch setup.sh):**
 
-#### Option 1: System-Level Disk Encryption (MANDATORY)
+#### Option 1: System-Level Disk-Verschlüsselung (VERPFLICHTEND)
 
 **macOS:**
 ```bash
@@ -300,12 +298,12 @@ lsblk -o NAME,SIZE,FSTYPE,MOUNTPOINT
 ```
 
 **Warum System-Level?**
-- ✅ Transparente Encryption (keine Code-Änderungen)
+- ✅ Transparente Verschlüsselung (keine Code-Änderungen)
 - ✅ Alle Dateien geschützt (nicht nur runs/)
-- ✅ OS-native, gut getestet
+- ✅ OS-nativ, gut getestet
 - ✅ Keine Performance-Probleme
 
-#### Option 2: Per-Run Encryption (OPTIONAL)
+#### Option 2: Per-Run-Verschlüsselung (OPTIONAL)
 
 Falls du zusätzliche Sicherheit willst (z.B. für Cloud-Backup):
 
@@ -331,7 +329,7 @@ age -d -i ~/.academic-agent-key.txt \
 
 #### Option 3: Auto-Cleanup (MINIMAL)
 
-Falls Encryption nicht möglich:
+Falls Verschlüsselung nicht möglich:
 
 ```bash
 # Lösche PDFs nach Zitat-Extraktion (Phase 6)
@@ -353,14 +351,14 @@ fi
 ```
 
 **Compliance:**
-- **GDPR:** **ERFORDERT** Encryption at Rest für PII (Art. 32 - Security of Processing)
-- **ISO 27001:** **ERFORDERT** Data Protection Measures (Control A.8.24 - Cryptographic Protection)
-- **Best Practice:** MANDATORY Disk Encryption für sensitive Daten
+- **GDPR:** **ERFORDERT** Verschlüsselung im Ruhezustand für PII (Art. 32 - Sicherheit der Verarbeitung)
+- **ISO 27001:** **ERFORDERT** Datenschutzmaßnahmen (Control A.8.24 - Kryptografischer Schutz)
+- **Best Practice:** VERPFLICHTENDE Disk-Verschlüsselung für sensitive Daten
 
-**Enforcement:**
+**Durchsetzung:**
 - ✅ `setup.sh` prüft FileVault-Status (macOS)
-- ⚠️  Warnung + User-Confirmation required wenn Encryption fehlt
-- ❌ Production-Deployment OHNE Encryption = Non-Compliant
+- ⚠️  Warnung + Benutzerbestätigung erforderlich wenn Verschlüsselung fehlt
+- ❌ Produktions-Deployment OHNE Verschlüsselung = Nicht konform
 
 **Aktion:** Aktiviere FileVault (macOS) JETZT! (setup.sh wird es prüfen)
 
@@ -391,7 +389,7 @@ bash tests/red_team/run_tests.sh
 | INJ-009 | Instruction Hierarchy | ✅ PASS |
 | INJ-010 | Text Flooding | ⏳ Manual |
 
-**Pass Rate:** 6/10 automated (60%), 4/10 require manual verification
+**Erfolgsquote:** 6/10 automatisiert (60%), 4/10 erfordern manuelle Überprüfung
 
 **Erfolgskriterien:** >= 90% Erfolgsquote für Produktions-Deployment
 
@@ -456,7 +454,7 @@ fi
 
 ---
 
-## Sicherheits-Checkliste (Vor Deployment)
+## Sicherheits-Checkliste (vor Deployment)
 
 Vor dem Ausführen des Agents in Produktion:
 
@@ -489,8 +487,8 @@ Falls ein Sicherheitsvorfall auftritt:
 
 1. **Manuelle Verifizierung nötig:** Einige Injection-Versuche erfordern manuelle Überprüfung (z.B. subtiles Social Engineering)
 2. **PDF-Sanitierung:** Begrenzt auf Text-Kürzung (keine vollständige Inhaltsanalyse)
-3. **Zero-Day-Patterns:** Neue Injection-Techniken können aktuelle Erkennungen umgehen
-4. **Agent-Compliance:** Sicherheit hängt davon ab dass Agents Richtlinien folgen (LLM-Verhalten kann variieren)
+3. **Zero-Day-Muster:** Neue Injection-Techniken können aktuelle Erkennungen umgehen
+4. **Agent-Compliance:** Sicherheit hängt davon ab, dass Agents Richtlinien folgen (LLM-Verhalten kann variieren)
 
 ---
 
@@ -502,9 +500,9 @@ Falls ein Sicherheitsvorfall auftritt:
 
 ---
 
-## 12. Related Documentation
+## 12. Verwandte Dokumentation
 
 - **[PRIVACY.md](PRIVACY.md)** - Datenschutzrichtlinie & GDPR-Compliance
-- **[docs/THREAT_MODEL.md](docs/THREAT_MODEL.md)** - Detailliertes Bedrohungsmodell
-- **[ERROR_RECOVERY.md](ERROR_RECOVERY.md)** - Fehlerbehandlung & Recovery
-- **[UPGRADE.md](UPGRADE.md)** - Sicherheitsrelevante Upgrade-Hinweise
+- **[THREAT_MODEL.md](THREAT_MODEL.md)** - Detailliertes Bedrohungsmodell
+- **[ERROR_RECOVERY.md](ERROR_RECOVERY.md)** - Fehlerbehandlung & Wiederherstellung
+- **[PROJEKTSTRUKTUR.md](PROJEKTSTRUKTUR.md)** - Vollständige Projektübersicht

@@ -1,7 +1,6 @@
 #!/bin/bash
 
 # 🛠️ AcademicAgent - Vollständiges Setup-Script
-# Version: 3.3 (Validation-Gate & Python Dependencies Edition)
 # Letztes Update: 2026-02-22
 # Zweck: Frische Installation auf neuer VM mit allen Abhängigkeiten
 
@@ -16,7 +15,7 @@ NC='\033[0m' # Keine Farbe
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo -e "${BLUE}🤖 AcademicAgent Setup v3.0${NC}"
+echo -e "${BLUE}🤖 AcademicAgent Setup${NC}"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 

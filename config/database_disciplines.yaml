@@ -1,11 +1,11 @@
-# Database Disciplines Mapping
-# Version: 3.0 - Curated Top Databases
-# Purpose: Focused list of top databases per discipline + DBIS integration for dynamic discovery
+# Datenbank-Disziplin-Zuordnung
+# Kuratierte Top-Datenbanken
+# Zweck: Fokussierte Liste der Top-Datenbanken pro Disziplin + DBIS-Integration für dynamische Entdeckung
 
-# Core Strategy:
-# 1. Start with top interdisciplinary databases
-# 2. Provide top databases per main discipline
-# 3. Use DBIS API to discover additional relevant databases dynamically
+# Kern-Strategie:
+# 1. Start mit Top interdisziplinären Datenbanken
+# 2. Bereitstellung von Top-Datenbanken pro Hauptdisziplin
+# 3. Verwendung der DBIS-API zur dynamischen Entdeckung zusätzlicher relevanter Datenbanken
 
 databases:
   # ============================================================================
@@ -19,7 +19,7 @@ databases:
     access: Subscription
     api_available: true
     dbis_id: "3366"
-    notes: "Premier citation database covering all disciplines"
+    notes: "Führende Zitationsdatenbank mit Abdeckung aller Disziplinen"
     base_score: 95
     priority: 1
 
@@ -30,7 +30,7 @@ databases:
     access: Subscription
     api_available: true
     dbis_id: "3636"
-    notes: "Largest abstract and citation database, all disciplines"
+    notes: "Größte Abstract- und Zitationsdatenbank, alle Disziplinen"
     base_score: 95
     priority: 1
 
@@ -40,7 +40,7 @@ databases:
     url: scholar.google.com
     access: Open Access
     api_available: false
-    notes: "Broad coverage across all disciplines, freely accessible"
+    notes: "Breite Abdeckung aller Disziplinen, frei zugänglich, ungerne und nur wenn unbedingt nötig verwenden"
     base_score: 85
     priority: 1
 
@@ -52,7 +52,7 @@ databases:
     url: jstor.org
     access: Subscription
     api_available: true
-    notes: "Archive of academic journals across humanities and social sciences"
+    notes: "Archiv akademischer Zeitschriften aus Geistes- und Sozialwissenschaften"
     base_score: 90
     priority: 1
 
@@ -64,7 +64,7 @@ databases:
     url: link.springer.com
     access: Subscription
     api_available: true
-    notes: "Major publisher with broad coverage in sciences and engineering"
+    notes: "Großer Verlag mit breiter Abdeckung in Natur- und Ingenieurwissenschaften"
     base_score: 88
     priority: 1
 
@@ -77,7 +77,7 @@ databases:
     url: sciencedirect.com
     access: Subscription
     api_available: true
-    notes: "Elsevier's platform with extensive science and engineering coverage"
+    notes: "Elseviers Plattform mit umfassender Abdeckung in Natur- und Ingenieurwissenschaften"
     base_score: 88
     priority: 1
 
@@ -89,7 +89,7 @@ databases:
     url: pubmed.ncbi.nlm.nih.gov
     access: Open Access
     api_available: true
-    notes: "Primary database for medical and life sciences research"
+    notes: "Primäre Datenbank für medizinische und biowissenschaftliche Forschung"
     base_score: 95
     priority: 1
 
@@ -102,7 +102,7 @@ databases:
     url: arxiv.org
     access: Open Access
     api_available: true
-    notes: "Preprint server for physics, math, CS - latest research"
+    notes: "Preprint-Server für Physik, Mathematik, Informatik - neueste Forschung"
     base_score: 85
     priority: 1
 
@@ -112,7 +112,7 @@ databases:
     url: base-search.net
     access: Open Access
     api_available: true
-    notes: "One of the largest search engines for academic open access resources"
+    notes: "Eine der größten Suchmaschinen für akademische Open-Access-Ressourcen"
     base_score: 82
     priority: 1
 
@@ -122,7 +122,7 @@ databases:
     url: core.ac.uk
     access: Open Access
     api_available: true
-    notes: "World's largest collection of open access research papers"
+    notes: "Weltweit größte Sammlung von Open-Access-Forschungsartikeln"
     base_score: 80
     priority: 1
 
@@ -139,7 +139,7 @@ databases:
     access: Subscription
     api_available: true
     dbis_id: "2024"
-    notes: "Premier source for computer science research from ACM"
+    notes: "Führende Quelle für Informatik-Forschung von ACM"
     base_score: 95
     priority: 1
 
@@ -149,7 +149,7 @@ databases:
     url: dl.acm.org/guide
     access: Open Access
     api_available: true
-    notes: "Comprehensive bibliographic database of computing literature"
+    notes: "Umfassende bibliographische Datenbank der Informatik-Literatur"
     base_score: 90
     priority: 1
 
@@ -162,7 +162,7 @@ databases:
     access: Subscription
     api_available: true
     dbis_id: "2172"
-    notes: "Essential for CS, electrical engineering, and technology research"
+    notes: "Unverzichtbar für Informatik, Elektrotechnik und Technologieforschung"
     base_score: 95
     priority: 1
 
@@ -173,7 +173,7 @@ databases:
     url: dblp.org
     access: Open Access
     api_available: true
-    notes: "Computer science bibliography, excellent conference coverage"
+    notes: "Informatik-Bibliographie, hervorragende Konferenz-Abdeckung"
     base_score: 88
     priority: 1
 
@@ -192,7 +192,7 @@ databases:
     url: wiso-net.de
     access: Subscription
     api_available: false
-    notes: "Leading German database for economics, business, and social sciences"
+    notes: "Führende deutsche Datenbank für Wirtschaftswissenschaften, BWL und Sozialwissenschaften"
     base_score: 92
     priority: 1
 
@@ -205,7 +205,7 @@ databases:
     url: statista.com
     access: Subscription
     api_available: true
-    notes: "Comprehensive statistics and market data portal"
+    notes: "Umfassendes Statistik- und Marktdaten-Portal"
     base_score: 90
     priority: 1
 
@@ -218,7 +218,7 @@ databases:
     url: ebsco.com/products/research-databases/business-source-ultimate
     access: Subscription
     api_available: false
-    notes: "Premier business database with full-text journals"
+    notes: "Führende Business-Datenbank mit Volltextzeitschriften"
     base_score: 92
     priority: 1
 
@@ -230,7 +230,7 @@ databases:
     url: refinitiv.com/en/products/datastream-macroeconomic-analysis
     access: Subscription
     api_available: true
-    notes: "Financial and economic time series data"
+    notes: "Finanz- und Wirtschafts-Zeitreihendaten"
     base_score: 88
     priority: 1
 
@@ -242,7 +242,7 @@ databases:
     url: crsp.org
     access: Subscription
     api_available: true
-    notes: "Historical stock market and financial data"
+    notes: "Historische Börsen- und Finanzdaten"
     base_score: 90
     priority: 1
 
@@ -253,7 +253,7 @@ databases:
     url: econbiz.de
     access: Open Access
     api_available: true
-    notes: "Free search engine for economics and business studies"
+    notes: "Kostenlose Suchmaschine für Wirtschaftswissenschaften und BWL"
     base_score: 85
     priority: 1
 
@@ -263,7 +263,7 @@ databases:
     url: repec.org
     access: Open Access
     api_available: true
-    notes: "Collaborative effort for economics research dissemination"
+    notes: "Gemeinschaftsprojekt zur Verbreitung wirtschaftswissenschaftlicher Forschung"
     base_score: 82
     priority: 1
 
@@ -276,7 +276,7 @@ databases:
     url: ssrn.com
     access: Mixed
     api_available: false
-    notes: "Preprints and working papers in social sciences and economics"
+    notes: "Preprints und Working Papers in Sozial- und Wirtschaftswissenschaften"
     base_score: 85
     priority: 1
 
@@ -291,7 +291,7 @@ databases:
     url: juris.de
     access: Subscription
     api_available: false
-    notes: "Leading German legal database with case law and legislation"
+    notes: "Führende deutsche Rechtsdatenbank mit Rechtsprechung und Gesetzgebung"
     base_score: 95
     priority: 1
 
@@ -302,7 +302,7 @@ databases:
     url: beck-online.de
     access: Subscription
     api_available: false
-    notes: "Comprehensive German legal database from C.H. Beck"
+    notes: "Umfassende deutsche Rechtsdatenbank von C.H. Beck"
     base_score: 95
     priority: 1
 
@@ -314,7 +314,7 @@ databases:
     url: wolterskluwer.com
     access: Subscription
     api_available: false
-    notes: "Legal information and practice solutions"
+    notes: "Rechtsinformationen und Praxislösungen"
     base_score: 90
     priority: 1
 
@@ -325,7 +325,7 @@ databases:
     url: staudinger.de
     access: Subscription
     api_available: false
-    notes: "Authoritative commentary on German Civil Code (BGB)"
+    notes: "Maßgeblicher Kommentar zum Bürgerlichen Gesetzbuch (BGB)"
     base_score: 92
     priority: 1
 
@@ -336,7 +336,7 @@ databases:
     url: heinonline.org
     access: Subscription
     api_available: false
-    notes: "Comprehensive legal research database"
+    notes: "Umfassende juristische Forschungsdatenbank"
     base_score: 88
     priority: 2
 
@@ -347,7 +347,7 @@ databases:
     url: westlaw.com
     access: Subscription
     api_available: false
-    notes: "Major legal research platform (international)"
+    notes: "Große juristische Forschungsplattform (international)"
     base_score: 90
     priority: 2
 

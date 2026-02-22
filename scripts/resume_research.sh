@@ -11,12 +11,12 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 # ============================================
-# Usage
+# Verwendung
 # ============================================
 if [ $# -lt 1 ]; then
-  echo "Usage: bash scripts/resume_research.sh <project_name>"
+  echo "Verwendung: bash scripts/resume_research.sh <projekt_name>"
   echo ""
-  echo "Example:"
+  echo "Beispiel:"
   echo "  bash scripts/resume_research.sh DevOps"
   echo ""
   exit 1
@@ -30,26 +30,26 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 PROJECT_DIR="$ROOT_DIR/projects/$PROJECT_NAME"
 
 # ============================================
-# Check if project exists
+# Prüfe ob Projekt existiert
 # ============================================
 if [ ! -d "$PROJECT_DIR" ]; then
-  echo "❌ Project not found: $PROJECT_DIR"
+  echo "❌ Projekt nicht gefunden: $PROJECT_DIR"
   echo ""
-  echo "Available projects:"
-  ls -1 "$ROOT_DIR/projects/" 2>/dev/null || echo "  (none)"
+  echo "Verfügbare Projekte:"
+  ls -1 "$ROOT_DIR/projects/" 2>/dev/null || echo "  (keine)"
   exit 1
 fi
 
-echo "🔍 Checking research state for: $PROJECT_NAME"
+echo "🔍 Prüfe Recherche-Status für: $PROJECT_NAME"
 echo ""
 
 # ============================================
-# Get resume point
+# Hole Fortsetzungspunkt
 # ============================================
 RESUME_INFO=$(python3 scripts/state_manager.py resume "$PROJECT_DIR")
 
 if [ $? -ne 0 ]; then
-  echo "❌ Error reading state"
+  echo "❌ Fehler beim Lesen des Status"
   exit 1
 fi
 
@@ -62,73 +62,73 @@ echo ""
 
 if [ "$SHOULD_RESUME" == "false" ]; then
   if [[ "$MESSAGE" == *"finished"* ]]; then
-    echo -e "${GREEN}✅ Research is complete!${NC}"
+    echo -e "${GREEN}✅ Recherche ist abgeschlossen!${NC}"
     echo ""
-    echo "Outputs:"
-    ls -lh "$PROJECT_DIR/outputs/" 2>/dev/null || echo "  No outputs found"
+    echo "Ausgaben:"
+    ls -lh "$PROJECT_DIR/outputs/" 2>/dev/null || echo "  Keine Ausgaben gefunden"
   else
-    echo "Use orchestrator.md to start a new research."
+    echo "Nutze orchestrator.md um eine neue Recherche zu starten."
   fi
   exit 0
 fi
 
 # ============================================
-# Show state summary
+# Zeige Status-Zusammenfassung
 # ============================================
-echo "📊 State Summary:"
+echo "📊 Status-Zusammenfassung:"
 echo ""
 
 STATE=$(python3 scripts/state_manager.py load "$PROJECT_DIR")
 
 echo "$STATE" | jq -r '.phases | to_entries[] |
-  "  Phase \(.key | split("_")[1]): \(.value.status) (updated: \(.value.updated_at))"'
+  "  Phase \(.key | split("_")[1]): \(.value.status) (aktualisiert: \(.value.updated_at))"'
 
 echo ""
 
 # ============================================
-# Check dependencies
+# Prüfe Abhängigkeiten
 # ============================================
-echo "🔍 Checking dependencies..."
+echo "🔍 Prüfe Abhängigkeiten..."
 echo ""
 
-# Check Chrome CDP
+# Prüfe Chrome CDP
 if ! curl -s http://localhost:9222/json/version > /dev/null 2>&1; then
-  echo -e "${YELLOW}⚠️  Chrome CDP not running${NC}"
+  echo -e "${YELLOW}⚠️  Chrome CDP läuft nicht${NC}"
   echo ""
-  echo "Starting Chrome..."
+  echo "Starte Chrome..."
   bash scripts/start_chrome_debug.sh &
   sleep 5
 
   if curl -s http://localhost:9222/json/version > /dev/null 2>&1; then
-    echo -e "${GREEN}✅ Chrome started${NC}"
+    echo -e "${GREEN}✅ Chrome gestartet${NC}"
   else
-    echo -e "${RED}❌ Failed to start Chrome${NC}"
-    echo "Please run: bash scripts/start_chrome_debug.sh"
+    echo -e "${RED}❌ Chrome konnte nicht gestartet werden${NC}"
+    echo "Bitte führe aus: bash scripts/start_chrome_debug.sh"
     exit 1
   fi
 else
-  echo -e "${GREEN}✅ Chrome CDP running${NC}"
+  echo -e "${GREEN}✅ Chrome CDP läuft${NC}"
 fi
 
 echo ""
 
 # ============================================
-# Generate resume instructions
+# Generiere Fortsetzungs-Anweisungen
 # ============================================
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo -e "${GREEN}Ready to resume!${NC}"
+echo -e "${GREEN}Bereit zum Fortsetzen!${NC}"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
-echo "📋 Next steps:"
+echo "📋 Nächste Schritte:"
 echo ""
-echo "  1. Open VS Code:"
+echo "  1. Öffne VS Code:"
 echo "     cd $ROOT_DIR"
 echo "     code ."
 echo ""
-echo "  2. Start Claude Code Chat:"
+echo "  2. Starte Claude Code Chat:"
 echo "     Cmd+Shift+P → 'Claude Code: Start Chat'"
 echo ""
-echo "  3. Resume with:"
+echo "  3. Setze fort mit:"
 echo "     Lies agents/orchestrator.md und setze die Recherche fort"
 echo "     für $PROJECT_DIR/config/Config_${PROJECT_NAME}.md"
 echo ""
@@ -138,7 +138,7 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo ""
 
 # ============================================
-# Optional: Auto-open VS Code
+# Optional: VS Code automatisch öffnen
 # ============================================
 echo "Soll VS Code automatisch geöffnet werden? (y/n)"
 read -r response

@@ -2,15 +2,15 @@
 name: browser-agent
 description: Browser-Automatisierung für Datenbank-Navigation und PDF-Downloads via CDP
 tools:
-  - Read      # File reading for patterns, schemas, configs
-  - Grep      # Content search in files
-  - Glob      # File pattern matching
-  - Bash      # ONLY via safe_bash.py wrapper for CDP/scripts
-  - WebFetch  # For web content fetching
+  - Read      # Dateien lesen für Patterns, Schemas, Configs
+  - Grep      # Content-Suche in Dateien
+  - Glob      # Datei-Pattern-Matching
+  - Bash      # NUR via safe_bash.py Wrapper für CDP/Scripts
+  - WebFetch  # Für Web-Content-Abruf
 disallowedTools:
-  - Write     # Output delegation to orchestrator (return JSON strings)
-  - Edit      # No in-place modifications needed
-  - Task      # No sub-agent spawning (orchestrator's job)
+  - Write     # Output-Delegation zum Orchestrator (return JSON strings)
+  - Edit      # Keine In-Place-Modifikationen nötig
+  - Task      # Kein Sub-Agent Spawning (Job des Orchestrators)
 permissionMode: default
 ---
 
@@ -276,7 +276,7 @@ logger.metric("navigation_success_rate_after_retry", 0.85, unit="ratio")
 
 ### ENFORCEMENT: with_retry Decorator (MANDATORY für Python-Code)
 
-**NEU seit v3.2:** Falls du Python-Code für CDP-Wrapper nutzt, MUSS `@with_retry` Decorator verwendet werden!
+Falls du Python-Code für CDP-Wrapper nutzt, MUSS `@with_retry` Decorator verwendet werden!
 
 ```python
 from scripts.enforce_retry import with_cdp_retry

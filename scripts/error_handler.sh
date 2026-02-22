@@ -6,16 +6,16 @@
 set -euo pipefail
 
 # ============================================
-# Color codes
+# Farbcodes
 # ============================================
 RED='\033[0;31m'
 YELLOW='\033[1;33m'
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+NC='\033[0m' # Keine Farbe
 
 # ============================================
-# Error Types
+# Fehlertypen
 # ============================================
 
 ERROR_TYPE_CDP="CDP_CONNECTION"
@@ -27,64 +27,64 @@ ERROR_TYPE_FILE="FILE_ERROR"
 ERROR_TYPE_UNKNOWN="UNKNOWN"
 
 # ============================================
-# CDP Diagnostics (detailed)
+# CDP-Diagnose (detailliert)
 # ============================================
 diagnose_cdp() {
-  echo -e "${BLUE}🔍 Running CDP diagnostics...${NC}"
+  echo -e "${BLUE}🔍 Führe CDP-Diagnose durch...${NC}"
   echo ""
 
-  # 1. Check if Chrome process is running
+  # 1. Prüfe ob Chrome-Prozess läuft
   local chrome_pid=$(pgrep -f "remote-debugging-port=9222" 2>/dev/null | head -1)
   if [ -n "$chrome_pid" ]; then
-    echo -e "${GREEN}✅ Chrome process found (PID: $chrome_pid)${NC}"
+    echo -e "${GREEN}✅ Chrome-Prozess gefunden (PID: $chrome_pid)${NC}"
 
-    # Check memory
+    # Prüfe Speicher
     local mem_mb=$(ps -o rss= -p "$chrome_pid" 2>/dev/null | awk '{print int($1/1024)}')
     if [ -n "$mem_mb" ]; then
       if [ "$mem_mb" -gt 2048 ]; then
-        echo -e "${YELLOW}⚠️  High memory usage: ${mem_mb}MB (may need restart)${NC}"
+        echo -e "${YELLOW}⚠️  Hoher Speicherverbrauch: ${mem_mb}MB (möglicherweise Neustart nötig)${NC}"
       else
-        echo "   Memory: ${mem_mb}MB"
+        echo "   Speicher: ${mem_mb}MB"
       fi
     fi
   else
-    echo -e "${RED}❌ Chrome process NOT running${NC}"
+    echo -e "${RED}❌ Chrome-Prozess läuft NICHT${NC}"
   fi
 
-  # 2. Check port availability
+  # 2. Prüfe Port-Verfügbarkeit
   if lsof -i :9222 > /dev/null 2>&1; then
-    echo -e "${GREEN}✅ Port 9222 is in use${NC}"
+    echo -e "${GREEN}✅ Port 9222 ist in Verwendung${NC}"
   else
-    echo -e "${RED}❌ Port 9222 is NOT in use (Chrome not listening)${NC}"
+    echo -e "${RED}❌ Port 9222 ist NICHT in Verwendung (Chrome hört nicht zu)${NC}"
   fi
 
-  # 3. Test CDP endpoint
+  # 3. Teste CDP-Endpunkt
   if curl -s --connect-timeout 2 http://localhost:9222/json/version > /dev/null 2>&1; then
-    echo -e "${GREEN}✅ CDP endpoint responding${NC}"
+    echo -e "${GREEN}✅ CDP-Endpunkt antwortet${NC}"
     local version=$(curl -s http://localhost:9222/json/version | jq -r '.Browser' 2>/dev/null)
     if [ -n "$version" ]; then
       echo "   Version: $version"
     fi
   else
-    echo -e "${RED}❌ CDP endpoint NOT responding${NC}"
+    echo -e "${RED}❌ CDP-Endpunkt antwortet NICHT${NC}"
   fi
 
   echo ""
 }
 
 # ============================================
-# Handle CDP Connection Error (Enhanced)
+# Behandle CDP-Verbindungsfehler (erweitert)
 # ============================================
 handle_cdp_error() {
   local project_dir=$1
   local phase=$2
 
-  echo -e "${RED}❌ CDP Connection Error${NC}"
+  echo -e "${RED}❌ CDP-Verbindungsfehler${NC}"
   echo ""
   echo "Chrome DevTools Protocol (CDP) ist nicht erreichbar."
   echo ""
 
-  # Run diagnostics
+  # Führe Diagnose durch
   diagnose_cdp
 
   echo -e "${YELLOW}🔧 Empfohlene Lösungen (in dieser Reihenfolge):${NC}"
@@ -104,18 +104,18 @@ handle_cdp_error() {
   echo "   \$ bash scripts/start_chrome_debug.sh"
   echo ""
 
-  # Save error state
+  # Speichere Fehlerstatus
   python3 scripts/state_manager.py save "$project_dir" "$phase" "failed" \
     '{"error": "CDP_CONNECTION", "recoverable": true}'
 
-  # Automatic recovery attempt
+  # Automatischer Wiederherstellungsversuch
   echo -e "${YELLOW}Möchtest du Auto-Recovery versuchen? (y/n)${NC}"
 
   # TTY-Check für non-interactive Umgebungen
   if [ -t 0 ]; then
     read -t 60 -r response || response="n"
   else
-    echo "Non-interactive mode - Auto-Recovery wird nicht versucht"
+    echo "Non-interactive Modus - Auto-Recovery wird nicht versucht"
     response="n"
   fi
 
@@ -141,7 +141,7 @@ handle_cdp_error() {
 }
 
 # ============================================
-# Handle CAPTCHA
+# Behandle CAPTCHA
 # ============================================
 handle_captcha() {
   local project_dir=$1
@@ -153,15 +153,15 @@ handle_captcha() {
   echo "Ein CAPTCHA wurde im Browser-Fenster erkannt."
   echo ""
 
-  # Save state
+  # Speichere Status
   python3 scripts/state_manager.py save "$project_dir" "$phase" "paused" \
     '{"error": "CAPTCHA", "screenshot": "'$screenshot_path'"}'
 
-  # Show screenshot path
+  # Zeige Screenshot-Pfad
   if [ -f "$screenshot_path" ]; then
     echo "Screenshot: $screenshot_path"
     echo ""
-    # Open screenshot (macOS)
+    # Öffne Screenshot (macOS)
     open "$screenshot_path" 2>/dev/null || true
   fi
 
@@ -175,24 +175,24 @@ handle_captcha() {
   if [ -t 0 ]; then
     read -t 300 -r || echo "Timeout nach 5 Minuten"
   else
-    echo "Non-interactive mode - Warte 60 Sekunden..."
+    echo "Non-interactive Modus - Warte 60 Sekunden..."
     sleep 60
   fi
 
   echo -e "${GREEN}✅ CAPTCHA gelöst! Fortsetzen...${NC}"
 
-  # Resume state
+  # Setze Status fort
   python3 scripts/state_manager.py save "$project_dir" "$phase" "in_progress" \
     '{"resumed_after": "CAPTCHA"}'
 
-  # Wait before retry
+  # Warte vor erneutem Versuch
   sleep 5
 
   return 0  # Retry
 }
 
 # ============================================
-# Handle Login Required
+# Behandle Login erforderlich
 # ============================================
 handle_login() {
   local project_dir=$1
@@ -205,7 +205,7 @@ handle_login() {
   echo "URL: $url"
   echo ""
 
-  # Save state
+  # Speichere Status
   python3 scripts/state_manager.py save "$project_dir" "$phase" "paused" \
     '{"error": "LOGIN_REQUIRED", "url": "'$url'"}'
 
@@ -219,13 +219,13 @@ handle_login() {
   if [ -t 0 ]; then
     read -t 600 -r || echo "Timeout nach 10 Minuten"
   else
-    echo "Non-interactive mode - Warte 120 Sekunden..."
+    echo "Non-interactive Modus - Warte 120 Sekunden..."
     sleep 120
   fi
 
   echo -e "${GREEN}✅ Login abgeschlossen! Fortsetzen...${NC}"
 
-  # Resume state
+  # Setze Status fort
   python3 scripts/state_manager.py save "$project_dir" "$phase" "in_progress" \
     '{"resumed_after": "LOGIN"}'
 
@@ -235,7 +235,7 @@ handle_login() {
 }
 
 # ============================================
-# Handle Rate Limit
+# Behandle Rate Limit
 # ============================================
 handle_rate_limit() {
   local project_dir=$1
@@ -247,7 +247,7 @@ handle_rate_limit() {
   echo "Die Datenbank hat zu viele Anfragen erkannt."
   echo ""
 
-  # Save state
+  # Speichere Status
   python3 scripts/state_manager.py save "$project_dir" "$phase" "paused" \
     '{"error": "RATE_LIMIT", "wait_time": '$wait_time'}'
 
@@ -262,7 +262,7 @@ handle_rate_limit() {
   echo ""
   echo -e "${GREEN}✅ Wartezeit vorbei! Fortsetzen...${NC}"
 
-  # Resume state
+  # Setze Status fort
   python3 scripts/state_manager.py save "$project_dir" "$phase" "in_progress" \
     '{"resumed_after": "RATE_LIMIT"}'
 
@@ -270,7 +270,7 @@ handle_rate_limit() {
 }
 
 # ============================================
-# Handle Network Error (Enhanced)
+# Behandle Netzwerk-Fehler (erweitert)
 # ============================================
 handle_network_error() {
   local project_dir=$1
@@ -282,41 +282,41 @@ handle_network_error() {
   echo "Verbindung zu $url fehlgeschlagen."
   echo ""
 
-  # Diagnostics
-  echo -e "${BLUE}🔍 Network Diagnostics:${NC}"
+  # Diagnose
+  echo -e "${BLUE}🔍 Netzwerk-Diagnose:${NC}"
 
-  # 1. Test internet connectivity
+  # 1. Teste Internet-Verbindung
   if ping -c 1 -W 2 8.8.8.8 > /dev/null 2>&1; then
-    echo -e "${GREEN}✅ Internet connectivity OK${NC}"
+    echo -e "${GREEN}✅ Internet-Verbindung OK${NC}"
   else
-    echo -e "${RED}❌ No internet connectivity${NC}"
+    echo -e "${RED}❌ Keine Internet-Verbindung${NC}"
   fi
 
-  # 2. Test DNS
+  # 2. Teste DNS
   if nslookup google.com > /dev/null 2>&1; then
-    echo -e "${GREEN}✅ DNS resolution OK${NC}"
+    echo -e "${GREEN}✅ DNS-Auflösung OK${NC}"
   else
-    echo -e "${RED}❌ DNS resolution failed${NC}"
+    echo -e "${RED}❌ DNS-Auflösung fehlgeschlagen${NC}"
   fi
 
-  # 3. Extract domain from URL and test
+  # 3. Extrahiere Domain aus URL und teste
   local domain=$(echo "$url" | sed -E 's|https?://([^/]+).*|\1|')
   if [ -n "$domain" ]; then
     if curl -s --connect-timeout 5 --head "$url" > /dev/null 2>&1; then
-      echo -e "${GREEN}✅ Target server reachable${NC}"
+      echo -e "${GREEN}✅ Zielserver erreichbar${NC}"
     else
-      echo -e "${RED}❌ Cannot reach $domain${NC}"
+      echo -e "${RED}❌ Kann $domain nicht erreichen${NC}"
 
-      # Check if it's a university domain (might need VPN)
+      # Prüfe ob es eine Uni-Domain ist (möglicherweise VPN nötig)
       if [[ "$domain" =~ \.(edu|ac\.|uni-) ]]; then
-        echo -e "${YELLOW}⚠️  University domain detected - VPN likely required!${NC}"
+        echo -e "${YELLOW}⚠️  Uni-Domain erkannt - VPN wahrscheinlich erforderlich!${NC}"
       fi
     fi
   fi
 
   echo ""
 
-  # Save state
+  # Speichere Status
   python3 scripts/state_manager.py save "$project_dir" "$phase" "paused" \
     '{"error": "NETWORK_ERROR", "url": "'$url'"}'
 
@@ -332,8 +332,8 @@ handle_network_error() {
   echo "   - Teste: curl -I $url"
   echo ""
   echo "3️⃣  Server-seitige Probleme:"
-  echo "   - Server könnte down sein"
-  echo "   - Warte 1-2 Minuten und retry"
+  echo "   - Server könnte ausgefallen sein"
+  echo "   - Warte 1-2 Minuten und versuche erneut"
   echo ""
   echo "Drücke ENTER wenn Netzwerk-Problem behoben ist..."
 
@@ -341,13 +341,13 @@ handle_network_error() {
   if [ -t 0 ]; then
     read -t 300 -r || echo "Timeout nach 5 Minuten"
   else
-    echo "Non-interactive mode - Warte 60 Sekunden..."
+    echo "Non-interactive Modus - Warte 60 Sekunden..."
     sleep 60
   fi
 
-  echo -e "${BLUE}🔄 Retry...${NC}"
+  echo -e "${BLUE}🔄 Erneuter Versuch...${NC}"
 
-  # Resume state
+  # Setze Status fort
   python3 scripts/state_manager.py save "$project_dir" "$phase" "in_progress" \
     '{"resumed_after": "NETWORK_ERROR"}'
 
@@ -357,7 +357,7 @@ handle_network_error() {
 }
 
 # ============================================
-# Handle File Error
+# Behandle Datei-Fehler
 # ============================================
 handle_file_error() {
   local project_dir=$1
@@ -365,35 +365,35 @@ handle_file_error() {
   local file_path=$3
   local error_type=$4  # missing, corrupt, permission
 
-  echo -e "${RED}📁 File Error${NC}"
+  echo -e "${RED}📁 Datei-Fehler${NC}"
   echo ""
-  echo "File: $file_path"
-  echo "Type: $error_type"
+  echo "Datei: $file_path"
+  echo "Typ: $error_type"
   echo ""
 
-  # Save state
+  # Speichere Status
   python3 scripts/state_manager.py save "$project_dir" "$phase" "failed" \
     '{"error": "FILE_ERROR", "file": "'$file_path'", "type": "'$error_type'"}'
 
   case $error_type in
     missing)
-      echo "File fehlt. Wurde eine Phase übersprungen?"
+      echo "Datei fehlt. Wurde eine Phase übersprungen?"
       echo ""
       echo "🔧 Lösung:"
       echo "  - Starte von früherer Phase neu"
-      echo "  - Oder erstelle File manuell"
+      echo "  - Oder erstelle Datei manuell"
       ;;
 
     corrupt)
-      echo "File ist beschädigt oder leer."
+      echo "Datei ist beschädigt oder leer."
       echo ""
       echo "🔧 Lösung:"
-      echo "  - Lösche File und wiederhole Phase"
+      echo "  - Lösche Datei und wiederhole Phase"
       echo "  - rm $file_path"
       ;;
 
     permission)
-      echo "Keine Berechtigung für File."
+      echo "Keine Berechtigung für Datei."
       echo ""
       echo "🔧 Lösung:"
       echo "  - chmod 644 $file_path"
@@ -415,7 +415,7 @@ handle_file_error() {
 }
 
 # ============================================
-# Generic Error Handler
+# Generischer Fehler-Handler
 # ============================================
 handle_error() {
   local error_type=$1
@@ -456,7 +456,7 @@ handle_error() {
       ;;
 
     *)
-      echo -e "${RED}❌ Unknown Error: $error_type${NC}"
+      echo -e "${RED}❌ Unbekannter Fehler: $error_type${NC}"
       python3 scripts/state_manager.py save "$project_dir" "$phase" "failed" \
         '{"error": "UNKNOWN"}'
       return 1
@@ -465,9 +465,9 @@ handle_error() {
 }
 
 # ============================================
-# Main (for testing)
+# Hauptprogramm (für Tests)
 # ============================================
 if [ "$1" == "test" ]; then
-  echo "Testing Error Handler..."
+  echo "Teste Error Handler..."
   handle_error "CDP_CONNECTION" "/tmp/test_project" 2
 fi

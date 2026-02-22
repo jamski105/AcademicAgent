@@ -310,7 +310,7 @@ Das **Auto-Permission-System** validiert automatisch alle File-Pfade gegen Path-
 
 ### 🤖 Auto-Permission System
 
-**Ab v2.2:** Agent-spezifische Auto-Allowed Paths reduzieren Permission-Dialoge!
+Agent-spezifische Auto-Allowed Paths reduzieren Permission-Dialoge!
 
 **System:** `scripts/auto_permissions.py`
 

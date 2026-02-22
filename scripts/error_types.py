@@ -79,7 +79,7 @@ ERROR_CONFIGS: Dict[ErrorType, ErrorConfig] = {
         retry_delay_seconds=5,
         recovery_strategy=RecoveryStrategy.RETRY_WITH_DELAY,
         user_message=(
-            "Chrome CDP connection lost. Attempting automatic restart..."
+            "Chrome-CDP-Verbindung verloren. Automatischer Neustart wird versucht..."
         ),
     ),
     ErrorType.BROWSER_CRASH: ErrorConfig(
@@ -88,9 +88,9 @@ ERROR_CONFIGS: Dict[ErrorType, ErrorConfig] = {
         retry_delay_seconds=10,
         recovery_strategy=RecoveryStrategy.USER_INTERVENTION,
         user_message=(
-            "Browser crashed. Please restart Chrome with:\n"
+            "Browser abgestürzt. Bitte starte Chrome neu mit:\n"
             "  bash scripts/smart_chrome_setup.sh\n"
-            "Then press ENTER to continue."
+            "Drücke dann ENTER um fortzufahren."
         ),
     ),
     ErrorType.LOGIN_REQUIRED: ErrorConfig(
@@ -99,10 +99,10 @@ ERROR_CONFIGS: Dict[ErrorType, ErrorConfig] = {
         retry_delay_seconds=0,
         recovery_strategy=RecoveryStrategy.USER_INTERVENTION,
         user_message=(
-            "Login required. Please:\n"
-            "  1. Switch to Chrome window\n"
-            "  2. Log in with your credentials\n"
-            "  3. Press ENTER when done"
+            "Login erforderlich. Bitte:\n"
+            "  1. Wechsle zum Chrome-Fenster\n"
+            "  2. Melde dich mit deinen Zugangsdaten an\n"
+            "  3. Drücke ENTER wenn fertig"
         ),
     ),
     ErrorType.CAPTCHA_DETECTED: ErrorConfig(
@@ -111,10 +111,10 @@ ERROR_CONFIGS: Dict[ErrorType, ErrorConfig] = {
         retry_delay_seconds=30,
         recovery_strategy=RecoveryStrategy.USER_INTERVENTION,
         user_message=(
-            "CAPTCHA detected. Please:\n"
-            "  1. Switch to Chrome window\n"
-            "  2. Solve the CAPTCHA\n"
-            "  3. Press ENTER when done"
+            "CAPTCHA erkannt. Bitte:\n"
+            "  1. Wechsle zum Chrome-Fenster\n"
+            "  2. Löse das CAPTCHA\n"
+            "  3. Drücke ENTER wenn fertig"
         ),
     ),
     ErrorType.RATE_LIMIT: ErrorConfig(
@@ -122,21 +122,21 @@ ERROR_CONFIGS: Dict[ErrorType, ErrorConfig] = {
         max_retries=3,
         retry_delay_seconds=60,
         recovery_strategy=RecoveryStrategy.RETRY_WITH_DELAY,
-        user_message="Rate limit hit. Waiting 60 seconds before retry...",
+        user_message="Rate-Limit erreicht. Warte 60 Sekunden vor erneutem Versuch...",
     ),
     ErrorType.NAVIGATION_TIMEOUT: ErrorConfig(
         error_type=ErrorType.NAVIGATION_TIMEOUT,
         max_retries=2,
         retry_delay_seconds=10,
         recovery_strategy=RecoveryStrategy.RETRY_WITH_DELAY,
-        user_message="Navigation timeout. Retrying...",
+        user_message="Navigations-Timeout. Versuche erneut...",
     ),
     ErrorType.ELEMENT_NOT_FOUND: ErrorConfig(
         error_type=ErrorType.ELEMENT_NOT_FOUND,
         max_retries=3,
         retry_delay_seconds=5,
         recovery_strategy=RecoveryStrategy.FALLBACK,
-        user_message="UI element not found. Trying fallback selectors...",
+        user_message="UI-Element nicht gefunden. Versuche Fallback-Selektoren...",
     ),
     ErrorType.DATABASE_UNAVAILABLE: ErrorConfig(
         error_type=ErrorType.DATABASE_UNAVAILABLE,
@@ -144,8 +144,8 @@ ERROR_CONFIGS: Dict[ErrorType, ErrorConfig] = {
         retry_delay_seconds=30,
         recovery_strategy=RecoveryStrategy.SKIP,
         user_message=(
-            "Database unavailable. Skipping and continuing with other "
-            "databases..."
+            "Datenbank nicht verfügbar. Überspringe und fahre mit anderen "
+            "Datenbanken fort..."
         ),
     ),
     ErrorType.PAYWALL: ErrorConfig(
@@ -153,7 +153,7 @@ ERROR_CONFIGS: Dict[ErrorType, ErrorConfig] = {
         max_retries=0,
         retry_delay_seconds=0,
         recovery_strategy=RecoveryStrategy.SKIP,
-        user_message="Paywall detected. Skipping source...",
+        user_message="Paywall erkannt. Überspringe Quelle...",
     ),
     ErrorType.SESSION_EXPIRED: ErrorConfig(
         error_type=ErrorType.SESSION_EXPIRED,
@@ -161,10 +161,10 @@ ERROR_CONFIGS: Dict[ErrorType, ErrorConfig] = {
         retry_delay_seconds=0,
         recovery_strategy=RecoveryStrategy.USER_INTERVENTION,
         user_message=(
-            "Session expired. Please:\n"
-            "  1. Switch to Chrome window\n"
-            "  2. Log in again\n"
-            "  3. Press ENTER when done"
+            "Session abgelaufen. Bitte:\n"
+            "  1. Wechsle zum Chrome-Fenster\n"
+            "  2. Melde dich erneut an\n"
+            "  3. Drücke ENTER wenn fertig"
         ),
     ),
     ErrorType.INVALID_CONFIG: ErrorConfig(
@@ -172,7 +172,7 @@ ERROR_CONFIGS: Dict[ErrorType, ErrorConfig] = {
         max_retries=0,
         retry_delay_seconds=0,
         recovery_strategy=RecoveryStrategy.ABORT,
-        user_message="Invalid configuration. Please fix and restart.",
+        user_message="Ungültige Konfiguration. Bitte korrigiere und starte neu.",
     ),
 }
 
@@ -219,7 +219,7 @@ class ErrorHandler:
                     context=context,
                 )
             print(
-                f"\n❌ Max retries exceeded for {error_type.value}. Aborting."
+                f"\n❌ Maximale Retries für {error_type.value} überschritten. Abbruch."
             )
             return RecoveryStrategy.ABORT
 
@@ -241,7 +241,7 @@ class ErrorHandler:
         strategy = config.recovery_strategy
 
         if strategy == RecoveryStrategy.RETRY_WITH_DELAY:
-            print(f"Retrying in {config.retry_delay_seconds} seconds...")
+            print(f"Versuche erneut in {config.retry_delay_seconds} Sekunden...")
             time.sleep(config.retry_delay_seconds)
 
         elif strategy == RecoveryStrategy.USER_INTERVENTION:
@@ -249,7 +249,7 @@ class ErrorHandler:
 
         elif strategy == RecoveryStrategy.FALLBACK:
             if self.logger:
-                self.logger.info("Attempting fallback strategy")
+                self.logger.info("Versuche Fallback-Strategie")
 
         return strategy
 

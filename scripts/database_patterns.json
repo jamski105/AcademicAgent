@@ -1,5 +1,4 @@
 {
-  "version": "1.0",
   "description": "UI-Patterns für wissenschaftliche Datenbanken (disziplinübergreifend)",
   "databases": {
     "IEEE Xplore": {
@@ -338,7 +337,7 @@
   },
   "fallback_strategies": {
     "generic_search_field": {
-      "description": "Falls keine datenbank-spezifischen Selektoren passen",
+      "description": "Wenn keine datenbank-spezifischen Selektoren passen",
       "selectors": [
         "input[type='search']",
         "input[type='text'][placeholder*='search' i]",
@@ -349,9 +348,11 @@
       ]
     },
     "generic_advanced_search": {
+      "description": "Generische Textmarkierungen für erweiterte Suchfunktionen",
       "text_markers": ["Advanced", "Erweitert", "Detailed", "Detailsuche"]
     },
     "generic_pdf_link": {
+      "description": "Generische Selektoren für PDF-Download-Links",
       "selectors": [
         "a[href*='.pdf']",
         "a:contains('PDF')",
@@ -360,8 +361,8 @@
       ]
     },
     "screenshot_analysis": {
-      "description": "Wenn alle Selektoren fehlschlagen: Screenshot machen und Claude analysieren lassen",
-      "prompt": "Analysiere diesen Screenshot einer wissenschaftlichen Datenbank. Identifiziere: 1) Suchfeld, 2) Advanced Search Button, 3) Filter-Optionen, 4) Ergebnis-Liste"
+      "description": "Wenn alle Selektoren fehlschlagen: Screenshot erstellen und Claude analysieren lassen",
+      "prompt": "Analysiere diesen Screenshot einer wissenschaftlichen Datenbank. Identifiziere: 1) Suchfeld, 2) Schaltfläche für erweiterte Suche, 3) Filteroptionen, 4) Ergebnisliste mit Titel, Autor und Abstract"
     }
   },
   "common_ui_elements": {

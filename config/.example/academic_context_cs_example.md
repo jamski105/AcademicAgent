@@ -296,7 +296,3 @@ Keine (HCI-Forschung ist international, Englisch dominant)
 ```
 
 ---
-
-**Versionshistorie:**
-- v2.0 (2026-02-17): Beispiel für CS/HCI erstellt
-- Basiert auf academic_context.md Template v2.0
