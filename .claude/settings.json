@@ -30,6 +30,12 @@
       "Write(runs/**)",
       "Write(/tmp/*)",
       "Edit(runs/**)",
+      "Task(setup-agent)",
+      "Task(orchestrator-agent)",
+      "Task(browser-agent)",
+      "Task(search-agent)",
+      "Task(scoring-agent)",
+      "Task(extraction-agent)",
       "Bash(python3 scripts/*)",
       "Bash(python scripts/*)",
       "Bash(node scripts/*)",
@@ -59,7 +65,9 @@
       "Bash(sleep *)",
       "Bash(test *)",
       "Bash([ *)",
-      "Bash(pdftotext *)"
+      "Bash(pdftotext *)",
+      "Bash(tmux *)",
+      "Bash(open -a Terminal*)"
     ],
     "ask": [
       "Edit",

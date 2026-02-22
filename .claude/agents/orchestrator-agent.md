@@ -1603,15 +1603,78 @@ else
   START_PHASE=0
 fi
 
+# ═══════════════════════════════════════════════════════════════════
+# INITIALIZE: Live Monitor Auto-Launch (CRITICAL für Live-Status)
+# ═══════════════════════════════════════════════════════════════════
+
+echo ""
+echo "╭────────────────────────────────────────────────────────────╮"
+echo "│ 🚀 Starte Live-Monitoring System                           │"
+echo "╰────────────────────────────────────────────────────────────╯"
+echo ""
+
+# Launch Live Monitor in separate terminal
+bash scripts/launch_live_monitor.sh "$RUN_ID"
+
+echo ""
+echo "─────────────────────────────────────────────────────────────"
+echo ""
+
+# ═══════════════════════════════════════════════════════════════════
 # Start Workflow from START_PHASE
+# ═══════════════════════════════════════════════════════════════════
+
 case $START_PHASE in
-  0) execute_phase_0 ;;
-  1) execute_phase_1 ;;
-  2) execute_phase_2 ;;
-  3) execute_phase_3 ;;
-  4) execute_phase_4 ;;
-  5) execute_phase_5 ;;
-  6) execute_phase_6 ;;
+  0)
+    execute_phase_0 "$RUN_ID"
+    # CRITICAL: Validate that Phase 0 was executed correctly
+    bash scripts/validate_agent_execution.sh 0 "$RUN_ID"
+    ;;
+
+  1)
+    execute_phase_1 "$RUN_ID"
+    # Validation for Phase 1 (search strings)
+    if [ ! -f "runs/$RUN_ID/metadata/search_strings.json" ]; then
+      echo "❌ ERROR: search_strings.json not created"
+      exit 1
+    fi
+    ;;
+
+  2)
+    execute_phase_2 "$RUN_ID"
+    # CRITICAL: Validate Phase 2 (NO SYNTHETIC DOIs!)
+    bash scripts/validate_agent_execution.sh 2 "$RUN_ID"
+    ;;
+
+  3)
+    execute_phase_3 "$RUN_ID"
+    # Validation for Phase 3 (ranking)
+    if [ ! -f "runs/$RUN_ID/metadata/ranked_candidates.json" ]; then
+      echo "❌ ERROR: ranked_candidates.json not created"
+      exit 1
+    fi
+    ;;
+
+  4)
+    execute_phase_4 "$RUN_ID"
+    # CRITICAL: Validate Phase 4 (real PDFs!)
+    bash scripts/validate_agent_execution.sh 4 "$RUN_ID"
+    ;;
+
+  5)
+    execute_phase_5 "$RUN_ID"
+    # CRITICAL: Validate Phase 5 (real quotes from PDFs!)
+    bash scripts/validate_agent_execution.sh 5 "$RUN_ID"
+    ;;
+
+  6)
+    execute_phase_6 "$RUN_ID"
+    # Final outputs
+    if [ ! -f "runs/$RUN_ID/outputs/citations_formatted.md" ]; then
+      echo "❌ ERROR: citations_formatted.md not created"
+      exit 1
+    fi
+    ;;
 esac
 ```
 
@@ -1874,6 +1937,99 @@ Show databases to be used, get user approval
 **Save state:**
 ```bash
 python3 scripts/safe_bash.py "python3 scripts/state_manager.py save <run_dir> 0 completed"
+```
+
+**IMPLEMENTATION - Phase 0 Function:**
+```bash
+execute_phase_0() {
+    local RUN_ID=$1
+
+    echo "╔══════════════════════════════════════════════════════════════╗"
+    echo "║                                                              ║"
+    echo "║            📋 PHASE 0: Database Identification               ║"
+    echo "║                                                              ║"
+    echo "╚══════════════════════════════════════════════════════════════╝"
+    echo ""
+
+    # Read search strategy from run_config.json
+    SEARCH_MODE=$(jq -r '.search_strategy.mode // "iterative"' "runs/$RUN_ID/run_config.json")
+
+    echo "Search Strategy: $SEARCH_MODE"
+    echo ""
+
+    if [ "$SEARCH_MODE" = "manual" ]; then
+        # Manual mode: Spawn browser-agent for DBIS navigation
+        echo "→ Manual mode detected: Spawning browser-agent for DBIS navigation"
+        echo ""
+
+        # Set CURRENT_AGENT for auto-permission system
+        export CURRENT_AGENT="browser-agent"
+
+        # Spawn browser-agent for Phase 0
+        Task(
+          subagent_type="browser-agent",
+          description="DBIS Navigation (Phase 0)",
+          prompt="Execute Phase 0: DBIS Database Navigation
+
+Read your agent configuration at .claude/agents/browser-agent.md
+
+Execute Phase 0 as described in the browser-agent documentation:
+- Navigate to DBIS (https://dbis.ur.de/UBTIB)
+- Wait for user login (one-time)
+- For each database in run_config.json:
+  - Search database in DBIS
+  - Click 'Zur Datenbank'
+  - Save final URL
+  - Track DBIS session
+
+Output: runs/$RUN_ID/metadata/databases.json
+
+See [Agent Contracts](../shared/AGENT_API_CONTRACTS.md) for full spec."
+        )
+
+        # Validate output
+        if [ ! -f "runs/$RUN_ID/metadata/databases.json" ]; then
+            echo "❌ ERROR: databases.json not created by browser-agent"
+            exit 1
+        fi
+
+        echo "✅ Phase 0 completed: databases.json created"
+
+    else
+        # Iterative/Comprehensive mode: Skip DBIS, use config databases
+        echo "→ Iterative/Comprehensive mode: Using databases from run_config.json"
+        echo ""
+
+        # Databases are already ranked in run_config.json
+        # Just initialize databases_remaining for iteration tracking
+        DB_COUNT=$(jq '.databases.initial_ranking | length' "runs/$RUN_ID/run_config.json")
+
+        echo "╭────────────────────────────────────────────────────────────╮"
+        echo "│ Database Pool Initialized                                  │"
+        echo "├────────────────────────────────────────────────────────────┤"
+        echo "│ Total Databases: $DB_COUNT                                 │"
+        echo "│ Source: run_config.json (pre-ranked)                       │"
+        echo "│ DBIS Navigation: Skipped (not needed for iterative mode)  │"
+        echo "╰────────────────────────────────────────────────────────────╯"
+        echo ""
+
+        # No databases.json needed - data is in run_config.json
+        echo "✅ Phase 0 completed: Database pool ready"
+    fi
+
+    # Update state
+    jq '.current_phase = 1 |
+        .last_completed_phase = 0 |
+        .phase_outputs["0"].status = "completed" |
+        .phase_outputs["0"].output_file = "run_config.json" |
+        .last_updated = (now | todate)' \
+        "runs/$RUN_ID/metadata/research_state.json" > "/tmp/state_tmp.json"
+    mv "/tmp/state_tmp.json" "runs/$RUN_ID/metadata/research_state.json"
+
+    echo ""
+    echo "State saved: Phase 0 completed"
+    echo ""
+}
 ```
 
 ---

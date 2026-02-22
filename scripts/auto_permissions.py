@@ -41,9 +41,15 @@ AUTO_ALLOWED_PATHS = {
         "write": [
             r"^runs/[^/]+/logs/browser_.*\.(log|jsonl|png)$",
             r"^runs/[^/]+/screenshots/.*\.png$",
+            r"^runs/[^/]+/metadata/databases\.json$",
+            r"^runs/[^/]+/metadata/candidates\.json$",
+            r"^runs/[^/]+/metadata/session\.json$",
+            r"^runs/[^/]+/downloads/.*\.pdf$",
+            r"^runs/[^/]+/downloads/downloads\.json$",
         ],
         "read": [
             r"^runs/[^/]+/metadata/(databases|search_strings|ranked_top27)\.json$",
+            r"^runs/[^/]+/run_config\.json$",
             r"^scripts/database_patterns\.json$",
         ]
     },
