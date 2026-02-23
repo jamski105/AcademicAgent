@@ -86,24 +86,24 @@ Extrahiere: Disziplin, Keywords, Zitierstil (falls vorhanden).
 
 ```
 ╭──────────────────────────────────────────────────────────────╮
-│ Schritt 2 von 3: Recherche-Modus                            │
+│ Schritt 2 von 3: Recherche-Modus                             │
 ├──────────────────────────────────────────────────────────────┤
-│ Wähle einen Modus (Parameter werden automatisch gesetzt):   │
+│ Wähle einen Modus (Parameter werden automatisch gesetzt):    │
 │                                                              │
 │ 1. 🎯 Quick (Empfohlen)                                      │
-│    → 8 Quellen, 3 Datenbanken, ~30-45 Min                   │
+│    → 8 Quellen, 3 Datenbanken, ~30-45 Min                    │
 │    → Standard-Zeitraum: Letzte 5 Jahre                       │
-│    → Peer-Reviewed, Min. 20 Zitationen                      │
+│    → Peer-Reviewed, Min. 20 Zitationen                       │
 │                                                              │
-│ 2. ⭐ Standard                                                │
-│    → 18 Quellen, 5 Datenbanken, ~1.5-2 Std                  │
+│ 2. ⭐ Standard                                               │
+│    → 18 Quellen, 5 Datenbanken, ~1.5-2 Std                   │
 │    → Standard-Zeitraum: Letzte 7 Jahre                       │
-│    → Peer-Reviewed, Min. 30 Zitationen                      │
+│    → Peer-Reviewed, Min. 30 Zitationen                       │
 │                                                              │
 │ 3. 📚 Deep                                                   │
-│    → 40 Quellen, 8 Datenbanken, ~3-4 Std                    │
+│    → 40 Quellen, 8 Datenbanken, ~3-4 Std                     │
 │    → Standard-Zeitraum: Letzte 10 Jahre                      │
-│    → Peer-Reviewed, Min. 50 Zitationen                      │
+│    → Peer-Reviewed, Min. 50 Zitationen                       │
 │                                                              │
 │ 4. ⚙️  Advanced (manuelle Parameter)                         │
 │    → Du wirst nach allen Parametern gefragt                  │
