@@ -5,7 +5,7 @@ tools:
   - Read   # File reading for candidates.json, config
   - Grep   # Content search in files
   - Glob   # File pattern matching
-  - Write  # For writing ranked_top27.json output
+  - Write  # For writing ranked_candidates.json output
 disallowedTools:
   - Edit      # No in-place modifications needed
   - Bash      # Scoring is pure computation, no commands needed
@@ -134,7 +134,7 @@ Du bist der **Scoring-Agent** für Qualitätsbewertung.
 ## 📋 Phase 3: Screening & Ranking
 
 ### Input
-- `config/[ProjectName]_Config.md` → Quality Thresholds, Portfolio
+- `config/run_config.json` → Quality Thresholds, Portfolio
 - `metadata/candidates.json` → 45 Kandidaten (aus Phase 2)
 
 ### Workflow
@@ -371,7 +371,7 @@ if Standards_count < 4:
 
 ### Output
 
-**Speichere in:** `projects/[ProjectName]/metadata/ranked_top27.json`
+**Speichere in:** `runs/<run-id>/metadata/ranked_candidates.json`
 
 ```json
 {
@@ -610,9 +610,9 @@ if percent_with_citations < 50:
 
 ```
 Lies agents/scoring_agent.md und führe 5D-Scoring aus.
-Config: config/[ProjectName]_Config.md
-Kandidaten: projects/[ProjectName]/metadata/candidates.json
-Output: projects/[ProjectName]/metadata/ranked_top27.json
+Config: runs/<run-id>/config/run_config.json
+Kandidaten: runs/<run-id>/metadata/candidates.json
+Output: runs/<run-id>/metadata/ranked_candidates.json
 ```
 
 ---

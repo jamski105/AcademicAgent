@@ -222,7 +222,7 @@ Beispiele:
     python3 scripts/validation_gate.py \\
       --agent scoring-agent \\
       --phase 3 \\
-      --output-file runs/session/metadata/ranked_top27.json \\
+      --output-file runs/session/metadata/ranked_candidates.json \\
       --schema schemas/ranked_sources_schema.json \\
       --run-id project_20260219_140000
         """

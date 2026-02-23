@@ -48,7 +48,7 @@ AUTO_ALLOWED_PATHS = {
             r"^runs/[^/]+/downloads/downloads\.json$",
         ],
         "read": [
-            r"^runs/[^/]+/metadata/(databases|search_strings|ranked_top27)\.json$",
+            r"^runs/[^/]+/metadata/(databases|search_strings|ranked_candidates)\.json$",
             r"^runs/[^/]+/run_config\.json$",
             r"^scripts/database_patterns\.json$",
         ]
@@ -61,7 +61,7 @@ AUTO_ALLOWED_PATHS = {
             r"^runs/[^/]+/errors/extraction_error_.*\.json$",
         ],
         "read": [
-            r"^runs/[^/]+/pdfs/.*\.pdf$",
+            r"^runs/[^/]+/downloads/.*\.pdf$",
             r"^runs/[^/]+/txt/.*\.txt$",
             r"^runs/[^/]+/run_config\.json$",
         ]

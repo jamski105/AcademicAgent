@@ -370,7 +370,7 @@ def generate_config(
 
 **Working Directory:**
 ```
-~/AcademicAgent/projects/{project_name}/
+~/AcademicAgent/runs/{run_id}/
 ```
 
 ---

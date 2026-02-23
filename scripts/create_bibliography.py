@@ -2,7 +2,7 @@
 
 """
 Annotated Bibliography Generator - AcademicAgent
-Creates Markdown Annotated Bibliography from ranked_top27.json and quotes.json
+Creates Markdown Annotated Bibliography from ranked_candidates.json and quotes.json
 """
 
 import json

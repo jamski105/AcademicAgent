@@ -27,7 +27,7 @@ PROJECT_NAME=$1
 # Nutze relative Pfade statt hardcoded $HOME/AcademicAgent
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-PROJECT_DIR="$ROOT_DIR/projects/$PROJECT_NAME"
+PROJECT_DIR="$ROOT_DIR/runs/$PROJECT_NAME"
 
 # ============================================
 # Prüfe ob Projekt existiert
@@ -36,7 +36,7 @@ if [ ! -d "$PROJECT_DIR" ]; then
   echo "❌ Projekt nicht gefunden: $PROJECT_DIR"
   echo ""
   echo "Verfügbare Projekte:"
-  ls -1 "$ROOT_DIR/projects/" 2>/dev/null || echo "  (keine)"
+  ls -1 "$ROOT_DIR/runs/" 2>/dev/null || echo "  (keine)"
   exit 1
 fi
 

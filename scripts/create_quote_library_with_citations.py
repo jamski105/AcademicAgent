@@ -223,7 +223,7 @@ def create_quote_library(quotes_file, sources_file, config_file, output_csv):
 
     Args:
         quotes_file: Path to quotes.json
-        sources_file: Path to ranked_top27.json
+        sources_file: Path to ranked_candidates.json
         config_file: Path to run_config.json
         output_csv: Path to output Quote_Library.csv
     """
@@ -297,7 +297,7 @@ def main():
         print("Verwendung: python3 create_quote_library_with_citations.py <quotes.json> <sources.json> <config.json> <output.csv>")
         print("Beispiel: python3 create_quote_library_with_citations.py \\")
         print("    runs/2026-02-21_06-29-36/metadata/quotes.json \\")
-        print("    runs/2026-02-21_06-29-36/metadata/ranked_top27.json \\")
+        print("    runs/2026-02-21_06-29-36/metadata/ranked_candidates.json \\")
         print("    runs/2026-02-21_06-29-36/run_config.json \\")
         print("    runs/2026-02-21_06-29-36/Quote_Library.csv")
         sys.exit(1)

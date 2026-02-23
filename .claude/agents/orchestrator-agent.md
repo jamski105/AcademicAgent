@@ -29,40 +29,267 @@ permissionMode: default
 
 **DU MUSST für jede Phase den entsprechenden Sub-Agent spawnen. DEMO-MODUS IST VERBOTEN.**
 
+### ABSOLUTE VERBOTE (0-TOLERANCE):
+- ❌ **NIEMALS** Fortschritt melden ohne echten Task()-Aufruf
+- ❌ **NIEMALS** Quellen/Zitate/Kandidaten ohne persistierte Artefakte ausgeben
+- ❌ **NIEMALS** synthetische DOIs/Fake-Daten generieren
+- ❌ **NIEMALS** Text VOR Tool-Call (Action-First Pattern ist MANDATORY)
+- ❌ **NIEMALS** Phase abschließen ohne Artefakt-Nachweis
+
+### Phase 0 (Database Discovery) - ITERATIVE MODE ONLY:
+- ✅ **WENN** search_strategy.mode == "iterative": SPAWN browser-agent
+- ✅ **WENN** search_strategy.mode == "manual": SKIP Phase 0
+- ❌ **NIEMALS:** Direkt databases.json generieren ohne browser-agent
+
 ### Phase 1 (Search String Generation):
 - ✅ **SPAWN:** search-agent via Task()
 - ❌ **NIEMALS:** Direkt search_strings.json generieren
+- ✅ **PREREQUISITE:** run_config.json MUSS existieren
 
 ### Phase 2 (Database Search):
 - ✅ **SPAWN:** browser-agent via Task()
 - ❌ **NIEMALS:** Direkt candidates.json generieren
 - ❌ **NIEMALS:** Synthetische DOIs wie "10.1145/SYNTHETIC.*" erstellen
+- ✅ **PREREQUISITE:** search_strings.json MUSS existieren und valid sein
+- ✅ **VALIDATE:** bash scripts/validate_agent_execution.sh 2 $RUN_ID
 
 ### Phase 3 (Scoring):
 - ✅ **SPAWN:** scoring-agent via Task()
 - ❌ **NIEMALS:** Direkt ranked_candidates.json generieren
+- ✅ **PREREQUISITE:** candidates.json MUSS existieren und >= 1 Kandidat enthalten
 
 ### Phase 4 (PDF Download):
 - ✅ **SPAWN:** browser-agent via Task()
 - ❌ **NIEMALS:** Fake-PDFs oder leere Dateien erstellen
+- ✅ **PREREQUISITE:** ranked_candidates.json MUSS existieren
+- ✅ **VALIDATE:** bash scripts/validate_agent_execution.sh 4 $RUN_ID
 
 ### Phase 5 (Quote Extraction):
 - ✅ **SPAWN:** extraction-agent via Task()
 - ❌ **NIEMALS:** Direkt quotes.json generieren
+- ✅ **PREREQUISITE:** downloads/*.pdf MUSS existieren (>=1 PDF)
+- ✅ **VALIDATE:** bash scripts/validate_agent_execution.sh 5 $RUN_ID
 
-**VALIDIERUNG NACH JEDEM SPAWN:**
+### MANDATORY: Phase Execution Guard (vor JEDER Phase)
 ```bash
-# Nach JEDEM Task()-Aufruf prüfen:
-if [ ! -f "runs/$RUN_ID/metadata/.phase_${PHASE_NUM}_spawned" ]; then
-    echo "❌ FEHLER: Sub-Agent wurde nicht gespawnt!"
-    exit 1
-fi
+# VOR jeder Phase diese Checks ausführen:
+RUN_ID="<current-run-id>"
+PHASE=<phase-number>
 
-# Marker-File nach erfolgreichem Spawn schreiben:
-echo "spawned" > "runs/$RUN_ID/metadata/.phase_${PHASE_NUM}_spawned"
+# 1. Prerequisite Check (phase-spezifisch)
+case $PHASE in
+  1) [ -f "runs/$RUN_ID/config/run_config.json" ] || { echo "❌ run_config.json fehlt"; exit 1; } ;;
+  2) [ -f "runs/$RUN_ID/metadata/search_strings.json" ] || { echo "❌ search_strings.json fehlt"; exit 1; } ;;
+  3) [ -f "runs/$RUN_ID/metadata/candidates.json" ] || { echo "❌ candidates.json fehlt"; exit 1; } ;;
+  4) [ -f "runs/$RUN_ID/metadata/ranked_candidates.json" ] || { echo "❌ ranked_candidates.json fehlt"; exit 1; } ;;
+  5) [ "$(find runs/$RUN_ID/downloads -name '*.pdf' | wc -l)" -gt 0 ] || { echo "❌ Keine PDFs vorhanden"; exit 1; } ;;
+esac
+
+# 2. Export CURRENT_AGENT für Auto-Permissions
+export CURRENT_AGENT="<agent-name>"
+
+# 3. Log Phase Start
+python3 scripts/log_event.py phase_start $PHASE $RUN_ID
+
+# 4. JETZT erst Task() aufrufen (kein Text vorher!)
 ```
 
 **NIEMALS synthetische Daten generieren. Nutze IMMER echte Sub-Agents.**
+
+---
+
+## 🚀 CRITICAL: Orchestrator Startup & Chrome Initialization
+
+### BEIM ERSTEN START (vor Phase 0):
+
+**MANDATORY: Chrome MUSS laufen bevor Browser-Agent startet!**
+
+```bash
+# 1. Prüfe ob Chrome läuft auf Port 9222
+if ! curl -s http://localhost:9222/json/version > /dev/null 2>&1; then
+    echo "╭──────────────────────────────────────────────────────────────╮"
+    echo "│ 🌐 Chrome nicht gefunden - starte Chrome mit CDP...          │"
+    echo "╰──────────────────────────────────────────────────────────────╯"
+
+    # Starte Chrome (macOS)
+    bash scripts/start_chrome_debug.sh
+
+    # Warte kurz
+    sleep 3
+
+    # Verify Chrome started
+    if ! curl -s http://localhost:9222/json/version > /dev/null 2>&1; then
+        echo "❌ FEHLER: Chrome konnte nicht gestartet werden"
+        echo "   Bitte manuell starten: bash scripts/start_chrome_debug.sh"
+        exit 1
+    fi
+
+    echo "✅ Chrome läuft auf Port 9222"
+fi
+
+# 2. Export CDP URL für browser-agent
+export PLAYWRIGHT_CDP_URL="http://localhost:9222"
+
+# 3. Zeige Chrome-Status
+echo "╭──────────────────────────────────────────────────────────────╮"
+echo "│ ✅ Browser-Umgebung bereit                                    │"
+echo "├──────────────────────────────────────────────────────────────┤"
+echo "│ Chrome CDP:  http://localhost:9222                           │"
+echo "│ Fenster:     Sichtbar auf Desktop                            │"
+echo "│ Agent:       browser-agent kann verbinden                    │"
+echo "╰──────────────────────────────────────────────────────────────╯"
+```
+
+**WICHTIG:** Dieser Check MUSS vor Phase 0 und Phase 2/4 (Browser-Agent) erfolgen!
+
+---
+
+## 🎯 Phase-by-Phase Execution Patterns (STRICT)
+
+### Phase 0: Database Discovery (Conditional)
+
+**Execute ONLY IF** `search_strategy.mode == "iterative"`
+
+```bash
+# Read mode from run_config
+RUN_ID="<current-run-id>"
+SEARCH_MODE=$(jq -r '.search_strategy.mode' "runs/$RUN_ID/config/run_config.json")
+
+if [ "$SEARCH_MODE" != "iterative" ]; then
+    echo "📊 Skipping Phase 0: Manual mode - databases already selected"
+    python3 scripts/log_event.py $RUN_ID orchestrator phase_skipped phase=0 reason="manual_mode"
+    # IMMEDIATELY continue to Phase 1 (no pause!)
+fi
+
+# Phase 0 is iterative mode → need browser-agent
+
+# 1. Log Phase Start
+python3 scripts/log_event.py $RUN_ID orchestrator phase_start phase=0
+
+# 2. Prerequisite: Chrome running (already checked above)
+
+# 3. Export CURRENT_AGENT
+export CURRENT_AGENT="browser-agent"
+
+# 4. NO TEXT OUTPUT BEFORE THIS! Action-First!
+Task(
+  subagent_type="browser-agent",
+  description="Phase 0: DBIS Navigation",
+  prompt="Navigate to DBIS, search for databases matching research context.
+
+  Research field: [from run_config]
+  Keywords: [from run_config]
+
+  Output: runs/$RUN_ID/metadata/databases.json
+
+  See Phase 0 in AGENT_API_CONTRACTS.md for full spec."
+)
+
+# 5. AFTER Task completes, validate
+[ -f "runs/$RUN_ID/metadata/databases.json" ] || { echo "❌ databases.json fehlt"; exit 1; }
+
+# 6. Log completion
+python3 scripts/log_event.py $RUN_ID orchestrator phase_complete phase=0
+
+# 7. IMMEDIATELY continue to Phase 1 (no pause, no "waiting for user")
+```
+
+**Key Points:**
+- Phase 0 ist OPTIONAL (nur iterative mode)
+- Browser-Agent spawnen via Task()
+- Keine Text-Ausgabe VOR Task()
+- Sofort zu Phase 1 weitermachen
+
+### Phase 1: Search String Generation
+
+```bash
+RUN_ID="<current-run-id>"
+
+# 1. Prerequisite check
+[ -f "runs/$RUN_ID/config/run_config.json" ] || { echo "❌ run_config.json fehlt"; exit 1; }
+
+# 2. Log Phase Start
+python3 scripts/log_event.py $RUN_ID orchestrator phase_start phase=1
+
+# 3. Export CURRENT_AGENT
+export CURRENT_AGENT="search-agent"
+
+# 4. NO TEXT! Action-First!
+Task(
+  subagent_type="search-agent",
+  description="Phase 1: Generate search strings",
+  prompt="Generate database-specific search strings.
+
+  Input: runs/$RUN_ID/config/run_config.json
+  Output: runs/$RUN_ID/metadata/search_strings.json
+
+  See Phase 1 in AGENT_API_CONTRACTS.md."
+)
+
+# 5. Validate
+[ -f "runs/$RUN_ID/metadata/search_strings.json" ] || { echo "❌ search_strings.json fehlt"; exit 1; }
+
+# 6. Log + Continue
+python3 scripts/log_event.py $RUN_ID orchestrator phase_complete phase=1
+```
+
+### Phase 2: Database Search
+
+**CRITICAL: Häufigster Failure-Point - Hier passieren "Halluzinationen"!**
+
+```bash
+RUN_ID="<current-run-id>"
+
+# 1. HARD Prerequisite check
+[ -f "runs/$RUN_ID/metadata/search_strings.json" ] || { echo "❌ search_strings.json fehlt - Phase 1 nicht ausgeführt!"; exit 1; }
+
+# 2. Validate search_strings.json is valid JSON
+jq empty "runs/$RUN_ID/metadata/search_strings.json" 2>/dev/null || { echo "❌ search_strings.json ist kein valides JSON!"; exit 1; }
+
+# 3. Chrome check (MUST be running!)
+curl -s http://localhost:9222/json/version > /dev/null || { echo "❌ Chrome nicht erreichbar!"; exit 1; }
+
+# 4. Log Phase Start
+python3 scripts/log_event.py $RUN_ID orchestrator phase_start phase=2 iteration=1
+
+# 5. Export CURRENT_AGENT
+export CURRENT_AGENT="browser-agent"
+
+# 6. NO TEXT! Task() FIRST!
+Task(
+  subagent_type="browser-agent",
+  description="Phase 2: Database Search Iteration 1",
+  prompt="Execute database searches for iteration 1.
+
+  Databases: [Top 5 from databases.json or run_config]
+  Search strings: runs/$RUN_ID/metadata/search_strings.json
+  Output: runs/$RUN_ID/metadata/candidates.json
+
+  MANDATORY: Use Chrome CDP via browser_cdp_helper.js
+  MANDATORY: Extract real candidates from real database results
+  FORBIDDEN: Creating synthetic DOIs or fake data
+
+  See Phase 2 in AGENT_API_CONTRACTS.md."
+)
+
+# 7. HARD Validation (catches hallucinations!)
+bash scripts/validate_agent_execution.sh 2 $RUN_ID || exit 1
+
+# 8. Check for SYNTHETIC DOIs (0-tolerance)
+if jq -e '.candidates[] | select(.doi | contains("SYNTHETIC"))' "runs/$RUN_ID/metadata/candidates.json" > /dev/null 2>&1; then
+    echo "╔══════════════════════════════════════════════════════════════╗"
+    echo "║  ❌ CRITICAL: FAKE DATA DETECTED                             ║"
+    echo "║  candidates.json contains SYNTHETIC DOIs!                   ║"
+    echo "║  Orchestrator MUST spawn browser-agent, not generate data!  ║"
+    echo "╚══════════════════════════════════════════════════════════════╝"
+    exit 1
+fi
+
+# 9. Log + Continue
+python3 scripts/log_event.py $RUN_ID orchestrator phase_complete phase=2 iteration=1
+```
+
+**Phase 3-6:** Similar patterns mit entsprechenden Prerequisite-Checks
 
 ---
 
@@ -252,7 +479,7 @@ Task(
 **Auto-Allowed Operations (Beispiele):**
 - `browser-agent`: Write to `runs/<run-id>/logs/browser_*.log` ✅ Auto-Allowed
 - `setup-agent`: Write to `runs/<run-id>/run_config.json` ✅ Auto-Allowed
-- `extraction-agent`: Read from `runs/<run-id>/pdfs/*.pdf` ✅ Auto-Allowed
+- `extraction-agent`: Read from `runs/<run-id>/downloads/*.pdf` ✅ Auto-Allowed
 - Any agent: Write to `/tmp/*` ✅ Auto-Allowed (global safe path)
 
 **Testing:**
@@ -1196,9 +1423,9 @@ if not can_proceed:
 | **0** | DBIS Navigation | run_config.json | metadata/databases.json | browser-agent | 10-15 min |
 | **1** | Search String Gen. | run_config.json, databases.json | metadata/search_strings.json | search-agent | 5 min |
 | **2** | Database Search (Iterative) | search_strings.json, databases.json | metadata/candidates.json | browser-agent | 30-90 min |
-| **3** | Screening & Ranking | candidates.json, run_config.json | metadata/ranked_top27.json | scoring-agent | 10 min |
-| **4** | PDF Download | ranked_top27.json | pdfs/*.pdf, metadata/downloads.json | browser-agent | 20-40 min |
-| **5** | Citation Extraction | pdfs/*.pdf, run_config.json | Quote_Library.csv | extraction-agent | 30-45 min |
+| **3** | Screening & Ranking | candidates.json, run_config.json | metadata/ranked_candidates.json | scoring-agent | 10 min |
+| **4** | PDF Download | ranked_candidates.json | downloads/*.pdf, metadata/downloads.json | browser-agent | 20-40 min |
+| **5** | Citation Extraction | downloads/*.pdf, run_config.json | Quote_Library.csv | extraction-agent | 30-45 min |
 | **6** | Finalization | Quote_Library.csv | Annotated_Bibliography.md, search_report.md | orchestrator | 5 min |
 
 **Checkpoints:**
@@ -1458,7 +1685,7 @@ state["phase_outputs"]["2"] = {
 # Phase 3 (Scoring) - Add these fields:
 state["phase_outputs"]["3"] = {
     "status": "completed",
-    "output_file": "metadata/ranked_top27.json",
+    "output_file": "metadata/ranked_candidates.json",
     "completed_at": "...",
     "duration_seconds": 600,
     "candidates_ranked": 85  # REQUIRED for live_monitor
@@ -1724,9 +1951,9 @@ validate_phase_prerequisites() {
       fi
       ;;
     4)
-      # Needs: ranked_top27.json (from Phase 3)
-      if [ ! -f "$RUN_DIR/metadata/ranked_top27.json" ]; then
-        echo "❌ Missing prerequisite: metadata/ranked_top27.json"
+      # Needs: ranked_candidates.json (from Phase 3)
+      if [ ! -f "$RUN_DIR/metadata/ranked_candidates.json" ]; then
+        echo "❌ Missing prerequisite: metadata/ranked_candidates.json"
         echo "   Run Phase 3 first"
         return 1
       fi
@@ -2503,13 +2730,31 @@ After search completes (success, early, or exhausted):
 
 ---
 
-### **Phase 4: PDF Download** (Unchanged)
+### **Phase 4: PDF Download** (CDP-basiert)
 
+**Download-Methode:**
 - Delegate to Task(browser-agent) for PDF downloads
-- Output: `runs/<run-id>/downloads/*.pdf`
-- Fallback strategies: direct DOI, CDP browser, Open Access, manual
-- **Incremental State Saves**: Every 3 PDFs downloaded
-- Save state: phase 4 completed
+- Uses `browser_cdp_helper.js download` action (Playwright CDP)
+- Automatic PDF validation (header check)
+- Error classification: timeout/404/auth_required/html_instead_of_pdf/empty_file
+
+**Outputs:**
+- `runs/<run-id>/downloads/*.pdf` (echte PDFs)
+- `runs/<run-id>/downloads/downloads.json` (Metadaten + Fehlerinfos)
+
+**Error Handling:**
+- Bei Paywall (auth_required): User informieren, Alternativen vorschlagen
+- Bei 0 erfolgreichen Downloads: WARNUNG (nicht Fehler), Phase 5 kann nicht fortfahren
+- downloads.json MUSS immer geschrieben werden (auch bei allen Fehlern)
+
+**Validation:**
+- `bash scripts/validate_agent_execution.sh 4 $RUN_ID`
+- Prüft: downloads.json existiert, valides JSON, Erfolgs-/Fehler-Statistiken
+- WARNUNG bei 0 PDFs (nicht Fehler wenn strukturiert dokumentiert)
+
+**Incremental State Saves:**
+- Nach jedem PDF-Download-Versuch (Erfolg oder Fehler)
+- Save state: phase 4 completed (auch wenn nur teilweise erfolgreich)
 
 ---
 

@@ -124,35 +124,63 @@ case $PHASE in
         # Prüfe downloads.json
         if [ ! -f "runs/$RUN_ID/downloads/downloads.json" ]; then
             echo -e "${RED}❌ FEHLER: downloads.json fehlt${NC}"
+            echo "   Phase 4 muss immer downloads.json schreiben (auch bei Fehler)!"
             VALIDATION_FAILED=true
         else
             echo -e "${GREEN}✅ downloads.json existiert${NC}"
 
-            # Zähle echte PDFs
-            PDF_COUNT=$(find "runs/$RUN_ID/downloads/" -name "*.pdf" 2>/dev/null | wc -l | tr -d ' ')
-            echo "→ Heruntergeladene PDFs: $PDF_COUNT"
-
-            if [ "$PDF_COUNT" -eq 0 ]; then
-                echo -e "${RED}❌ FEHLER: Keine PDFs heruntergeladen${NC}"
-                echo "   Phase 4 muss echte PDFs herunterladen!"
+            # Validiere JSON-Struktur
+            if ! jq empty "runs/$RUN_ID/downloads/downloads.json" 2>/dev/null; then
+                echo -e "${RED}❌ FEHLER: downloads.json ist kein valides JSON${NC}"
                 VALIDATION_FAILED=true
             else
-                echo -e "${GREEN}✅ $PDF_COUNT PDFs gefunden${NC}"
+                # Zähle Erfolge/Fehler
+                SUCCESS_COUNT=$(jq '[.downloads[] | select(.status=="success")] | length' "runs/$RUN_ID/downloads/downloads.json" 2>/dev/null || echo "0")
+                FAILED_COUNT=$(jq '[.downloads[] | select(.status=="failed")] | length' "runs/$RUN_ID/downloads/downloads.json" 2>/dev/null || echo "0")
+                TOTAL_ATTEMPTS=$(jq '.downloads | length' "runs/$RUN_ID/downloads/downloads.json" 2>/dev/null || echo "0")
 
-                # Prüfe ob PDFs valide sind (nicht leer)
-                EMPTY_PDFS=0
-                for pdf in runs/$RUN_ID/downloads/*.pdf 2>/dev/null; do
-                    if [ -f "$pdf" ]; then
-                        SIZE=$(stat -f%z "$pdf" 2>/dev/null || stat -c%s "$pdf" 2>/dev/null || echo "0")
-                        if [ "$SIZE" -lt 1024 ]; then
-                            echo -e "${YELLOW}⚠️  WARNUNG: $pdf ist sehr klein (<1KB)${NC}"
-                            EMPTY_PDFS=$((EMPTY_PDFS + 1))
+                echo "→ Download-Statistik:"
+                echo "   Versuche:  $TOTAL_ATTEMPTS"
+                echo "   Erfolge:   $SUCCESS_COUNT"
+                echo "   Fehler:    $FAILED_COUNT"
+
+                # Zähle echte PDFs im Filesystem
+                PDF_COUNT=$(find "runs/$RUN_ID/downloads/" -name "*.pdf" 2>/dev/null | wc -l | tr -d ' ')
+                echo "   PDFs (FS): $PDF_COUNT"
+
+                # WARNUNG (nicht Fehler) bei 0 PDFs, aber nur wenn auch downloads.json sagt dass 0 erfolgreich
+                if [ "$PDF_COUNT" -eq 0 ] && [ "$SUCCESS_COUNT" -eq 0 ] && [ "$TOTAL_ATTEMPTS" -gt 0 ]; then
+                    echo -e "${YELLOW}⚠️  WARNUNG: Keine PDFs heruntergeladen${NC}"
+                    echo "   Alle $TOTAL_ATTEMPTS Download-Versuche fehlgeschlagen."
+
+                    # Zeige häufigste Fehlertypen
+                    echo "   Häufigste Fehler:"
+                    jq -r '.downloads[] | select(.status=="failed") | .error_type' "runs/$RUN_ID/downloads/downloads.json" 2>/dev/null | sort | uniq -c | sort -rn | head -3 | sed 's/^/     /'
+
+                    echo ""
+                    echo "   Dies ist KEIN Validierungsfehler - downloads.json ist strukturiert."
+                    echo "   Phase 5 kann NICHT fortfahren ohne PDFs."
+                elif [ "$PDF_COUNT" -ne "$SUCCESS_COUNT" ]; then
+                    echo -e "${YELLOW}⚠️  INKONSISTENZ: PDF-Count ($PDF_COUNT) != Success-Count ($SUCCESS_COUNT)${NC}"
+                    echo "   Prüfe downloads.json und Filesystem."
+                else
+                    echo -e "${GREEN}✅ $PDF_COUNT PDFs erfolgreich heruntergeladen${NC}"
+
+                    # Prüfe ob PDFs valide sind (nicht leer)
+                    EMPTY_PDFS=0
+                    for pdf in runs/$RUN_ID/downloads/*.pdf 2>/dev/null; do
+                        if [ -f "$pdf" ]; then
+                            SIZE=$(stat -f%z "$pdf" 2>/dev/null || stat -c%s "$pdf" 2>/dev/null || echo "0")
+                            if [ "$SIZE" -lt 1024 ]; then
+                                echo -e "${YELLOW}⚠️  WARNUNG: $pdf ist sehr klein (<1KB)${NC}"
+                                EMPTY_PDFS=$((EMPTY_PDFS + 1))
+                            fi
                         fi
-                    fi
-                done
+                    done
 
-                if [ "$EMPTY_PDFS" -gt 0 ]; then
-                    echo -e "${YELLOW}⚠️  $EMPTY_PDFS PDFs könnten leer/korrupt sein${NC}"
+                    if [ "$EMPTY_PDFS" -gt 0 ]; then
+                        echo -e "${YELLOW}⚠️  $EMPTY_PDFS PDFs könnten leer/korrupt sein${NC}"
+                    fi
                 fi
             fi
         fi

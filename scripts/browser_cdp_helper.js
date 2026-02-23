@@ -19,10 +19,11 @@ async function main() {
 
   if (!action) {
     console.error('Usage: node browser_cdp_helper.js <action> <args...>');
-    console.error('Actions: navigate, search, extract, screenshot, inject');
+    console.error('Actions: navigate, search, extract, screenshot, inject, download');
     console.error('');
     console.error('Example:');
     console.error('  node browser_cdp_helper.js navigate "https://ieeexplore.ieee.org"');
+    console.error('  node browser_cdp_helper.js download "https://example.com/paper.pdf" "/path/to/save.pdf"');
     process.exit(1);
   }
 
@@ -66,6 +67,9 @@ async function main() {
         break;
       case 'status':
         await actionStatus(page, args);
+        break;
+      case 'download':
+        await actionDownload(page, args);
         break;
       default:
         console.error(`Unknown action: ${action}`);
@@ -205,6 +209,108 @@ async function actionStatus(page, args) {
   };
 
   console.log(JSON.stringify(result, null, 2));
+}
+
+async function actionDownload(page, args) {
+  const [url, savePath, timeoutMs] = args;
+
+  if (!url || !savePath) {
+    console.error('Usage: download <url> <savePath> [timeoutMs]');
+    process.exit(1);
+  }
+
+  const timeout = parseInt(timeoutMs) || 60000; // Default 60s
+
+  console.log(`Downloading: ${url}`);
+  console.log(`Save to: ${savePath}`);
+
+  try {
+    // Set up download listener
+    const downloadPromise = new Promise((resolve, reject) => {
+      const timeoutId = setTimeout(() => {
+        reject(new Error('Download timeout'));
+      }, timeout);
+
+      page.once('download', async (download) => {
+        clearTimeout(timeoutId);
+        try {
+          // Wait for download to complete
+          await download.saveAs(savePath);
+
+          // Get file size
+          const stats = await fs.stat(savePath);
+
+          resolve({
+            status: 'success',
+            url: download.url(),
+            suggestedFilename: download.suggestedFilename(),
+            path: savePath,
+            size_bytes: stats.size,
+            content_type: null // Not available in Playwright
+          });
+        } catch (err) {
+          reject(err);
+        }
+      });
+    });
+
+    // Trigger download by navigating to URL
+    await page.goto(url, {
+      waitUntil: 'commit', // Don't wait for full load (PDFs may not have networkidle)
+      timeout: timeout
+    });
+
+    // Wait for download to complete
+    const result = await downloadPromise;
+
+    // Verify file is not empty
+    if (result.size_bytes === 0) {
+      throw new Error('Downloaded file is empty');
+    }
+
+    // Verify file is actually a PDF (basic check)
+    const fileBuffer = await fs.readFile(savePath);
+    const isPDF = fileBuffer.toString('ascii', 0, 4) === '%PDF';
+
+    if (!isPDF) {
+      result.status = 'failed';
+      result.error_type = 'html_instead_of_pdf';
+      result.error_message = 'Downloaded file is not a valid PDF (likely HTML error page)';
+    }
+
+    console.log(JSON.stringify(result, null, 2));
+
+    if (result.status === 'failed') {
+      process.exit(1);
+    }
+
+  } catch (error) {
+    // Classify error type
+    let errorType = 'unknown';
+    let errorMessage = error.message;
+
+    if (error.message.includes('timeout') || error.message.includes('Timeout')) {
+      errorType = 'timeout';
+    } else if (error.message.includes('net::ERR_')) {
+      errorType = '404_or_network';
+    } else if (error.message.includes('401') || error.message.includes('403')) {
+      errorType = 'auth_required';
+    } else if (error.message.includes('empty')) {
+      errorType = 'empty_file';
+    }
+
+    const result = {
+      status: 'failed',
+      url: url,
+      path: savePath,
+      error_type: errorType,
+      error_message: errorMessage,
+      attempts: 1
+    };
+
+    console.log(JSON.stringify(result, null, 2));
+    process.exit(1);
+  }
 }
 
 // ============================================

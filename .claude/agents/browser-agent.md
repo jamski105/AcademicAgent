@@ -7,8 +7,8 @@ tools:
   - Glob      # Datei-Pattern-Matching
   - Bash      # NUR via safe_bash.py Wrapper für CDP/Scripts
   - WebFetch  # Für Web-Content-Abruf
+  - Write     # MUSS outputs schreiben (databases.json, candidates.json, downloads.json)
 disallowedTools:
-  - Write     # Output-Delegation zum Orchestrator (return JSON strings)
   - Edit      # Keine In-Place-Modifikationen nötig
   - Task      # Kein Sub-Agent Spawning (Job des Orchestrators)
 permissionMode: default
@@ -72,7 +72,7 @@ permissionMode: default
 - ✅ `/tmp/*` (Global Safe Path)
 
 **Read (Auto-Allowed):**
-- ✅ `runs/<run-id>/metadata/(databases|search_strings|ranked_top27).json`
+- ✅ `runs/<run-id>/metadata/(databases|search_strings|ranked_candidates).json`
 - ✅ `scripts/database_patterns.json`
 - ✅ `config/*`, `schemas/*` (Global Safe Paths)
 
@@ -454,7 +454,7 @@ Diese Datei enthält:
 **Ziel:** Datenbanken identifizieren, Zugang prüfen
 
 ### Input
-- Config-Datei: `config/[ProjectName]_Config.md`
+- Config-Datei: `runs/<run-id>/config/run_config.json`
   - Liest: Primary Databases (3-5 DBs)
 
 ### Workflow (Vollautomatisch via DBIS-Proxy)
@@ -564,7 +564,7 @@ Informiere User: "✅ Alle Datenbanken via DBIS navigiert und gespeichert"
 
 ### Output
 
-**Speichere in:** `projects/[ProjectName]/metadata/databases.json`
+**Speichere in:** `runs/$RUN_ID/metadata/databases.json`
 
 ```json
 {
@@ -604,7 +604,7 @@ Informiere User: "✅ Alle Datenbanken via DBIS navigiert und gespeichert"
 **Orchestrator muss tun:**
 ```bash
 # Orchestrator initialisiert leere candidates.json VOR Browser-Agent-Spawn
-Write: projects/[ProjectName]/metadata/candidates.json
+Write: runs/$RUN_ID/metadata/candidates.json
 Content: {"candidates": []}
 ```
 
@@ -615,13 +615,13 @@ Content: {"candidates": []}
 ```bash
 # 1. Lese Suchstring-Info (via safe_bash)
 SEARCH_STRING=$(python3 scripts/safe_bash.py "jq -r '.search_strings[\$i].db_specific_string' \
-  projects/[ProjectName]/metadata/search_strings.json")
+  runs/$RUN_ID/metadata/search_strings.json")
 
 DATABASE_NAME=$(python3 scripts/safe_bash.py "jq -r '.search_strings[\$i].database' \
-  projects/[ProjectName]/metadata/search_strings.json")
+  runs/$RUN_ID/metadata/search_strings.json")
 
 DATABASE_URL=$(python3 scripts/safe_bash.py "jq -r '.databases[] | select(.name==\"\$DATABASE_NAME\") | .url' \
-  projects/[ProjectName]/metadata/databases.json")
+  runs/$RUN_ID/metadata/databases.json")
 
 Informiere User: "Processing: \$DATABASE_NAME - String \$i"
 
@@ -636,11 +636,11 @@ if [ -f "runs/\$RUN_ID/session.json" ]; then
   if [ $? -eq 0 ]; then
     # Erlaubt → Navigiere direkt
     python3 scripts/safe_bash.py "node scripts/browser_cdp_helper.js navigate '\$DATABASE_URL'" \
-      > projects/[ProjectName]/logs/nav_\${i}.json
+      > runs/$RUN_ID/logs/nav_\${i}.json
   else
     # Blockiert → Über DBIS navigieren
     DBIS_RESOURCE_ID=$(python3 scripts/safe_bash.py "jq -r '.databases[] | select(.name==\"\$DATABASE_NAME\") | .dbis_resource_id' \
-      projects/[ProjectName]/metadata/databases.json")
+      runs/$RUN_ID/metadata/databases.json")
 
     python3 scripts/safe_bash.py "node scripts/browser_cdp_helper.js navigate 'https://dbis.ur.de/UBTIB/resources/\$DBIS_RESOURCE_ID'"
     sleep 2
@@ -659,7 +659,7 @@ python3 scripts/safe_bash.py "node scripts/browser_cdp_helper.js search \
   scripts/database_patterns.json \
   '\$DATABASE_NAME' \
   '\$SEARCH_STRING'" \
-  > projects/[ProjectName]/metadata/results_temp_\${i}.json
+  > runs/$RUN_ID/metadata/results_temp_\${i}.json
 
 # 4. Prüfe auf Fehler
 if [ $? -ne 0 ]; then
@@ -667,10 +667,10 @@ if [ $? -ne 0 ]; then
 
   # Screenshot zur Analyse
   node scripts/browser_cdp_helper.js screenshot \
-    projects/[ProjectName]/logs/error_${i}.png
+    runs/$RUN_ID/logs/error_${i}.png
 
   # Lies Screenshot mit Claude Vision
-  Read: projects/[ProjectName]/logs/error_${i}.png
+  Read: runs/$RUN_ID/logs/error_${i}.png
 
   # Entscheide:
   # - CAPTCHA? → User fragen, dann retry
@@ -696,12 +696,12 @@ python3 scripts/safe_bash.py "jq -s '
 ' \
   --arg db \"\$DATABASE_NAME\" \
   --arg query \"\$SEARCH_STRING\" \
-  projects/[ProjectName]/metadata/candidates.json \
-  projects/[ProjectName]/metadata/results_temp_\${i}.json \
-  > projects/[ProjectName]/metadata/candidates_new.json"
+  runs/$RUN_ID/metadata/candidates.json \
+  runs/$RUN_ID/metadata/results_temp_\${i}.json \
+  > runs/$RUN_ID/metadata/candidates_new.json"
 
-mv projects/[ProjectName]/metadata/candidates_new.json \
-   projects/[ProjectName]/metadata/candidates.json
+mv runs/$RUN_ID/metadata/candidates_new.json \
+   runs/$RUN_ID/metadata/candidates.json
 
 # 6. Rate-Limit-Schutz
 if (( ($i + 1) % 10 == 0 )); then
@@ -711,7 +711,7 @@ fi
 
 # 7. Fortschritt loggen (via safe_bash + logger.py)
 TOTAL_CANDIDATES=$(python3 scripts/safe_bash.py "jq '.candidates | length' \
-  projects/[ProjectName]/metadata/candidates.json")
+  runs/$RUN_ID/metadata/candidates.json")
 
 python3 scripts/safe_bash.py "python3 -c '
 from scripts.logger import get_logger
@@ -729,7 +729,7 @@ Informiere User: "Progress: String \$i/29, Total candidates: \$TOTAL_CANDIDATES"
 
 ```bash
 # CAPTCHA erkannt (in error_${i}.png)
-if grep -q "CAPTCHA" projects/[ProjectName]/logs/error_\${i}.png; then
+if grep -q "CAPTCHA" runs/$RUN_ID/logs/error_\${i}.png; then
   Informiere User: "🚨 CAPTCHA erkannt!"
   Informiere User: "Bitte löse das CAPTCHA im Browser-Fenster."
   Informiere User: "Drücke ENTER wenn fertig."
@@ -741,14 +741,14 @@ if grep -q "CAPTCHA" projects/[ProjectName]/logs/error_\${i}.png; then
 fi
 
 # 0 Treffer (OK, nächster String) - via safe_bash
-RESULT_COUNT=$(python3 scripts/safe_bash.py "jq '.results | length' projects/[ProjectName]/metadata/results_temp_\${i}.json")
+RESULT_COUNT=$(python3 scripts/safe_bash.py "jq '.results | length' runs/$RUN_ID/metadata/results_temp_\${i}.json")
 if [ "$RESULT_COUNT" -eq 0 ]; then
   Informiere User: "⚠️  0 results for: \$SEARCH_STRING"
   # Nächster String (kein Error)
 fi
 
 # Login-Screen
-if grep -q "login" projects/[ProjectName]/logs/error_\${i}.png; then
+if grep -q "login" runs/$RUN_ID/logs/error_\${i}.png; then
   Informiere User: "❌ Login erforderlich! Bitte logge dich im Browser ein."
   Informiere User: "Drücke ENTER wenn fertig."
   read
@@ -761,7 +761,7 @@ fi
 
 ### Output
 
-**Speichere in:** `projects/[ProjectName]/metadata/candidates.json`
+**Speichere in:** `runs/$RUN_ID/metadata/candidates.json`
 
 ```json
 {
@@ -789,195 +789,197 @@ fi
 
 **Ziel:** PDFs für Top 18 Quellen herunterladen
 
+### ✅ Download-Implementierung: CDP-basiert
+
+**Verfügbare Download-Methode:**
+- ✅ `browser_cdp_helper.js download <url> <savePath> [timeoutMs]`
+- Nutzt Playwright CDP Download-API
+- Automatische PDF-Validierung (Header-Check)
+- Fehlerklassifikation (timeout/404/auth/html_instead_of_pdf/empty_file)
+
+**MANDATORY BEHAVIOR für Phase 4:**
+- Nutze `browser_cdp_helper.js download` für jeden PDF-Download
+- Bei Fehler: Klassifiziere via error_type (siehe unten)
+- Schreibe strukturiertes `downloads/downloads.json` mit allen Versuchen
+- KEINE Fake-Downloads, KEIN Silent Fail
+
+**Error-Types:**
+- `success`: PDF heruntergeladen und validiert
+- `timeout`: Download dauerte >60s
+- `404_or_network`: URL nicht erreichbar
+- `auth_required`: Paywall/Login benötigt (401/403)
+- `html_instead_of_pdf`: Seite lieferte HTML statt PDF
+- `empty_file`: Download war 0 Bytes
+- `unknown`: Unbekannter Fehler
+
 ### Input
-- `metadata/ranked_top27.json` (User hat Top 18 ausgewählt)
+- `metadata/ranked_candidates.json` (enthält ranked_sources)
 
-### Workflow (wget-first, CDP als Fallback)
+### Workflow (CDP-basierter Download)
 
-**WICHTIG:** Du hast KEIN Write-Tool! Orchestrator schreibt downloads.json vor deinem Start.
-
-**Orchestrator muss tun:**
-```bash
-# Orchestrator initialisiert leere downloads.json VOR Browser-Agent-Spawn (Phase 4)
-Write: projects/[ProjectName]/metadata/downloads.json
-Content: {"downloads": []}
-```
-
-**Du akkumulierst Download-Status und gibst Gesamt-JSON als Return-String zurück.**
+**Output:** Du MUSST `downloads/downloads.json` schreiben (Write-Tool verfügbar).
 
 **Für jede Quelle (Loop 0-17):**
 
 ```bash
-# 1. Extrahiere Metadaten (via safe_bash)
+# 1. Extrahiere Metadaten via safe_bash
 ID=$(printf "%03d" $((i+1)))
-DOI=$(python3 scripts/safe_bash.py "jq -r '.ranked_sources[\$i].doi' projects/[ProjectName]/metadata/ranked_top27.json")
-AUTHOR=$(python3 scripts/safe_bash.py "jq -r '.ranked_sources[\$i].authors[0]' projects/[ProjectName]/metadata/ranked_top27.json | sed 's/,.*//; s/ /_/g'")
-YEAR=$(python3 scripts/safe_bash.py "jq -r '.ranked_sources[\$i].year' projects/[ProjectName]/metadata/ranked_top27.json")
-TITLE=$(python3 scripts/safe_bash.py "jq -r '.ranked_sources[\$i].title' projects/[ProjectName]/metadata/ranked_top27.json")
+DOI=$(python3 scripts/safe_bash.py "jq -r '.ranked_sources[$i].doi' runs/$RUN_ID/metadata/ranked_candidates.json")
+AUTHOR=$(python3 scripts/safe_bash.py "jq -r '.ranked_sources[$i].authors[0]' runs/$RUN_ID/metadata/ranked_candidates.json | sed 's/,.*//; s/ /_/g'")
+YEAR=$(python3 scripts/safe_bash.py "jq -r '.ranked_sources[$i].year' runs/$RUN_ID/metadata/ranked_candidates.json")
+TITLE=$(python3 scripts/safe_bash.py "jq -r '.ranked_sources[$i].title' runs/$RUN_ID/metadata/ranked_candidates.json")
+PDF_URL=$(python3 scripts/safe_bash.py "jq -r '.ranked_sources[$i].pdf_url // empty' runs/$RUN_ID/metadata/ranked_candidates.json")
 
-PDF_FILENAME="\${ID}_\${AUTHOR}_\${YEAR}.pdf"
-PDF_PATH="projects/[ProjectName]/pdfs/\${PDF_FILENAME}"
+# Fallback: Verwende DOI-Resolver wenn keine PDF-URL
+if [ -z "$PDF_URL" ]; then
+  PDF_URL="https://doi.org/$DOI"
+fi
 
-Informiere User: "Downloading: \$PDF_FILENAME"
+PDF_FILENAME="${ID}_${AUTHOR}_${YEAR}.pdf"
+PDF_PATH="runs/$RUN_ID/downloads/${PDF_FILENAME}"
 
-# 2. Variante A: wget via DOI (schnell, funktioniert oft) - via safe_bash
-if python3 scripts/safe_bash.py "wget -q --timeout=30 -O '\$PDF_PATH' 'https://doi.org/\$DOI'"; then
-  # Verifiziere PDF (via safe_bash)
-  if python3 scripts/safe_bash.py "pdftotext '\$PDF_PATH' /tmp/test_\${ID}.txt" && [ -s /tmp/test_\${ID}.txt ]; then
-    Informiere User: "✅ Downloaded via wget: \$PDF_FILENAME"
+# 2. Download via CDP (via safe_bash)
+echo "╭────────────────────────────────────────────────────────────╮"
+echo "│ 📥 Downloading PDF $ID/18                                  │"
+echo "├────────────────────────────────────────────────────────────┤"
+echo "│ Title:   ${TITLE:0:50}...                                  │"
+echo "│ Author:  $AUTHOR                                            │"
+echo "│ Year:    $YEAR                                              │"
+echo "│ DOI:     $DOI                                               │"
+echo "╰────────────────────────────────────────────────────────────╯"
 
-    # Log in downloads.json (via safe_bash)
-    python3 scripts/safe_bash.py "jq '.downloads += [{
-      \"id\": \"\$ID\",
-      \"filename\": \"\$PDF_FILENAME\",
-      \"source\": \"DOI-Direct\",
-      \"status\": \"success\",
-      \"doi\": \"\$DOI\"
-    }]' projects/[ProjectName]/metadata/downloads.json > /tmp/downloads_new.json"
-    mv /tmp/downloads_new.json projects/[ProjectName]/metadata/downloads.json
+# Versuche Download (Output ist JSON)
+DOWNLOAD_RESULT=$(python3 scripts/safe_bash.py "node scripts/browser_cdp_helper.js download '$PDF_URL' '$PDF_PATH' 60000" 2>&1)
+DOWNLOAD_EXIT=$?
 
-    continue  # Nächstes PDF
+if [ $DOWNLOAD_EXIT -eq 0 ]; then
+  # Erfolg: Parse JSON via jq
+  STATUS=$(echo "$DOWNLOAD_RESULT" | jq -r '.status')
+  SIZE=$(echo "$DOWNLOAD_RESULT" | jq -r '.size_bytes')
+
+  if [ "$STATUS" = "success" ]; then
+    echo "✅ Downloaded: $PDF_FILENAME ($(echo "scale=2; $SIZE/1024/1024" | bc) MB)"
+
+    # Schreibe in downloads.json
+    Write: runs/$RUN_ID/downloads/downloads.json (append entry):
+    {
+      "doi": "$DOI",
+      "filename": "$PDF_FILENAME",
+      "status": "success",
+      "source_url": "$PDF_URL",
+      "final_path": "$PDF_PATH",
+      "size_bytes": $SIZE,
+      "attempts": 1,
+      "method": "CDP-Direct"
+    }
   else
-    # PDF korrupt oder HTML-Seite statt PDF
-    python3 scripts/safe_bash.py "rm '\$PDF_PATH'"
+    # Status war failed (z.B. html_instead_of_pdf)
+    ERROR_TYPE=$(echo "$DOWNLOAD_RESULT" | jq -r '.error_type')
+    ERROR_MSG=$(echo "$DOWNLOAD_RESULT" | jq -r '.error_message')
+
+    echo "❌ Download failed: $ERROR_TYPE"
+    echo "   $ERROR_MSG"
+
+    # Schreibe Fehler in downloads.json
+    Write: runs/$RUN_ID/downloads/downloads.json (append entry):
+    {
+      "doi": "$DOI",
+      "filename": "$PDF_FILENAME",
+      "status": "failed",
+      "source_url": "$PDF_URL",
+      "error_type": "$ERROR_TYPE",
+      "error_message": "$ERROR_MSG",
+      "attempts": 1
+    }
+  fi
+else
+  # Script fehlgeschlagen: Parse Fehler
+  ERROR_TYPE=$(echo "$DOWNLOAD_RESULT" | jq -r '.error_type // "unknown"')
+  ERROR_MSG=$(echo "$DOWNLOAD_RESULT" | jq -r '.error_message // "CDP download failed"')
+
+  echo "❌ Download error: $ERROR_TYPE"
+  echo "   $ERROR_MSG"
+
+  # Schreibe Fehler in downloads.json
+  Write: runs/$RUN_ID/downloads/downloads.json (append entry):
+  {
+    "doi": "$DOI",
+    "filename": "$PDF_FILENAME",
+    "status": "failed",
+    "source_url": "$PDF_URL",
+    "error_type": "$ERROR_TYPE",
+    "error_message": "$ERROR_MSG",
+    "attempts": 1
+  }
+
+  # Bei auth_required: Informiere User über Paywall
+  if [ "$ERROR_TYPE" = "auth_required" ]; then
+    echo ""
+    echo "╭────────────────────────────────────────────────────────────╮"
+    echo "│ 🚫 PAYWALL DETECTED                                        │"
+    echo "├────────────────────────────────────────────────────────────┤"
+    echo "│ This paper requires subscription or purchase.              │"
+    echo "│                                                            │"
+    echo "│ Options:                                                   │"
+    echo "│  1. Check if your institution has access                  │"
+    echo "│  2. Search for Open Access version (arXiv, ResearchGate)  │"
+    echo "│  3. Request via TIB Document Delivery (3-5 days)          │"
+    echo "│  4. Skip this paper (use next in ranking)                 │"
+    echo "╰────────────────────────────────────────────────────────────╯"
   fi
 fi
 
-# 3. Variante B: CDP Browser-Download (Paywall-Umgehung)
-Informiere User: "⚠️  wget failed, trying CDP browser..."
+# 3. Progress Update
+SUCCESS_COUNT=$(jq '[.downloads[] | select(.status=="success")] | length' runs/$RUN_ID/downloads/downloads.json)
+TOTAL=18
 
-# Navigiere zu DOI-URL (via safe_bash)
-python3 scripts/safe_bash.py "node scripts/browser_cdp_helper.js navigate 'https://doi.org/\$DOI'"
-
-# Warte auf Redirect
-python3 scripts/safe_bash.py "sleep 5"
-
-# Screenshot zur Analyse
-python3 scripts/safe_bash.py "node scripts/browser_cdp_helper.js screenshot \
-  projects/[ProjectName]/logs/pdf_page_\${ID}.png"
-
-# Analysiere Screenshot (suche nach PDF-Link)
-Read: projects/[ProjectName]/logs/pdf_page_\${ID}.png
-
-# Wenn Paywall erkannt:
-if grep -q "paywall\|purchase\|subscribe" projects/[ProjectName]/logs/pdf_page_\${ID}.png; then
-  Informiere User: "🚫 Paywall detected for: \$PDF_FILENAME"
-
-  # Variante C: Open Access Fallback
-  Informiere User: "Trying Open Access alternatives..."
-
-  # arXiv (für Informatik/Physik)
-  ARXIV_URL="https://arxiv.org/search/?query=\${TITLE// /+}"
-  python3 scripts/safe_bash.py "node scripts/browser_cdp_helper.js navigate '\$ARXIV_URL'"
-  python3 scripts/safe_bash.py "sleep 3"
-
-  # Screenshot
-  python3 scripts/safe_bash.py "node scripts/browser_cdp_helper.js screenshot \
-    projects/[ProjectName]/logs/arxiv_\${ID}.png"
-
-  # Wenn arXiv-PDF gefunden (manuell via Read)
-  Read: projects/[ProjectName]/logs/arxiv_\${ID}.png
-
-  # User fragen
-  Informiere User: "❓ Konnte PDF nicht automatisch finden."
-  Informiere User: "   Titel: \$TITLE"
-  Informiere User: "   DOI: \$DOI"
-  Informiere User: ""
-  Informiere User: "Optionen:"
-  Informiere User: "  1) Manuell herunterladen und als \$PDF_FILENAME speichern"
-  Informiere User: "  2) Via TIB-Portal bestellen (3-5 Tage)"
-  Informiere User: "  3) Quelle überspringen (nächste im Ranking nutzen)"
-  Informiere User: ""
-  Informiere User: "Was möchtest du tun? (1/2/3)"
-  read USER_CHOICE
-
-  case $USER_CHOICE in
-    1)
-      Informiere User: "Bitte speichere PDF als: \$PDF_PATH"
-      Informiere User: "Drücke ENTER wenn fertig."
-      read
-
-      # Verifiziere
-      if [ -f "\$PDF_PATH" ]; then
-        Informiere User: "✅ Manual download: \$PDF_FILENAME"
-        python3 scripts/safe_bash.py "jq '.downloads += [{
-          \"id\": \"\$ID\",
-          \"filename\": \"\$PDF_FILENAME\",
-          \"source\": \"Manual\",
-          \"status\": \"success\"
-        }]' projects/[ProjectName]/metadata/downloads.json > /tmp/downloads_new.json"
-        mv /tmp/downloads_new.json projects/[ProjectName]/metadata/downloads.json
-      fi
-      ;;
-
-    2)
-      Informiere User: "📋 TIB-Portal: https://www.tib.eu/en/search/document-delivery"
-      Informiere User: "   Bitte bestelle: \$TITLE"
-
-      python3 scripts/safe_bash.py "jq '.downloads += [{
-        \"id\": \"\$ID\",
-        \"filename\": \"\$PDF_FILENAME\",
-        \"source\": \"TIB-Requested\",
-        \"status\": \"pending\"
-      }]' projects/[ProjectName]/metadata/downloads.json > /tmp/downloads_new.json"
-      python3 scripts/safe_bash.py "mv /tmp/downloads_new.json projects/[ProjectName]/metadata/downloads.json"
-      ;;
-
-    3)
-      Informiere User: "⏭️  Skipping: \$PDF_FILENAME"
-      python3 scripts/safe_bash.py "jq '.downloads += [{
-        \"id\": \"\$ID\",
-        \"status\": \"skipped\",
-        \"reason\": \"Paywall\"
-      }]' projects/[ProjectName]/metadata/downloads.json > /tmp/downloads_new.json"
-      mv /tmp/downloads_new.json projects/[ProjectName]/metadata/downloads.json
-      ;;
-  esac
-fi
-
-# 4. Fortschritt loggen (via safe_bash + logger.py)
-DOWNLOADED=$(python3 scripts/safe_bash.py "jq '.downloads | map(select(.status==\"success\")) | length' \
-  projects/[ProjectName]/metadata/downloads.json")
-
-python3 scripts/safe_bash.py "python3 -c '
-from scripts.logger import get_logger
-logger = get_logger(\"browser_agent\", \"runs/\$SESSION_ID\")
-logger.info(\"PDF download progress\",
-    downloaded=\$DOWNLOADED,
-    total=18)
-'"
-
-Informiere User: "Progress: \$DOWNLOADED/18 PDFs downloaded"
+echo ""
+echo "Progress: $SUCCESS_COUNT/$TOTAL PDFs downloaded"
+echo "────────────────────────────────────────────────────────────"
+echo ""
 ```
+
+**WICHTIG:**
+- NIEMALS Fake-Erfolge: Nur `status: "success"` wenn echtes PDF existiert
+- IMMER error_type klassifizieren bei Fehler
+- IMMER downloads.json schreiben (auch bei Fehler)
 
 ### Output
 
-**Speichere in:** `projects/[ProjectName]/pdfs/`
+**Speichere in:** `runs/$RUN_ID/downloads/`
 - 001_Bass_2015.pdf
 - 002_Kim_2016.pdf
 - ...
 
-**Speichere Metadaten in:** `metadata/downloads.json`
+**Speichere Metadaten in:** `downloads/downloads.json` (NICHT metadata/!)
 
 ```json
 {
   "downloads": [
     {
-      "id": "001",
+      "doi": "10.1109/MS.2015.27",
       "filename": "001_Bass_2015.pdf",
-      "source": "IEEE Xplore",
-      "status": "downloaded",
-      "file_size": "4.2 MB"
+      "status": "success",
+      "source_url": "https://doi.org/10.1109/MS.2015.27",
+      "final_path": "runs/xyz/downloads/001_Bass_2015.pdf",
+      "size_bytes": 4194304,
+      "attempts": 1,
+      "method": "CDP-Direct"
     },
     {
-      "id": "002",
+      "doi": "10.1145/2884781.2884849",
       "filename": "002_Kim_2016.pdf",
-      "source": "arXiv (Open Access)",
-      "status": "downloaded",
-      "file_size": "1.8 MB"
+      "status": "failed",
+      "source_url": "https://doi.org/10.1145/2884781.2884849",
+      "error_type": "auth_required",
+      "error_message": "HTTP 403: Subscription required",
+      "attempts": 1
     }
   ],
-  "success_rate": "18/18 (100%)"
+  "success_count": 1,
+  "failed_count": 1,
+  "skipped_count": 0,
+  "timestamp": "2026-02-23T14:30:00Z"
 }
 ```
 
@@ -1097,22 +1099,22 @@ Informiere User: "Progress: \$DOWNLOADED/18 PDFs downloaded"
 **Phase 0:**
 ```
 Lies agents/browser_agent.md und führe Phase 0 aus: DBIS-Navigation.
-Config: config/[ProjectName]_Config.md
-Output: projects/[ProjectName]/metadata/databases.json
+Config: runs/<run-id>/config/run_config.json
+Output: runs/$RUN_ID/metadata/databases.json
 ```
 
 **Phase 2:**
 ```
 Lies agents/browser_agent.md und führe Phase 2 aus: Datenbank-Durchsuchung.
-Suchstrings: projects/[ProjectName]/metadata/search_strings.json
-Output: projects/[ProjectName]/metadata/candidates.json
+Suchstrings: runs/$RUN_ID/metadata/search_strings.json
+Output: runs/$RUN_ID/metadata/candidates.json
 ```
 
 **Phase 4:**
 ```
 Lies agents/browser_agent.md und führe Phase 4 aus: PDF-Download.
-Top 18: projects/[ProjectName]/metadata/ranked_top27.json
-Output: projects/[ProjectName]/pdfs/*.pdf
+Top 18: runs/$RUN_ID/metadata/ranked_candidates.json
+Output: runs/$RUN_ID/downloads/*.pdf
 ```
 
 ---

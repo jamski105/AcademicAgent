@@ -8,7 +8,7 @@ tools:
   - Write  # For writing quotes.json output
 disallowedTools:
   - Edit      # No in-place modifications needed
-  - Bash      # PDF processing via scripts called by orchestrator
+  - Bash      # No direct script execution - orchestrator calls PDF scripts
   - WebFetch  # No web access for offline extraction
   - WebSearch # No web access for offline extraction
   - Task      # No sub-agent spawning
@@ -60,7 +60,7 @@ permissionMode: default
 - ✅ `/tmp/*` (Global Safe Path)
 
 **Read (Auto-Allowed):**
-- ✅ `runs/<run-id>/pdfs/*.pdf`
+- ✅ `runs/<run-id>/downloads/*.pdf`
 - ✅ `runs/<run-id>/txt/*.txt`
 - ✅ `runs/<run-id>/run_config.json`
 - ✅ `config/*`, `schemas/*` (Global Safe Paths)
@@ -134,8 +134,8 @@ Du bist der **Extraction-Agent** für Zitat-Extraktion.
 ## 📋 Phase 5: Zitat-Extraktion
 
 ### Input
-- `projects/[ProjectName]/pdfs/*.pdf` (18 PDFs)
-- `config/[ProjectName]_Config.md` → Cluster-Begriffe, Citation Rules
+- `runs/<run-id>/downloads/*.pdf` (18 PDFs)
+- `config/run_config.json` → Cluster-Begriffe, Citation Rules
 
 ### Workflow
 
@@ -148,9 +148,9 @@ Du bist der **Extraction-Agent** für Zitat-Extraktion.
 ```bash
 # Security-Validation mit pdf_security_validator.py
 python3 scripts/pdf_security_validator.py \
-  projects/[ProjectName]/pdfs/001_Bass_2015.pdf \
-  projects/[ProjectName]/txt/001.txt \
-  --report projects/[ProjectName]/logs/001_security_report.json
+  runs/<run-id>/downloads/001_Bass_2015.pdf \
+  runs/<run-id>/txt/001.txt \
+  --report runs/<run-id>/logs/001_security_report.json
 
 # Exit-Codes:
 # 0 = SAFE (LOW/MEDIUM risk)
@@ -178,7 +178,7 @@ Informiere User: "✅ PDF 001 sicher extrahiert"
 **Verifiziere Output:**
 ```bash
 # Prüfe, ob bereinigter Text lesbar ist
-head -20 projects/[ProjectName]/txt/001.txt
+head -20 runs/<run-id>/txt/001.txt
 
 # Falls OCR-Problem (gescanntes PDF):
 # → pdf_security_validator.py schlägt fehl → Log "OCR required for 001.pdf" → Skip
@@ -187,7 +187,7 @@ head -20 projects/[ProjectName]/txt/001.txt
 **Security-Report prüfen (optional):**
 ```bash
 # Zeige Warnungen aus Security-Report
-jq '.result.warnings' projects/[ProjectName]/logs/001_security_report.json
+jq '.result.warnings' runs/<run-id>/logs/001_security_report.json
 ```
 
 ---
@@ -205,7 +205,7 @@ Cluster 3: "automation", "pull requests", "code review"
 **Multi-Keyword-Suche (grep):**
 
 ```bash
-grep -n -i -E "(lean governance|lightweight governance|agile governance|DevOps|automation|pull requests)" projects/[ProjectName]/txt/001.txt
+grep -n -i -E "(lean governance|lightweight governance|agile governance|DevOps|automation|pull requests)" runs/<run-id>/txt/001.txt
 
 # -n: Zeile Nummer
 # -i: Case-insensitive
@@ -225,7 +225,7 @@ grep -n -i -E "(lean governance|lightweight governance|agile governance|DevOps|a
 1. **Kontext extrahieren (3 Zeilen vor/nach):**
 
 ```bash
-grep -A 3 -B 3 -n "lean governance" projects/[ProjectName]/txt/001.txt
+grep -A 3 -B 3 -n "lean governance" runs/<run-id>/txt/001.txt
 
 # -A 3: 3 Zeilen danach
 # -B 3: 3 Zeilen davor
@@ -292,10 +292,10 @@ with DevOps principles."
 
 ```bash
 # Suche nach Seitenzahlen-Patterns im TXT
-grep -n -E "^\s*[0-9]+\s*$" projects/[ProjectName]/txt/001.txt
+grep -n -E "^\s*[0-9]+\s*$" runs/<run-id>/txt/001.txt
 
 # Oder: Regex für "Page X", "Seite X"
-grep -n -E "(Page|Seite)\s+[0-9]+" projects/[ProjectName]/txt/001.txt
+grep -n -E "(Page|Seite)\s+[0-9]+" runs/<run-id>/txt/001.txt
 
 # Fallback: Schätze via Zeilen
 # (Zeile 42, ca. 50 Zeilen/Seite → Seite 1)
@@ -319,7 +319,7 @@ Defines lean governance in DevOps context, directly relevant to research questio
 
 #### f. Zitat speichern
 
-**Speichere in:** `metadata/quotes.json` (inkrementell, nicht RAM)
+**Speichere in:** `outputs/quotes.json` (inkrementell, nicht RAM)
 
 ```json
 {
@@ -348,7 +348,7 @@ Defines lean governance in DevOps context, directly relevant to research questio
 
 ### Output
 
-**Speichere in:** `projects/[ProjectName]/metadata/quotes.json`
+**Speichere in:** `runs/<run-id>/outputs/quotes.json`
 
 ```json
 {
@@ -386,8 +386,8 @@ brew install poppler  # macOS
 sudo apt install poppler-utils  # Linux
 
 # Konvertierung mit Error-Handling
-PDF_FILE="pdfs/001_Bass_2015.pdf"
-TXT_FILE="pdfs/001_Bass_2015.txt"
+PDF_FILE="downloads/001_Bass_2015.pdf"
+TXT_FILE="txt/001_Bass_2015.txt"
 
 # Try with layout first (preserves page numbers)
 pdftotext -layout "$PDF_FILE" "$TXT_FILE" 2>/tmp/pdftotext_err.log
@@ -518,9 +518,9 @@ grep -n -E "^\s*[0-9]+\s*$" file.txt
 
 ```
 Lies agents/extraction_agent.md und extrahiere Zitate.
-PDFs: projects/[ProjectName]/pdfs/*.pdf
-Keywords: config/[ProjectName]_Config.md (Cluster 1-3)
-Output: projects/[ProjectName]/metadata/quotes.json
+PDFs: runs/<run-id>/downloads/*.pdf
+Keywords: config/run_config.json (Cluster 1-3)
+Output: runs/<run-id>/outputs/quotes.json
 ```
 
 ---

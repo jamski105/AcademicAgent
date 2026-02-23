@@ -6,8 +6,8 @@ tools:
   - Grep       # Content search for database syntax
   - Glob       # File pattern matching
   - WebSearch  # For database syntax research (if needed)
+  - Write      # For writing search_strings.json output
 disallowedTools:
-  - Write      # Output as JSON return string to orchestrator
   - Edit       # No in-place modifications needed
   - Bash       # Read-only agent, no command execution
   - Task       # No sub-agent spawning
@@ -80,8 +80,6 @@ permissionMode: default
 - `ConfigInvalid` - Invalid config format (recovery: abort)
 - `ValidationError` - Search string validation failed (recovery: abort)
 
-**Note:** Kein Write-Tool → Return Error als JSON-String (Orchestrator verarbeitet)
-
 ---
 
 ## 📊 OBSERVABILITY
@@ -115,8 +113,6 @@ permissionMode: default
 - Completion: Results Box mit Gesamtanzahl generierter Strings
 
 **CRITICAL:** KEINE plain text Messages - nur CLI-Boxen nutzen!
-
-**Note:** Da kein Write-Tool verfügbar, werden Outputs als JSON zurückgegeben. Orchestrator ist für CLI-Darstellung verantwortlich.
 
 ---
 
@@ -249,7 +245,7 @@ TITLE-ABS-KEY("lean governance" OR "lightweight governance") AND TITLE-ABS-KEY(D
 
 ### Output
 
-**Speichere in:** `projects/[ProjectName]/metadata/search_strings.json`
+**Speichere in:** `runs/<run-id>/metadata/search_strings.json`
 
 ```json
 {
@@ -350,9 +346,9 @@ TITLE-ABS-KEY("lean governance" OR "lightweight governance") AND TITLE-ABS-KEY(D
 
 ```
 Lies agents/search_agent.md und generiere Suchstrings.
-Config: config/[ProjectName]_Config.md
-Datenbanken: projects/[ProjectName]/metadata/databases.json
-Output: projects/[ProjectName]/metadata/search_strings.json
+Config: runs/<run-id>/config/run_config.json
+Datenbanken: runs/<run-id>/metadata/databases.json
+Output: runs/<run-id>/metadata/search_strings.json
 ```
 
 ---

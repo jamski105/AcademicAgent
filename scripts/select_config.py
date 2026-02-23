@@ -112,10 +112,12 @@ def create_run_directory(project_name):
     else:
         run_dir = home_runs_dir / run_name
 
-    # Erstelle Ordnerstruktur
-    (run_dir / "Downloads").mkdir(parents=True, exist_ok=True)
+    # Erstelle Ordnerstruktur (Contract-konform)
+    (run_dir / "config").mkdir(parents=True, exist_ok=True)
     (run_dir / "metadata").mkdir(parents=True, exist_ok=True)
+    (run_dir / "outputs").mkdir(parents=True, exist_ok=True)
     (run_dir / "logs").mkdir(parents=True, exist_ok=True)
+    (run_dir / "downloads").mkdir(parents=True, exist_ok=True)
 
     return run_dir, run_name
 
@@ -150,10 +152,11 @@ def main():
     print(f"\n✅ Run-Ordner erstellt:")
     print(f"   {run_dir}")
     print(f"\n   Struktur:")
-    print(f"   ├── Quote_Library.csv (wird hier erstellt)")
-    print(f"   ├── Downloads/         (PDFs landen hier)")
+    print(f"   ├── config/            (run_config.json)")
     print(f"   ├── metadata/          (State & Zwischenergebnisse)")
-    print(f"   └── logs/              (Logs)")
+    print(f"   ├── outputs/           (Quote Library, Bibliography)")
+    print(f"   ├── logs/              (Agent Logs)")
+    print(f"   └── downloads/         (PDFs)")
 
     # Schritt 3: Run-Info speichern
     save_run_info(run_dir, config_path, project_name)
