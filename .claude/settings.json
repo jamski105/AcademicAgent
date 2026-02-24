@@ -1,81 +1,68 @@
 {
-  "$schema": "https://json.schemastore.org/claude-code-settings.json",
-  "defaultMode": "acceptEdits",
-  "permissions": {
-    "deny": [
-      "Read(.env)",
-      "Read(.env.*)",
-      "Read(./.env)",
-      "Read(./.env.*)",
-      "Read(secrets/**)",
-      "Read(./secrets/**)",
-      "Read(~/.ssh/**)",
-      "Bash(sudo *)",
-      "Bash(rm -rf /*)",
-      "Bash(rm -rf ~/*)",
-      "Bash(dd *)",
-      "Bash(mkfs*)",
-      "Bash(ssh *)",
-      "Bash(scp *)",
-      "Bash(rsync *)"
-    ],
-    "allow": [
-      "Read",
-      "Grep",
-      "Glob",
-      "Write(runs/**)",
-      "Edit(runs/**)",
-      "Write(/tmp/**)",
-      "Write(*.md)",
-      "Read(config/**)",
-      "Task(setup-agent)",
-      "Task(orchestrator-agent)",
-      "Task(browser-agent)",
-      "Task(search-agent)",
-      "Task(scoring-agent)",
-      "Task(extraction-agent)",
-      "Bash(python3 scripts/safe_bash.py *)",
-      "Bash(python3 scripts/log_event.py *)",
-      "Bash(python3 scripts/validate_state.py *)",
-      "Bash(python3 scripts/state_manager.py *)",
-      "Bash(python3 scripts/budget_limiter.py *)",
-      "Bash(python3 scripts/auto_permissions.py *)",
-      "Bash(python3 scripts/pdf_security_validator.py *)",
-      "Bash(python3 scripts/validation_gate.py *)",
-      "Bash(python3 scripts/create_quote_library_with_citations.py *)",
-      "Bash(python3 scripts/create_bibliography.py *)",
-      "Bash(bash scripts/start_chrome_debug.sh *)",
-      "Bash(bash scripts/cdp_health_check.sh *)",
-      "Bash(bash scripts/create_run_structure.sh *)",
-      "Bash(bash scripts/validate_agent_execution.sh *)",
-      "Bash(bash scripts/launch_live_monitor.sh *)",
-      "Bash(jq *)",
-      "Bash(grep *)",
-      "Bash(find runs/**)",
-      "Bash(find scripts/**)",
-      "Bash(mkdir -p runs/**)",
-      "Bash(ls *)",
-      "Bash(cat runs/**/*.json)",
-      "Bash(cat runs/**/*.md)",
-      "Bash(cat runs/**/*.txt)",
-      "Bash(cat runs/**/*.log)",
-      "Bash(stat *)",
-      "Bash(date *)",
-      "Bash(sleep *)",
-      "Bash(wc *)",
-      "Bash(head *)",
-      "Bash(tail *)",
-      "Bash(echo *)",
-      "Bash(which *)",
-      "Bash(curl -s http://localhost:9222/*)",
-      "Bash(lsof *)",
-      "Bash(mv runs/** runs/**)",
-      "Bash(cp runs/** runs/**)",
-      "Bash(test *)",
-      "Bash([ *)",
-      "Bash(kill *)",
-      "Bash(ps *)"
-    ],
-    "ask": []
+  "agents": {
+    "linear_coordinator": {
+      "model": "claude-sonnet-4-5",
+      "max_tokens": 8192,
+      "temperature": 0.3,
+      "timeout_seconds": 600,
+      "description": "Haupt-Coordinator für v2.0 Workflow"
+    },
+    "query_generator": {
+      "model": "claude-haiku-4",
+      "max_tokens": 2048,
+      "temperature": 0.5,
+      "timeout_seconds": 60,
+      "description": "Generiert Boolean-Queries für API-Suche"
+    },
+    "five_d_scorer": {
+      "model": "claude-haiku-4",
+      "max_tokens": 4096,
+      "temperature": 0.2,
+      "timeout_seconds": 120,
+      "description": "LLM-gestützte Relevanz-Bewertung für 5D-Scoring"
+    },
+    "quote_extractor": {
+      "model": "claude-haiku-4",
+      "max_tokens": 4096,
+      "temperature": 0.1,
+      "timeout_seconds": 180,
+      "description": "Extrahiert präzise Zitate aus PDFs"
+    }
+  },
+  "workflow": {
+    "default_mode": "standard",
+    "auto_resume_on_error": true,
+    "checkpoint_interval_minutes": 5,
+    "max_retries_per_phase": 3
+  },
+  "ui": {
+    "show_progress_bars": true,
+    "headful_browser": true,
+    "log_level": "INFO",
+    "output_format": "rich"
+  },
+  "api": {
+    "rate_limit_strategy": "adaptive",
+    "cache_enabled": true,
+    "cache_ttl_hours": 24,
+    "timeout_seconds": 30
+  },
+  "pdf": {
+    "max_parallel_downloads": 3,
+    "fallback_chain": ["unpaywall", "core", "dbis_browser"],
+    "dbis_browser_delay_seconds": 15,
+    "skip_after_all_failed": true
+  },
+  "scoring": {
+    "relevance_weight": 0.4,
+    "recency_weight": 0.2,
+    "quality_weight": 0.2,
+    "authority_weight": 0.2,
+    "use_llm_relevance": true
+  },
+  "output": {
+    "base_directory": "output",
+    "create_bibliography": true,
+    "export_formats": ["json", "markdown", "bibtex"]
   }
 }
