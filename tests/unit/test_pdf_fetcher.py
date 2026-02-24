@@ -182,13 +182,14 @@ class TestPDFRetryLogic:
     @patch.object(PDFFetcher, '_try_unpaywall')
     def test_retries_on_network_error(self, mock_unpaywall):
         """Test: Retry bei Network-Error"""
-        mock_unpaywall.side_effect = [
+        side_effects = [
             ConnectionError("Network error"),
             "/path/to/paper.pdf"
         ]
+        mock_unpaywall.side_effect = side_effects
 
         # In echter Implementierung würde retried werden
-        assert mock_unpaywall.side_effect[1] == "/path/to/paper.pdf"
+        assert side_effects[1] == "/path/to/paper.pdf"
 
     @patch.object(PDFFetcher, '_try_unpaywall')
     def test_gives_up_after_max_retries(self, mock_unpaywall):

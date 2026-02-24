@@ -46,28 +46,30 @@ class TestExponentialBackoff:
     def test_exponential_increases_delay(self):
         """Testet dass Delays exponentiell wachsen"""
         from tenacity import Retrying, wait_exponential, stop_after_attempt
+        import time
 
-        delays = []
-
-        def track_delays(retry_state):
-            if retry_state.attempt_number > 1:
-                delays.append(retry_state.next_action.sleep)
+        attempt_times = []
 
         try:
             for attempt in Retrying(
-                wait=wait_exponential(multiplier=1, min=1, max=60),
+                wait=wait_exponential(multiplier=0.01, min=0.01, max=1),
                 stop=stop_after_attempt(4),
-                after=track_delays,
                 reraise=True
             ):
                 with attempt:
+                    attempt_times.append(time.time())
                     raise ValueError("Always fails")
-        except RetryError:
+        except ValueError:
             pass
 
-        # Delays sollten wachsen
-        if len(delays) >= 2:
-            assert delays[1] >= delays[0]
+        # Check that there were multiple attempts and timing increased
+        assert len(attempt_times) == 4
+        if len(attempt_times) >= 3:
+            # Time between attempts should generally increase (exponential backoff)
+            delay1 = attempt_times[1] - attempt_times[0]
+            delay2 = attempt_times[2] - attempt_times[1]
+            # With exponential backoff, second delay should be >= first delay
+            assert delay2 >= delay1 * 0.9  # Allow small variance
 
 
 class TestRetryWithMaxAttempts:
@@ -108,11 +110,12 @@ class TestRetryWithMaxAttempts:
 
     def test_raises_after_max_retries(self):
         """Testet dass Exception nach Max-Retries geraised wird"""
-        from tenacity import Retrying, stop_after_attempt, wait_fixed, RetryError
+        from tenacity import Retrying, stop_after_attempt, wait_fixed
 
         call_count = 0
 
-        with pytest.raises(RetryError):
+        # With reraise=True, the original exception is raised, not RetryError
+        with pytest.raises(ValueError, match="Always fails"):
             for attempt in Retrying(
                 stop=stop_after_attempt(3),
                 wait=wait_fixed(0.01),
@@ -302,11 +305,12 @@ class TestEdgeCases:
 
     def test_handles_zero_retries(self):
         """Testet dass 0 Retries korrekt behandelt werden"""
-        from tenacity import Retrying, stop_after_attempt, RetryError
+        from tenacity import Retrying, stop_after_attempt
 
         call_count = 0
 
-        with pytest.raises(RetryError):
+        # With reraise=True and stop_after_attempt(1), the original exception is raised
+        with pytest.raises(ValueError, match="Immediate fail"):
             for attempt in Retrying(
                 stop=stop_after_attempt(1),
                 reraise=True

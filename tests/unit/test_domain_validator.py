@@ -59,6 +59,9 @@ class DomainValidator:
         try:
             parsed = urlparse(url)
             hostname = parsed.netloc.lower()
+            # Remove port if present
+            if ':' in hostname:
+                hostname = hostname.split(':')[0]
 
             for pattern in self.blocked_domains:
                 if fnmatch.fnmatch(hostname, pattern):
@@ -73,6 +76,9 @@ class DomainValidator:
         try:
             parsed = urlparse(url)
             hostname = parsed.netloc.lower()
+            # Remove port if present
+            if ':' in hostname:
+                hostname = hostname.split(':')[0]
 
             # Exakte Match
             if hostname in self.allowed_publishers:
