@@ -1,0 +1,97 @@
+# DBIS Publisher Mapping
+# Maps publishers to their DBIS database names for proper license activation
+
+publishers:
+  IEEE:
+    dbis_search: "IEEE Xplore"
+    dbis_resource_id: null  # Auto-discovered and cached on first use
+    publisher_url_pattern: "ieeexplore.ieee.org"
+    doi_prefix: "10.1109"
+    pdf_selectors:
+      - ".pdf-btn"
+      - "a[href*='download']"
+      - "button:contains('Download PDF')"
+    search_selector: "input[name='queryText']"
+
+  ACM:
+    dbis_search: "ACM Digital Library"
+    dbis_resource_id: null
+    publisher_url_pattern: "dl.acm.org"
+    doi_prefix: "10.1145"
+    pdf_selectors:
+      - "a[href$='.pdf']"
+      - ".pdf-link"
+      - "a:contains('PDF')"
+    search_selector: "input[name='AllField']"
+
+  Springer:
+    dbis_search: "SpringerLink"
+    dbis_resource_id: null
+    publisher_url_pattern: "link.springer.com"
+    doi_prefix: "10.1007"
+    pdf_selectors:
+      - ".c-pdf-download__link"
+      - "a[href*='pdf']"
+      - "button:contains('Download PDF')"
+    search_selector: "input[name='query']"
+
+  Elsevier:
+    dbis_search: "ScienceDirect"
+    dbis_resource_id: null
+    publisher_url_pattern: "sciencedirect.com"
+    doi_prefix: "10.1016"
+    pdf_selectors:
+      - ".pdf-download-btn"
+      - "a[title*='Download PDF']"
+      - "a[href*='pdfdownload']"
+    search_selector: "input[name='qs']"
+
+  Wiley:
+    dbis_search: "Wiley Online Library"
+    dbis_resource_id: null
+    publisher_url_pattern: "onlinelibrary.wiley.com"
+    doi_prefix: "10.1002"
+    pdf_selectors:
+      - ".pdf-download"
+      - "a[href*='pdfdirect']"
+    search_selector: "input[name='searchText']"
+
+  Taylor_Francis:
+    dbis_search: "Taylor & Francis Online"
+    dbis_resource_id: null
+    publisher_url_pattern: "tandfonline.com"
+    doi_prefix: "10.1080"
+    pdf_selectors:
+      - ".show-pdf"
+      - "a[href*='pdf']"
+    search_selector: "input[name='searchText']"
+
+# DBIS Configuration
+dbis:
+  base_url: "https://dbis.ur.de/UBTIB"
+  search_url: "https://dbis.ur.de/UBTIB/suche?q={query}"
+  resource_url: "https://dbis.ur.de/UBTIB/resources/{resource_id}"
+
+  # CSS Selectors for DBIS navigation
+  selectors:
+    search_input: "input[name='q']"
+    search_button: "button[type='submit']"
+    result_link: "a[href*='/UBTIB/resources/']"
+    db_title: "h3.db-title a"
+    db_link_button:
+      - "a.db-link"
+      - "a[href*='dbis.ur.de/dblp']"
+      - "button:contains('Zur Datenbank')"
+      - "a:contains('Zur Datenbank')"
+    access_indicator: "span.access-indicator"
+
+  # Rate limiting
+  rate_limit:
+    requests_per_second: 1
+    requests_per_hour: 100
+
+  # Timeouts
+  timeouts:
+    page_load: 10  # seconds
+    user_login: 300  # 5 minutes
+    download: 120  # 2 minutes

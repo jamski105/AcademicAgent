@@ -1,0 +1,151 @@
+# DBIS HTML Selectors Configuration
+# Academic Agent v2.3 - Auto-Discovery
+#
+# These selectors are used by dbis_search agent to scrape database lists
+# from DBIS discipline pages.
+#
+# ⚠️ IMPORTANT: These selectors need to be tested against real DBIS pages!
+# Test URL: https://dbis.ur.de/dbis/dbliste.php?bib_id=ubtib&lett=f&sGeb=9.1
+
+---
+
+# ========================================
+# DATABASE ENTRY SELECTORS
+# ========================================
+
+database_entry:
+  # Primary selector for database list items
+  primary: "tr[id^='db_']"
+
+  # Fallback selectors (try in order)
+  fallbacks:
+    - ".db-entry"
+    - ".datenbank"
+    - "tr.dbis-row"
+    - "div[class*='database']"
+
+# ========================================
+# DATABASE METADATA SELECTORS
+# ========================================
+
+database_name:
+  # Selector for database name/title
+  primary: "td.td2 a"
+
+  fallbacks:
+    - ".db-name"
+    - "h3"
+    - ".title"
+    - "td:nth-child(2) a"
+
+database_link:
+  # Selector for "Zur Datenbank" link (activates TIB license!)
+  primary: "a[title='Zum Angebot']"
+
+  fallbacks:
+    - "a:contains('Zur Datenbank')"
+    - ".db-link"
+    - "a[href*='erf=']"  # DBIS redirect URL pattern
+
+# ========================================
+# TRAFFIC LIGHT (ACCESS STATUS) SELECTORS
+# ========================================
+
+traffic_light:
+  # Image selector for access status icon
+  primary: "img[src*='dbis_']"
+
+  fallbacks:
+    - ".access-status img"
+    - "img[alt*='frei']"
+    - "img[alt*='lizenziert']"
+
+  # Traffic light color patterns (in image src)
+  green:
+    - "dbis_gr_"     # Free access (grün)
+    - "amp_gruen"
+    - "green"
+    - "frei"
+
+  yellow:
+    - "dbis_ge_"     # TIB license (gelb)
+    - "amp_gelb"
+    - "yellow"
+    - "lizenziert"
+
+  red:
+    - "dbis_ro_"     # No access (rot)
+    - "amp_rot"
+    - "red"
+    - "nzg"          # "Nicht zugänglich"
+
+# ========================================
+# PAGINATION SELECTORS
+# ========================================
+
+pagination:
+  next_page: "a:contains('nächste')"
+  page_numbers: ".page-numbers a"
+  current_page: ".page-numbers .current"
+
+# ========================================
+# ERROR DETECTION
+# ========================================
+
+error_indicators:
+  no_results:
+    - "text:Keine Datenbanken gefunden"
+    - ".no-results"
+    - "#error-message"
+
+  page_load_failed:
+    - "text:Fehler beim Laden"
+    - "text:Error"
+    - ".error-page"
+
+# ========================================
+# EXTRACTION PATTERNS
+# ========================================
+
+# Regex patterns for extracting info from text
+patterns:
+  # Extract database ID from link href
+  # Example: href="erf=123&colors=15" → db_id=123
+  database_id: 'erf=(\d+)'
+
+  # Extract TIB institution ID
+  institution_id: 'bib_id=(\w+)'
+
+# ========================================
+# TESTING URLS
+# ========================================
+
+test_urls:
+  rechtswissenschaft: "https://dbis.ur.de/dbis/dbliste.php?bib_id=ubtib&colors=15&lett=f&sGeb=9.1"
+  medizin: "https://dbis.ur.de/dbis/dbliste.php?bib_id=ubtib&colors=15&lett=f&sGeb=7"
+  informatik: "https://dbis.ur.de/dbis/dbliste.php?bib_id=ubtib&colors=15&lett=f&sGeb=11"
+  klassische_philologie: "https://dbis.ur.de/dbis/dbliste.php?bib_id=ubtib&colors=15&lett=f&sGeb=2.1"
+
+# ========================================
+# NOTES
+# ========================================
+
+# How to test these selectors:
+# 1. Open one of the test_urls in a browser
+# 2. Open browser DevTools (F12)
+# 3. Use Console to test selectors:
+#    document.querySelectorAll("tr[id^='db_']")
+# 4. Verify correct elements are selected
+# 5. Update selectors if needed
+
+# DBIS page structure (typical):
+# <table id="dbliste">
+#   <tr id="db_123" class="even">
+#     <td class="td1"><img src="dbis_ge_01.gif" alt="lizenziert"></td>
+#     <td class="td2">
+#       <a href="erf=123&colors=15">Beck-Online</a>
+#       <br><a title="Zum Angebot" href="...">Zur Datenbank</a>
+#     </td>
+#     <td class="td3">Description...</td>
+#   </tr>
+# </table>

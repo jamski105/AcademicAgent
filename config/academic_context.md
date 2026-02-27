@@ -1,329 +1,193 @@
-# Wissenschaftlicher Kontext
+# Academic Context - User Präferenzen
 
-**Zweck:** Statischer wissenschaftlicher Kontext für alle Recherche-Runs
-
----
-
-## Anleitung
-
-Fülle dieses Template **einmal** aus mit dem allgemeinen Kontext deiner wissenschaftlichen Arbeit. Diese Informationen werden für **alle Recherche-Runs** verwendet.
-
-**Was gehört NICHT hierher:**
-- ❌ Spezifische Forschungsfragen für einzelne Kapitel
-- ❌ Anzahl benötigter Zitate pro Run
-- ❌ Run-spezifische Keywords
-
-**Was gehört hierher:**
-- ✅ Allgemeines Forschungsgebiet und Thema
-- ✅ Hintergrund und Kontext der Arbeit
-- ✅ Grundlegende Methoden und Theorien
-- ✅ Generelle Keywords die immer relevant sind
-- ✅ Bevorzugte Datenbanken (optional)
+Diese Datei ist **OPTIONAL** und wird von der Research-Recherche genutzt um User-spezifische Präferenzen zu berücksichtigen.
 
 ---
 
-## 1. Forschungsgebiet
+## 🎓 Disziplin & Fachgebiet
 
-**Hauptdisziplin:**
-```
-[Beispiel: Human-Computer Interaction, Machine Learning, Klinische Psychologie,
-Software Engineering, Rechtswissenschaften, etc.]
-```
+**Hauptdisziplin:** Computer Science / Software Engineering
 
-**Spezialisierung/Sub-Bereich:**
-```
-[Beispiel: VR Accessibility, DevOps Governance, Medizinrecht,
-AI Ethics, etc.]
-```
+**Spezialisierung:**
+- DevOps & Cloud Engineering
+- Software Architecture
+- IT Governance & Compliance
 
----
-
-## 2. Hintergrund der Arbeit
-
-**Art der Arbeit:**
-```
-[Beispiel: Masterarbeit, Bachelorarbeit, Dissertation, Paper, Forschungsprojekt]
-```
-
-**Kontext:**
-```
-[Beispiel:
-"Masterarbeit an der TU Wien über Accessibility in VR-Anwendungen für Menschen
-mit motorischen Einschränkungen. Fokus auf alternative Input-Methoden zu
-Hand-Tracking, insbesondere für Nutzer mit Tremor oder eingeschränkter
-Handbeweglichkeit."]
-```
-
-**Hauptziel der Arbeit:**
-```
-[Beispiel:
-"Entwicklung und Evaluation eines adaptiven Input-Systems für VR, das sich
-automatisch an verschiedene Grade motorischer Einschränkungen anpasst."]
-```
+**Forschungsinteressen:**
+- Infrastructure as Code
+- Continuous Integration/Deployment
+- Cloud Security
+- Microservices Architecture
 
 ---
 
-## 3. Verwendete Methoden/Theorien
+## 🔑 Keywords & Terminologie
 
-**Forschungsmethoden:**
-```
-[Beispiel:
-- User-Centered Design
-- Qualitative Interviews mit Betroffenen (N=15)
-- Usability Testing mit Prototypen
-- Vergleichsstudie verschiedener Input-Methoden]
-```
+### Bevorzugte Begriffe:
+- "DevOps" (statt "Development Operations")
+- "CI/CD" (statt ausgeschrieben)
+- "Infrastructure as Code" (statt "IaC" allein)
+- "Microservices" (statt "SOA")
 
-**Theoretischer Rahmen:**
-```
-[Beispiel:
-- Universal Design Principles
-- ISO 9241 (Ergonomie der Mensch-System-Interaktion)
-- Accessibility Guidelines (WCAG, EN 301 549)]
-```
+### Verwandte Themen:
+- Kubernetes, Docker, Container Orchestration
+- GitOps, ArgoCD, Flux
+- Terraform, Ansible, CloudFormation
+- Monitoring: Prometheus, Grafana
+- Governance: Compliance, Policy Enforcement
 
-**Technologien/Tools:**
-```
-[Beispiel:
-- Unity 3D für VR-Entwicklung
-- Oculus Quest 2 als Zielplattform
-- Eye-Tracking Hardware (Tobii)
-- Verschiedene adaptive Controller]
-```
+### Ausschluss-Keywords:
+- "Agile" (zu allgemein, außer im DevOps-Kontext)
+- "Blockchain" (nicht relevant für meine Forschung)
 
 ---
 
-## 4. Wichtige Keywords
+## 📚 Bevorzugte Datenbanken & Quellen
 
-**Hinweis:** Liste hier **generelle** Keywords auf, die für deine gesamte Arbeit relevant sind.
-Run-spezifische Keywords werden später vom Setup-Agent abgefragt.
+### Primäre Quellen (Priorität):
+1. **IEEE Xplore** - Software Engineering Papers
+2. **ACM Digital Library** - Computing Research
+3. **Springer** - Software Engineering Journals
+4. **arXiv** - Preprints (cs.SE, cs.DC)
 
-**Hauptkonzepte:**
-```
-[Beispiel:
-- Virtual Reality
-- VR
-- Immersive Environments
-- Accessibility
-- Inclusive Design
-- Universal Access]
-```
+### Sekundäre Quellen:
+- Google Scholar (als Fallback)
+- Semantic Scholar (für Zitations-Analyse)
 
-**Technische Begriffe:**
-```
-[Beispiel:
-- Hand Tracking
-- Gesture Control
-- Eye Tracking
-- Voice Control
-- Adaptive Interfaces
-- Assistive Technology]
-```
+### Journal Präferenzen:
+- IEEE Transactions on Software Engineering
+- ACM Transactions on Software Engineering and Methodology
+- Journal of Systems and Software
+- Empirical Software Engineering
 
-**Zielgruppen/Kontext:**
-```
-[Beispiel:
-- Motor Impairments
-- Physical Disabilities
-- Limited Mobility
-- Tremor
-- Cerebral Palsy]
-```
+### Conference Präferenzen:
+- ICSE (International Conference on Software Engineering)
+- FSE (Foundations of Software Engineering)
+- DevOps Conference Series
+- IEEE Cloud Computing Conference
 
 ---
 
-## 5. Bevorzugte Datenbanken (optional)
+## 🎯 Qualitätskriterien
 
-**Hinweis:** Wenn leer gelassen, erkennt der Agent automatisch passende Datenbanken
-basierend auf deinem Forschungsgebiet.
+### Paper-Auswahl:
+- **Minimum Citation Count:** 5+ Citations (für Papers älter als 2 Jahre)
+- **Max Paper Age:** 7 Jahre (2018-2025)
+  - Ausnahme: Foundational Papers/Highly Cited (10+ Jahre OK wenn >50 Citations)
+- **Peer-Review:** Nur peer-reviewed Papers (keine Blog Posts, White Papers)
+- **Language:** Englisch (Deutsch optional wenn hochrelevant)
 
-**Deine bevorzugten Datenbanken:**
-```
-[Beispiel:
-- ACM Digital Library (für HCI-Papers)
-- IEEE Xplore (für technische Aspekte)
-- PubMed (für medizinische Perspektive)]
-```
+### Venue Quality:
+- **Conferences:** CORE Ranking A* oder A
+- **Journals:** Impact Factor > 2.0 (oder Top-Tier in Disziplin)
+- **Venues:** Etablierte Konferenzen/Journals bevorzugt
 
-**Warum diese Datenbanken?**
-```
-[Beispiel:
-"ACM und IEEE haben die beste Abdeckung für HCI- und VR-Forschung.
-PubMed ist wichtig für die medizinische Perspektive auf motorische Einschränkungen."]
-```
-
----
-
-## 6. Zitationseinstellungen
-
-**Zitationsstil:**
-```
-APA 7
-```
-
-**Alternativen:** IEEE, MLA, Chicago, Harvard, Vancouver
-
-**Max Wörter pro Zitat:**
-```
-50
-```
-
-**Hinweis:** Dieser Wert sollte normalerweise nicht geändert werden (50 Wörter = optimal für Zitat-Bibliothek)
+### Relevanz-Kriterien:
+- **Abstract-Match:** Keywords müssen im Abstract erscheinen
+- **Praktische Relevanz:** Bevorzuge Industrie-relevante Papers (nicht nur theoretisch)
+- **Empirische Studien:** Bevorzuge empirische Studien mit Fallstudien/Experimenten
 
 ---
 
-## 7. Relevante Autoren/Paper (optional)
+## 📊 Scoring-Präferenzen
 
-**Seminal Papers in deinem Feld:**
-```
-[Beispiel:
-- Smith et al. (2023): "Accessible VR: A Systematic Review"
-- Johnson & Lee (2022): "Adaptive Interfaces for Motor Impairments"
-- Wilson (2021): "Beyond Hand Tracking: Alternative Input Methods for VR"]
-```
+### 5D-Scoring Gewichtung (Optional - überschreibt research_modes.yaml):
 
-**Wichtige Forscher/Gruppen:**
-```
-[Beispiel:
-- Dr. Sarah Chen (Stanford HCI Lab) - Accessibility in VR
-- Prof. Michael Rodriguez (MIT) - Adaptive Systems
-- Ability Lab Chicago - Assistive Technology Research]
-```
+**Standard-Gewichtung:** (aus research_modes.yaml)
+- Relevanz: 40%
+- Recency: 20%
+- Quality: 20%
+- Authority: 20%
 
-**Warum sind diese relevant?**
-```
-[Beispiel:
-"Diese Autoren haben Pionierarbeit im Bereich accessible VR geleistet.
-Ihre Frameworks und Methoden bilden die Grundlage für meine Arbeit."]
-```
+**Meine Präferenz für DevOps-Themen:**
+- Relevanz: 45% (wichtiger für mich!)
+- Recency: 25% (DevOps entwickelt sich schnell)
+- Quality: 20% (Citation Count wichtig)
+- Authority: 10% (Venue weniger wichtig als Inhalt)
+
+**Für Foundational Topics (z.B. "Software Architecture"):**
+- Relevanz: 40%
+- Recency: 10% (ältere Papers OK)
+- Quality: 30% (höhere Citation Count wichtig)
+- Authority: 20% (etablierte Venues wichtig)
 
 ---
 
-## 8. Zeitliche Eingrenzung (Default)
+## 🚫 Ausschluss-Kriterien
 
-**Standard-Zeitraum für Recherchen:**
-```
-2019-2026 (Last 7 years)
-```
+### Nicht relevante Paper-Types:
+- Blog Posts, Medium Articles
+- Non-Peer-Reviewed White Papers
+- Marketing Materials
+- Tutorial/How-To ohne Research-Beitrag
 
-**Begründung:**
-```
-[Beispiel:
-"VR-Technologie hat sich in den letzten 5 Jahren stark entwickelt.
-Papers vor 2019 sind oft nicht mehr relevant, da sie auf veralteter Hardware basieren."]
-```
-
-**Hinweis:** Dieser Default kann in jedem Run individuell angepasst werden.
+### Nicht relevante Topics (Auto-Ausschluss):
+- Reine Hardware-Papers (außer Cloud Infrastructure)
+- Quantum Computing (nicht mein Fokus)
+- Game Development (außer DevOps für Games)
+- Mobile App Development (außer CI/CD für Mobile)
 
 ---
 
-## 9. Qualitätsanforderungen (Default)
+## 📝 Quote-Extraction Präferenzen
 
-**Peer-Review erforderlich:**
-```
-Ja
-```
+### Quote-Stil:
+- **Bevorzugt:** Definitionen, Key Findings, Empirische Resultate
+- **Vermeiden:** Einleitungen, Literatur-Reviews, Allgemeine Statements
 
-**Preprints einbeziehen:**
-```
-Ja (arXiv, bioRxiv für cutting-edge Forschung)
-```
+### Quote-Länge:
+- **Ideal:** 15-20 Wörter (kurz & prägnant)
+- **Max:** 25 Wörter (aus research_modes.yaml)
 
-**Minimum Citation Count:**
-```
-5 (Papers mit weniger als 5 Citations werden standardmäßig gefiltert)
-```
-
-**Conference Tiers (für CS):**
-```
-A, B (CORE Ranking)
-```
-
-**Hinweis:** Diese Defaults können in jedem Run angepasst werden.
+### Kontext:
+- **Before/After:** 50 Wörter Kontext (aus research_modes.yaml)
+- **Mit Seitenzahl:** Immer angeben für Citation
 
 ---
 
-## 10. Sprachen
+## 🔬 Forschungsfokus
 
-**Bevorzugte Sprachen:**
-```
-1. Englisch (primär)
-2. Deutsch (sekundär, falls relevant)
-```
+### Aktuelle Forschungsfragen:
+1. Wie implementieren große Organisationen DevOps Governance?
+2. Welche Best Practices gibt es für Infrastructure as Code Testing?
+3. Wie wird Compliance in CI/CD Pipelines automatisiert?
+4. Welche Metriken messen DevOps Erfolg?
 
-**Andere akzeptable Sprachen:**
-```
-[Beispiel: Französisch, Spanisch - nur wenn sehr relevant]
-```
-
----
-
-## Beispiel: Ausgefüllter Kontext
-
-```markdown
-# Wissenschaftlicher Kontext
-
-## 1. Forschungsgebiet
-Hauptdisziplin: Human-Computer Interaction
-Spezialisierung: VR Accessibility for Motor Impairments
-
-## 2. Hintergrund der Arbeit
-Art: Masterarbeit
-Kontext: TU Wien, Studiengang Medieninformatik
-"Entwicklung und Evaluation alternativer Input-Methoden für VR-Anwendungen
-für Menschen mit eingeschränkter Handmotorik."
-
-## 3. Verwendete Methoden
-- User-Centered Design
-- Qualitative Interviews (N=15)
-- Prototyping & Usability Testing
-- Comparative Analysis verschiedener Input-Methoden
-
-## 4. Keywords
-Hauptkonzepte: VR, Virtual Reality, Accessibility, Inclusive Design
-Technisch: Hand Tracking, Eye Tracking, Voice Control, Adaptive Interfaces
-Zielgruppe: Motor Impairments, Physical Disabilities, Tremor
-
-## 5. Bevorzugte Datenbanken
-- ACM Digital Library
-- IEEE Xplore
-- PubMed
-
-## 6. Zitationseinstellungen
-Stil: APA 7
-Max Wörter: 50
-
-## 7. Relevante Autoren
-- Smith et al. (2023): "Accessible VR: A Systematic Review"
-- Johnson (2022): "Adaptive Interfaces"
-
-## 8. Zeitraum Default
-2019-2026 (neueste VR-Forschung)
-
-## 9. Qualität
-Peer-Reviewed: Ja
-Preprints: Ja
-Min Citations: 5
-```
+### Methodische Präferenzen:
+- **Empirische Studien** > Theoretische Arbeiten
+- **Case Studies** aus Industrie bevorzugt
+- **Quantitative Daten** (Metriken, Benchmarks) geschätzt
+- **Tools & Frameworks** die praktisch anwendbar sind
 
 ---
 
-## Nächste Schritte
+## 💡 Nutzungshinweise
 
-Nach dem Ausfüllen dieser Datei:
+**Wie wird dieser Context genutzt?**
 
-1. **Speichere** die Datei als `academic_context.md` im `config/` Ordner
-2. **Starte** den Academic Agent mit: `/academicagent`
-3. Der Setup-Agent wird diesen Kontext laden und dich durch einen **run-spezifischen Dialog** führen
+1. **Query Generation (Haiku):**
+   - Nutzt Keywords für bessere Boolean Queries
+   - Berücksichtigt Terminologie-Präferenzen
 
-Der Setup-Agent fragt dann:
-- "Was ist dein spezifisches Ziel für diesen Run?" (z.B. Zitate für Kapitel 3)
-- "Wie viele Zitate brauchst du?"
-- "Welche speziellen Keywords für diesen Run?"
-- etc.
+2. **Search APIs:**
+   - Priorisiert bevorzugte Datenbanken
+   - Filtert nach Venue-Präferenzen
+
+3. **Ranking (5D-Scoring):**
+   - Nutzt custom Scoring-Gewichtung
+   - Filtert nach Qualitätskriterien
+   - Wendet Ausschluss-Kriterien an
+
+4. **Quote Extraction:**
+   - Bevorzugt spezifische Quote-Typen
+   - Nutzt Längen-Präferenzen
+
+**Tipp:** Diese Datei kann pro Projekt angepasst werden!
 
 ---
 
-**Version History:**
-- 2.0 (2026-02-17): Neue Struktur mit Trennung statisch/dynamisch
-- 1.0 (2026-01-15): Original Config_Template.md
+## 📅 Letzte Aktualisierung
+
+**Version:** 1.0
+**Datum:** 2026-02-24
+**Gültig für:** Academic Agent v2.0

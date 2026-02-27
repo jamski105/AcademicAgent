@@ -11,14 +11,10 @@ secrets/
 *.key
 *.pem
 
-# Run outputs (large binary files)
-runs/*/downloads/*.pdf
-runs/*/downloads/*.zip
-
-# Test runs (cleanup - not for production)
-runs/test_*/
-runs/e2e_test_*/
-runs/dev_test_*/
+# Runs Directory - All research outputs
+# Each run creates a timestamped directory with PDFs, results, logs
+/runs/
+!/runs/.gitkeep
 
 # Python
 __pycache__/

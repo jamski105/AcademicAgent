@@ -1,81 +1,143 @@
 {
-  "$schema": "https://json.schemastore.org/claude-code-settings.json",
-  "defaultMode": "acceptEdits",
+  "mcpServers": {
+    "chrome": {
+      "command": "npx",
+      "args": ["-y", "@eddym06/custom-chrome-mcp@latest"],
+      "env": {
+        "CHROME_PATH": "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+      }
+    }
+  },
   "permissions": {
-    "deny": [
-      "Read(.env)",
-      "Read(.env.*)",
-      "Read(./.env)",
-      "Read(./.env.*)",
-      "Read(secrets/**)",
-      "Read(./secrets/**)",
-      "Read(~/.ssh/**)",
-      "Bash(sudo *)",
-      "Bash(rm -rf /*)",
-      "Bash(rm -rf ~/*)",
-      "Bash(dd *)",
-      "Bash(mkfs*)",
-      "Bash(ssh *)",
-      "Bash(scp *)",
-      "Bash(rsync *)"
-    ],
     "allow": [
-      "Read",
-      "Grep",
-      "Glob",
-      "Write(runs/**)",
-      "Edit(runs/**)",
-      "Write(/tmp/**)",
-      "Write(*.md)",
-      "Read(config/**)",
-      "Task(setup-agent)",
-      "Task(orchestrator-agent)",
-      "Task(browser-agent)",
-      "Task(search-agent)",
-      "Task(scoring-agent)",
-      "Task(extraction-agent)",
-      "Bash(python3 scripts/safe_bash.py *)",
-      "Bash(python3 scripts/log_event.py *)",
-      "Bash(python3 scripts/validate_state.py *)",
-      "Bash(python3 scripts/state_manager.py *)",
-      "Bash(python3 scripts/budget_limiter.py *)",
-      "Bash(python3 scripts/auto_permissions.py *)",
-      "Bash(python3 scripts/pdf_security_validator.py *)",
-      "Bash(python3 scripts/validation_gate.py *)",
-      "Bash(python3 scripts/create_quote_library_with_citations.py *)",
-      "Bash(python3 scripts/create_bibliography.py *)",
-      "Bash(bash scripts/start_chrome_debug.sh *)",
-      "Bash(bash scripts/cdp_health_check.sh *)",
-      "Bash(bash scripts/create_run_structure.sh *)",
-      "Bash(bash scripts/validate_agent_execution.sh *)",
-      "Bash(bash scripts/launch_live_monitor.sh *)",
-      "Bash(jq *)",
-      "Bash(grep *)",
-      "Bash(find runs/**)",
-      "Bash(find scripts/**)",
-      "Bash(mkdir -p runs/**)",
-      "Bash(ls *)",
-      "Bash(cat runs/**/*.json)",
-      "Bash(cat runs/**/*.md)",
-      "Bash(cat runs/**/*.txt)",
-      "Bash(cat runs/**/*.log)",
-      "Bash(stat *)",
-      "Bash(date *)",
-      "Bash(sleep *)",
-      "Bash(wc *)",
-      "Bash(head *)",
-      "Bash(tail *)",
-      "Bash(echo *)",
-      "Bash(which *)",
-      "Bash(curl -s http://localhost:9222/*)",
-      "Bash(lsof *)",
-      "Bash(mv runs/** runs/**)",
-      "Bash(cp runs/** runs/**)",
-      "Bash(test *)",
-      "Bash([ *)",
-      "Bash(kill *)",
-      "Bash(ps *)"
+      "Bash(python3 .claude/skills/research/scripts/config_loader.py --mode * --query *)",
+      "Bash(python3 -m src.*)",
+      "Bash(python3 -c *)",
+      "Bash(pytest *)",
+      "Bash(npx -y @eddym06/custom-chrome-mcp@latest --version)",
+      "Bash(source venv/bin/activate *)",
+      "Bash(mkdir -p runs/*)",
+      "Bash(ls * config/* runs/* logs/*)",
+      "Bash(cat config/* runs/*/results.json logs/*.log)",
+      "Bash(grep * logs/* runs/*)",
+      "Bash(tail * logs/* runs/*)",
+      "Bash(head * runs/* logs/*)",
+      "Bash(wc -l *)",
+      "Bash(find src tests -name \"*.py\" *)"
     ],
-    "ask": []
+    "additionalDirectories": [
+      ".claude/skills/research",
+      "runs",
+      "logs",
+      "tests"
+    ]
+  },
+  "agents": {
+    "linear_coordinator": {
+      "model": "claude-sonnet-4-5",
+      "max_tokens": 8192,
+      "temperature": 0.3,
+      "timeout_seconds": 600,
+      "description": "Haupt-Coordinator für v2.0 Workflow"
+    },
+    "query_generator": {
+      "model": "claude-haiku-4",
+      "max_tokens": 2048,
+      "temperature": 0.5,
+      "timeout_seconds": 60,
+      "description": "Generiert Boolean-Queries für API-Suche"
+    },
+    "discipline_classifier": {
+      "model": "claude-haiku-4",
+      "max_tokens": 1024,
+      "temperature": 0.2,
+      "timeout_seconds": 30,
+      "description": "Detects academic discipline for DBIS database selection (v2.2)"
+    },
+    "llm_relevance_scorer": {
+      "model": "claude-haiku-4",
+      "max_tokens": 4096,
+      "temperature": 0.2,
+      "timeout_seconds": 120,
+      "description": "LLM-gestützte Relevanz-Bewertung für 5D-Scoring"
+    },
+    "quote_extractor": {
+      "model": "claude-haiku-4",
+      "max_tokens": 4096,
+      "temperature": 0.1,
+      "timeout_seconds": 180,
+      "description": "Extrahiert präzise Zitate aus PDFs"
+    },
+    "dbis_browser": {
+      "model": "claude-sonnet-4-5",
+      "max_tokens": 8192,
+      "temperature": 0.2,
+      "timeout_seconds": 600,
+      "description": "Browser automation für PDF-Downloads via DBIS institutional access"
+    },
+    "dbis_search": {
+      "model": "claude-sonnet-4-5",
+      "max_tokens": 8192,
+      "temperature": 0.2,
+      "timeout_seconds": 900,
+      "description": "Browser automation for DBIS database search (v2.2)"
+    }
+  },
+  "workflow": {
+    "default_mode": "standard",
+    "auto_resume_on_error": true,
+    "checkpoint_interval_minutes": 5,
+    "max_retries_per_phase": 3
+  },
+  "ui": {
+    "show_progress_bars": true,
+    "headful_browser": true,
+    "log_level": "INFO",
+    "output_format": "rich"
+  },
+  "api": {
+    "rate_limit_strategy": "adaptive",
+    "cache_enabled": true,
+    "cache_ttl_hours": 24,
+    "timeout_seconds": 30
+  },
+  "pdf": {
+    "max_parallel_downloads": 3,
+    "fallback_chain": [
+      "unpaywall",
+      "core",
+      "dbis_browser"
+    ],
+    "dbis_browser_delay_seconds": 15,
+    "skip_after_all_failed": true
+  },
+  "dbis_search": {
+    "enabled": true,
+    "max_databases_per_query": 3,
+    "timeout_per_database": 60,
+    "fallback_to_api_only": true,
+    "source_annotation": true,
+    "discipline_boost": 0.05
+  },
+  "scoring": {
+    "relevance_weight": 0.4,
+    "recency_weight": 0.2,
+    "quality_weight": 0.2,
+    "authority_weight": 0.2,
+    "use_llm_relevance": true
+  },
+  "output": {
+    "base_directory": "runs",
+    "create_timestamp_folder": true,
+    "citation_style": "apa7",
+    "save_logs": true,
+    "save_temp_files": true,
+    "create_bibliography": true,
+    "export_formats": [
+      "json",
+      "csv",
+      "markdown",
+      "bibtex"
+    ]
   }
 }

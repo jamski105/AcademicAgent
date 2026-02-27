@@ -1,0 +1,42 @@
+{
+  "databases": [
+    {
+      "name": "ACM Digital Library",
+      "url": "https://dl.acm.org/",
+      "access": "available",
+      "discipline": "Computer Science",
+      "priority": 1
+    },
+    {
+      "name": "IEEE Xplore",
+      "url": "https://ieeexplore.ieee.org/",
+      "access": "available",
+      "discipline": "Engineering",
+      "priority": 2
+    },
+    {
+      "name": "Scopus",
+      "url": "https://www.scopus.com/",
+      "access": "available",
+      "discipline": "Multidisciplinary",
+      "priority": 3
+    },
+    {
+      "name": "SpringerLink",
+      "url": "https://link.springer.com/",
+      "access": "available",
+      "discipline": "Multidisciplinary",
+      "priority": 4
+    },
+    {
+      "name": "Web of Science",
+      "url": "https://www.webofscience.com/",
+      "access": "available",
+      "discipline": "Multidisciplinary",
+      "priority": 5
+    }
+  ],
+  "timestamp": "2026-02-23T18:02:00Z",
+  "source": "quick_mode_preset",
+  "count": 5
+}

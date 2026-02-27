@@ -1,0 +1,50 @@
+[
+  {
+    "rank": 1,
+    "id": "C001",
+    "title": "Data Driven Change Control: The Role of Predictive Risk Scoring in DevOps Oriented IT Governance",
+    "authors": ["LH Whitcombe"],
+    "year": 2026,
+    "url": "https://oscarpubhouse.com/index.php/sdlijmef/article/view/637"
+  },
+  {
+    "rank": 2,
+    "id": "C002",
+    "title": "Agile Governance: Examining the Impact of DevOps on PMO: A Systematic Review",
+    "authors": ["I Peerzada"],
+    "year": 2025,
+    "url": "https://www.preprints.org/frontend/manuscript/a8b1afae669385a2a59aa5d7dc0c596e/download_pub"
+  },
+  {
+    "rank": 3,
+    "id": "C003",
+    "title": "Bridging Performance Gaps through Agile Portfolio Governance and Continuous Delivery Pipelines",
+    "authors": ["F Young", "B Hill", "A Tariq"],
+    "year": 2025,
+    "url": "https://www.researchgate.net/profile/Ayesha-Tariq-65/publication/396913148_Bridging_Performance_Gaps_through_Agile_Portfolio_Governance_and_Continuous_Delivery_Pipelines/links/68fe098f7d9a4d4e870cce99/Bridging-Performance-Gaps-through-Agile-Portfolio-Governance-and-Continuous-Delivery-Pipelines.pdf"
+  },
+  {
+    "rank": 4,
+    "id": "C004",
+    "title": "Agile IT Governance for Sustainable Digital Transformation in Universities",
+    "authors": ["JR Batmetan"],
+    "year": 2025,
+    "url": "https://ijite.jredu.id/index.php/ijite/article/view/260"
+  },
+  {
+    "rank": 5,
+    "id": "C005",
+    "title": "Developing Effective It Governance for Devops Teams: A Qualitative Delphi Study",
+    "authors": ["B Greene"],
+    "year": 2020,
+    "url": "https://search.proquest.com/openview/f357449437bd115f4825e4d20801c998/1?pq-origsite=gscholar&cbl=18750&diss=y"
+  },
+  {
+    "rank": 6,
+    "id": "C006",
+    "title": "Data Governance for Continuous Security",
+    "authors": ["GM Khan", "N Hussain"],
+    "year": null,
+    "url": "https://www.researchgate.net/profile/Hussain-Nizam/publication/387471291_Data_Governance_for_Continuous_Security/links/676f3f6700aa3770e0c17626/Data-Governance-for-Continuous-Security.pdf"
+  }
+]
