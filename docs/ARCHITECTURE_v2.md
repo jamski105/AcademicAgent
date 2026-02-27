@@ -1,432 +1,645 @@
-# Academic Agent v2.0 - Architektur-Dokumentation
+# Academic Agent v2.2 - Architektur-Dokumentation
 
 **Erstellt:** 2026-02-23
-**Ziel:** Detaillierte Architektur-Beschreibung für v2.0
+**Aktualisiert:** 2026-02-27 (v2.2 - DBIS Search Integration)
+**Ziel:** Agent-basierte Architektur über Claude Code + DBIS Meta-Portal
 
 ---
 
 ## 📋 Übersicht
 
-### Vergleich: v1.0 vs v2.0
+### Architektur-Paradigma: Agent Orchestration via Claude Code
 
-| Aspect | v1.0 (Alt) | v2.0 (Neu) |
-|--------|-----------|------------|
-| **Agents** | 1 Orchestrator + 5 Sub-Agents | 1 Linear Coordinator |
-| **Architektur** | Hierarchisch, asynchron | Linear Coordinator + Module |
-| **Datenquellen** | Web-Scraping (Browser) | APIs (CrossRef, OpenAlex, S2) |
-| **Koordination** | Asynchron via Task-Tool | Synchron, Schritt-für-Schritt |
-| **Modularität** | Agent-basiert | Hybrid: 3 Haiku-Agents + 10 Python-Module |
-| **User Feedback** | Headless + tmux (unsichtbar) | Headful Browser + stdout |
-| **PDF Access** | Direct Download (fehlerhaft) | API → DBIS Browser (Institutional) |
-| **State** | JSON (research_state.json) | SQLite + JSON Backup |
-| **Fehlerbehandlung** | Abbruch | Fallback-Chain + Recovery |
-| **Erfolgsrate** | ~60% | **Ziel: 85-92%** |
-| **Cost pro Run** | ~$2.15 | **$0.27 (87% günstiger)** |
+```
+User → Claude Code → linear_coordinator Agent
+  → Spawnt Subagenten (query_gen, scorer, extractor, dbis_browser)
+  → Ruft Python-Module auf (search, ranking, parsing)
+  → Nutzt Chrome MCP für Browser Automation
+```
+
+**Kernprinzip:** Keine direkten Anthropic API-Calls, alles über Claude Code Agenten.
 
 ---
 
-## 🏗️ Architektur-Entscheidung: Linear Coordinator + Module
+## 🏗️ Neue Architektur v2.0
 
-### v1.0 Problem: Multi-Agent-Hierarchie
-
-```
-┌─────────────────────────────────────┐
-│      Orchestrator Agent             │  ← Versagt beim Agent-Spawning
-│   (Task-Tool Koordination)          │
-└──────────────┬──────────────────────┘
-               │
-    ┌──────────┼──────────┬──────────┬──────────┐
-    ▼          ▼          ▼          ▼          ▼
-┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐
-│ Search │ │Browser │ │Scoring │ │Extract │ │ Setup  │
-│ Agent  │ │ Agent  │ │ Agent  │ │ Agent  │ │ Agent  │
-└────────┘ └────────┘ └────────┘ └────────┘ └────────┘
-```
-
-**Probleme:**
-- Asynchrone Kommunikation (Task-Tool) ist fehleranfällig
-- Orchestrator muss Agent-Lifecycle managen (spawn, wait, error-handling)
-- Debugging schwer: Welcher Agent hat versagt? Wo ist der State?
-- Overhead: Jeder Sub-Agent hat eigenen Context, eigene Instruktionen
-
----
-
-### Warum KEIN Monolithischer Agent?
+### High-Level Übersicht
 
 ```
-❌ Monolithischer Agent (FALSCH):
-┌─────────────────────────────────────────────┐
-│   Ein riesiger "Do Everything" Agent        │
-│                                             │
-│   - Search-Logik                            │
-│   - Browser-Steuerung                       │
-│   - Scoring-Algorithmen                     │
-│   - PDF-Parsing                             │
-│   - Quote-Extraction                        │
-│   - Error-Handling                          │
-│                                             │
-│   (10.000+ Zeilen Prompt)                  │
-└─────────────────────────────────────────────┘
-```
-
-**Probleme:**
-- Prompt Explosion (10.000+ Zeilen)
-- Keine Spezialisierung (macht alles "ok", nichts "gut")
-- Testing unmöglich (nur E2E-Tests)
-- Debugging Albtraum (alles in einem Stack Trace)
-
----
-
-### v2.0 Lösung: Linear Coordinator + Module
-
-```
-v2.0 Architektur (RICHTIG):
-┌────────────────────────────────────────────────────────────┐
-│              Linear Coordinator Agent                      │
-│          (Koordiniert Workflow, macht nicht alles selbst)  │
-└──────────────────────┬─────────────────────────────────────┘
-                       │
-                       │ Ruft Python-Module direkt auf:
-                       │
-    ┌──────────────────┼─────────────────┬─────────────────┬────────────┐
-    ▼                  ▼                 ▼                 ▼            ▼
-┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌──────────────┐
-│ SearchEngine │ │ PDFFetcher   │ │ FiveDScorer  │ │QuoteExtractor│ │ StateManager │
-│  (Modul)     │ │  (Modul)     │ │  (Modul)     │ │  (Modul)     │ │  (Modul)     │
-│              │ │              │ │              │ │              │ │              │
-│ - CrossRef   │ │ - Unpaywall  │ │ - Relevanz   │ │ - PDF Parse  │ │ - SQLite     │
-│ - OpenAlex   │ │ - CORE       │ │ - Recency    │ │ - Validation │ │ - JSON       │
-│ - S2 API     │ │ - Browser    │ │ - Authority  │ │ - Context    │ │ - Checkpoints│
-└──────────────┘ └──────────────┘ └──────────────┘ └──────────────┘ └──────────────┘
-```
-
-**Vorteile:**
-- ✅ Ein Agent (keine Task-Tool-Koordination)
-- ✅ Modularer Code (Python-Klassen, testbar, wiederverwendbar)
-- ✅ Spezialisierung (jedes Modul ist ein Experte)
-- ✅ Linearer Flow (Agent ruft Module sequenziell auf)
-- ✅ Klarer State (ein Process, ein Stack Trace)
-- ✅ Debugging einfach (Modul-Tests + Integration-Tests)
-
----
-
-## 🤖 Agents vs Python-Module
-
-### Agents = LLM-Prompts (.md Dateien)
-
-```
-.claude/agents/
-├── linear_coordinator.md    # Sonnet Agent (Prompt für LLM)
-├── query_generator.md        # Haiku Agent (Prompt für LLM)
-├── five_d_scorer.md          # Haiku Agent (Prompt für LLM)
-└── quote_extractor.md        # Haiku Agent (Prompt für LLM)
-```
-
-**Was sind das?**
-- Markdown-Dateien mit Instruktionen für den LLM
-- Enthalten Prompt-Engineering
-- Werden via Anthropic SDK / Task Tool aufgerufen
-- **4 Agents gesamt:** 1 Sonnet + 3 Haiku
-
----
-
-### Python-Module = Deterministischer Code (.py Dateien)
-
-```
-src/pdf/
-├── pdf_fetcher.py               # Python-Klasse (KEIN Agent!)
-├── unpaywall_client.py          # API-Client (KEIN Agent!)
-├── dbis_browser_downloader.py  # Browser-Code (KEIN Agent!)
-└── shibboleth_auth.py           # Auth-Logik (KEIN Agent!)
-```
-
-**Was sind das?**
-- Normale Python-Klassen und Funktionen
-- Deterministischer Code (API-Calls, Browser, etc.)
-- Werden von Agents AUFGERUFEN (import + direkter Call)
-- **10 Module gesamt:** Alle in `src/`
-
----
-
-## 📂 Ordnerstruktur v2.0 (Implementiert)
-
-```
-.claude/
-├── agents/                      # 4 Agent-Definitionen (.md)
-│   ├── linear_coordinator.md   # Sonnet - Haupt-Coordinator
-│   ├── query_generator.md      # Haiku - Boolean-Queries
-│   ├── five_d_scorer.md        # Haiku - Relevanz-Scoring
-│   └── quote_extractor.md      # Haiku - Zitat-Extraktion
-│
-├── skills/research/             # Research Skill (Entry-Point)
-│   ├── SKILL.md                # ✅ Implementiert - User-Interaktion
-│   └── scripts/
-│       └── config_loader.py    # ✅ Implementiert - Config laden/validieren
-│
-└── settings.json               # ✅ Implementiert - Agent-Konfiguration
-
-config/                          # ✅ Implementiert - Konfigurationsdateien
-├── research_modes.yaml         # Quick/Standard/Deep Modi
-├── api_config.yaml             # API Keys, Rate-Limits, Endpoints
-└── academic_context.md         # Optional - Akademischer Kontext
-
-src/                            # Python-Module
-├── coordinator/
-│   ├── __init__.py
-│   └── coordinator_runner.py   # Python-Wrapper für Agent-Execution
-│
-├── search/
-│   ├── __init__.py
-│   ├── search_engine.py        # Wrapper für alle Search-APIs
-│   ├── crossref_client.py      # CrossRef API
-│   ├── openalex_client.py      # OpenAlex API
-│   ├── semantic_scholar_client.py  # Semantic Scholar API
-│   └── deduplicator.py         # DOI-basierte Deduplizierung
-│
-├── ranking/
-│   ├── __init__.py
-│   ├── five_d_scorer.py        # 5D-Scoring: Hybrid (Python + Haiku Relevanz)
-│   ├── citation_enricher.py    # Citation Counts via APIs
-│   └── portfolio_balancer.py   # Portfolio-Balance
-│
-├── pdf/
-│   ├── __init__.py
-│   ├── pdf_fetcher.py              # Orchestriert PDF-Download
-│   ├── unpaywall_client.py         # Unpaywall API
-│   ├── core_client.py              # CORE API
-│   ├── dbis_browser_downloader.py  # DBIS via Headful Browser
-│   ├── publisher_navigator.py      # Publisher-Navigation (IEEE, ACM, Springer)
-│   └── shibboleth_auth.py          # TIB Shibboleth-Auth
-│
-├── extraction/
-│   ├── __init__.py
-│   ├── quote_extractor.py      # Quote-Extraction (Haiku)
-│   ├── quote_validator.py      # Validierung gegen PDF
-│   └── pdf_parser.py           # PyMuPDF Wrapper
-│
-├── state/
-│   ├── __init__.py
-│   ├── state_manager.py        # SQLite + JSON State
-│   ├── database.py             # SQLAlchemy Models
-│   └── checkpointer.py         # Resume-Funktionalität
-│
-├── ui/
-│   ├── __init__.py
-│   ├── progress_ui.py          # Rich Progress Bars
-│   └── error_formatter.py      # User-friendly Errors
-│
-└── utils/
-    ├── __init__.py
-    ├── retry.py                # Retry-Logik mit tenacity
-    ├── rate_limiter.py         # Rate-Limiting
-    ├── cache.py                # Lokales Caching
-    └── config.py               # Pydantic Config Models
+┌─────────────────────────────────────────────────────────┐
+│ User: /research "DevOps Governance"                     │
+└────────────────────┬────────────────────────────────────┘
+                     ↓
+┌─────────────────────────────────────────────────────────┐
+│ SKILL.md (.claude/skills/research/)                     │
+│ → Spawnt: Task(subagent_type="linear_coordinator")     │
+└────────────────────┬────────────────────────────────────┘
+                     ↓
+┌─────────────────────────────────────────────────────────┐
+│ LINEAR COORDINATOR AGENT (Sonnet 4.5)                   │
+│ (.claude/agents/linear_coordinator.md)                  │
+│                                                         │
+│ Orchestriert 8 Phasen:                                 │
+│                                                         │
+│ Phase 1: Context Setup                                 │
+│   → Read config files (Bash: cat)                       │
+│   → Init database (Bash: python -m state.database)     │
+│                                                         │
+│ Phase 2: Query Generation                              │
+│   → Task(subagent="query_generator") ◄─── Haiku Agent  │
+│                                                         │
+│ Phase 2a: Discipline Classification (NEW v2.2)         │
+│   → Task(subagent="discipline_classifier") ◄─── Haiku  │
+│   → Maps query to DBIS categories                      │
+│   → Identifies relevant databases                      │
+│                                                         │
+│ Phase 3: Hybrid Search (ENHANCED v2.2)                 │
+│   Track 1 (Fast):                                      │
+│   → Bash: python -m src.search.search_engine (APIs)    │
+│   Track 2 (Comprehensive):                             │
+│   → Task(subagent="dbis_search") ◄─── Chrome MCP       │
+│   → Merges & deduplicates results                      │
+│                                                         │
+│ Phase 4: Ranking                                       │
+│   → Bash: python -m src.ranking.five_d_scorer          │
+│   → Task(subagent="llm_relevance_scorer") ◄─── Haiku   │
+│                                                         │
+│ Phase 5: PDF Acquisition                               │
+│   → Bash: python unpaywall + core clients              │
+│   → Task(subagent="dbis_browser") ◄─── Chrome MCP      │
+│                                                         │
+│ Phase 6: Quote Extraction                              │
+│   → Bash: python -m src.extraction.pdf_parser          │
+│   → Task(subagent="quote_extractor") ◄─── Haiku Agent  │
+│                                                         │
+│ Phase 7: Export Results (NEW v2.1)                     │
+│   → Bash: python -m src.export.csv_exporter            │
+│   → Bash: python -m src.export.markdown_exporter       │
+│   → Bash: python -m src.export.bibtex_exporter         │
+│   → Save to runs/{timestamp}/                          │
+│                                                         │
+│ Output: runs/2026-02-27_14-30-00/                      │
+│   ├── pdfs/, results.json, quotes.csv                  │
+│   ├── summary.md, bibliography.bib                     │
+│   └── session.db, logs                                 │
+└─────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 🎯 Entry-Point: Research Skill
+## 🤖 Agents (Claude Code Subagents)
 
-### Skill-Struktur (Implementiert)
+### 1. linear_coordinator (Sonnet 4.5)
 
-```
-.claude/skills/research/
-├── SKILL.md                    # ✅ Entry-Point mit User-Interaktion
-└── scripts/
-    └── config_loader.py        # ✅ Config-Loading & Validierung
-```
+**Rolle:** Master Orchestrator
+**File:** `.claude/agents/linear_coordinator.md`
+**Tools:** Bash, Read, Write, Task, Grep, Glob
 
-### Workflow: User → Skill → Agent → Module
+**Verantwortlichkeiten:**
+- Orchestriert 7-Phasen Workflow
+- Spawnt Subagenten via Task tool
+- Ruft Python-Module via Bash auf
+- State Management (SQLite + Run Directory)
+- Error Handling & Recovery
+- Progress Tracking
+- Export Management (CSV, Markdown, BibTeX)
 
-```
-User: /research "DevOps Governance"
-  ↓
-SKILL.md:
-  1. Begrüßt User
-  2. Fragt nach Recherche-Modus (Quick/Standard/Deep)
-  3. Lädt config/research_modes.yaml
-  4. Lädt optional config/academic_context.md
-  5. Validiert mit config_loader.py
-  6. Spawnt Linear Coordinator Agent (EINMAL!)
-  ↓
-Linear Coordinator Agent:
-  1. Initialisiert State (SQLite + JSON)
-  2. Ruft SearchEngine.search() auf
-  3. Ruft FiveDScorer.score() auf
-  4. Ruft PDFFetcher.fetch() auf
-  5. Ruft QuoteExtractor.extract() auf
-  6. Erstellt finale Ausgabe
-  ↓
-Python-Module:
-  - Deterministischer Code
-  - API-Calls
-  - PDF-Downloads
-  - Datenverarbeitung
-```
+### 2. query_generator (Haiku 4.5)
 
-### Wichtige Design-Entscheidung: Simplicity
+**Rolle:** Query Expansion
+**File:** `.claude/agents/query_generator.md`
+**Input:** User query, research mode, academic context
+**Output:** Boolean queries, keywords, filters
 
-**Warum nur SKILL.md + config_loader.py?**
+**Verantwortlichkeiten:**
+- Kreative Query-Expansion
+- Synonyme & verwandte Begriffe
+- Boolean-Query-Konstruktion
+- API-spezifische Query-Optimierung
 
-❌ **NICHT:** Komplexe Skill-Struktur mit vielen Scripts
-```
-skills/research/
-├── SKILL.md
-├── scripts/
-│   ├── setup_research.py
-│   ├── load_context.py
-│   ├── validate_config.py
-│   ├── mode_selector.py
-│   └── ... (zu viel!)
-```
+### 3. llm_relevance_scorer (Haiku 4.5)
 
-✅ **SONDERN:** Minimal aber effektiv
-```
-skills/research/
-├── SKILL.md              # LLM macht User-Interaktion
-└── scripts/
-    └── config_loader.py  # Python macht Datenverarbeitung
-```
+**Rolle:** Semantische Relevanz-Bewertung
+**File:** `.claude/agents/llm_relevance_scorer.md`
+**Input:** Papers (Title, Abstract), User query
+**Output:** Relevanz-Scores (0-1)
 
-**Prinzip:** "LLM wo nötig (UX), Python wo möglich (Data)"
+**Verantwortlichkeiten:**
+- Semantisches Verständnis von Paper-Inhalten
+- Relevanz-Bewertung pro Paper
+- Batch-Processing (10 papers)
+- JSON Output für five_d_scorer
+
+### 4. quote_extractor (Haiku 4.5)
+
+**Rolle:** Zitat-Extraktion aus PDFs
+**File:** `.claude/agents/quote_extractor.md`
+**Input:** PDF Text, User query
+**Output:** Relevante Zitate mit Context
+
+**Verantwortlichkeiten:**
+- Findet relevante Textstellen
+- Extrahiert prägnante Zitate (≤25 Wörter)
+- Kontext-Window (50 Wörter)
+- Validierung gegen PDF-Text
+
+### 5. dbis_browser (Sonnet 4.5)
+
+**Rolle:** Browser Automation für PDF-Download
+**File:** `.claude/agents/dbis_browser.md`
+**Tools:** Chrome MCP (mcp__chrome__*)
+
+**Verantwortlichkeiten:**
+- DOI → Publisher Website Navigation
+- Paywall Detection
+- Shibboleth Auth Flow (TIB Hannover)
+- **Interaktiver Login** (User sieht Browser, Login manuell)
+- PDF Download Link Detection
+- Publisher-spezifische Flows:
+  - IEEE Xplore
+  - ACM Digital Library
+  - Springer
+  - Elsevier/ScienceDirect
 
 ---
 
-## 📁 Konfigurationsdateien (Implementiert)
+## 🐍 Python-Module (CLI-fähig)
 
-### config/research_modes.yaml
+### Phase 3: Search
 
-Definiert 4 Recherche-Modi:
+**search_engine.py** (CLI)
+```bash
+python -m src.search.search_engine \
+  --query "DevOps Governance" \
+  --mode standard \
+  --output results.json
+```
 
-```yaml
-modes:
-  quick:
-    max_papers: 15
-    estimated_duration_min: 20
-    api_sources: [crossref, openalex, semantic_scholar]
+**Integriert:**
+- `crossref_client.py` - CrossRef API (50 req/s, anonymous)
+- `openalex_client.py` - OpenAlex API (100 req/day, anonymous)
+- `semantic_scholar_client.py` - S2 API (100 req/5min, anonymous)
+- `deduplicator.py` - DOI-basierte Deduplizierung
 
-  standard:  # Empfohlen
-    max_papers: 25
-    estimated_duration_min: 35
-    api_sources: [crossref, openalex, semantic_scholar, google_scholar]
+### Phase 4: Ranking
 
-  deep:
-    max_papers: 40
-    estimated_duration_min: 60
-    api_sources: [crossref, openalex, semantic_scholar, google_scholar, ieee_xplore]
-
-  custom:
-    # User-definierbar
+**five_d_scorer.py** (CLI)
+```bash
+python -m src.ranking.five_d_scorer \
+  --papers papers.json \
+  --weights relevance:0.4,recency:0.2,quality:0.2,authority:0.2 \
+  --output scored.json
 ```
 
 **Features:**
-- Mode-spezifische Scoring-Kriterien
-- API-Prioritäten
-- Fallback-Strategien
-- Portfolio-Balance (Deep Mode)
+- Relevanz (wird von llm_relevance_scorer Agent ergänzt)
+- Recency (log-scaled, max 10 Jahre)
+- Quality (Citation Count, log-scaled)
+- Authority (Venue-Heuristic)
+- Portfolio Balance (optional)
 
-### config/api_config.yaml
+### Phase 5: PDF Acquisition
 
-Zentrale API-Konfiguration:
+**pdf_fetcher.py** (Wrapper)
+- `unpaywall_client.py` - Unpaywall API (~40% Erfolg)
+- `core_client.py` - CORE API (~10% zusätzlich)
+- Falls fehlgeschlagen → Coordinator spawnt dbis_browser Agent
 
-```yaml
-api_keys:
-  crossref_email: ""
-  openalex_email: ""
-  semantic_scholar_api_key: ""
-  unpaywall_email: ""
-  core_api_key: ""
+### Phase 6: Quote Extraction
 
-rate_limits:
-  crossref: {requests_per_second: 50}
-  openalex: {requests_per_second: 10}
-  semantic_scholar: {requests_per_second: 1}
-
-timeouts:
-  api_request: 30
-  pdf_download: 60
-
-retry:
-  max_attempts: 3
-  backoff_factor: 2
+**pdf_parser.py** (CLI)
+```bash
+python -m src.extraction.pdf_parser \
+  --pdf paper.pdf \
+  --output text.json
 ```
 
 **Features:**
-- Environment Variable Fallback
-- Adaptive Rate-Limiting
-- Retry-Strategien
-- Health Checks
-- Caching (SQLite, 24h TTL)
-
-### config/academic_context.md (Optional)
-
-User-spezifische Präferenzen:
-
-```markdown
-## Disziplin
-Computer Science / Software Engineering
-
-## Keywords
-- DevOps
-- Continuous Integration
-- Infrastructure as Code
-
-## Bevorzugte Datenbanken
-- IEEE Xplore
-- ACM Digital Library
-
-## Qualitätskriterien
-- Minimum Citation Count: 3
-- Max Paper Age: 7 Jahre
-```
-
-**Verwendung:** Query-Optimierung, Relevanz-Scoring, Datenbank-Auswahl
+- PyMuPDF Text-Extraktion
+- Page-by-page
+- Text Cleaning & Normalization
 
 ---
 
-## ⚙️ Agent-Konfiguration: .claude/settings.json
+## 🌐 Chrome MCP Integration
+
+### Setup (.claude/settings.json)
 
 ```json
 {
-  "agents": {
-    "linear_coordinator": {
-      "model": "claude-sonnet-4-5",
-      "max_tokens": 8192,
-      "temperature": 0.3
-    },
-    "query_generator": {
-      "model": "claude-haiku-4",
-      "max_tokens": 2048,
-      "temperature": 0.5
-    },
-    "five_d_scorer": {
-      "model": "claude-haiku-4",
-      "temperature": 0.2
-    },
-    "quote_extractor": {
-      "model": "claude-haiku-4",
-      "temperature": 0.1
+  "mcpServers": {
+    "chrome": {
+      "command": "npx",
+      "args": ["-y", "@eddym06/custom-chrome-mcp@latest"],
+      "env": {
+        "CHROME_PATH": "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+      }
     }
-  },
-  "workflow": {
-    "default_mode": "standard",
-    "auto_resume_on_error": true,
-    "checkpoint_interval_minutes": 5
-  },
-  "pdf": {
-    "fallback_chain": ["unpaywall", "core", "dbis_browser"],
-    "dbis_browser_delay_seconds": 15
-  },
-  "scoring": {
-    "relevance_weight": 0.4,
-    "recency_weight": 0.2,
-    "quality_weight": 0.2,
-    "authority_weight": 0.2,
-    "use_llm_relevance": true
   }
 }
 ```
 
+### dbis_browser Agent - Chrome MCP Tools
+
+**Verfügbare Tools:**
+- `mcp__chrome__navigate` - URL Navigation
+- `mcp__chrome__click` - Element Click
+- `mcp__chrome__type` - Text Input
+- `mcp__chrome__screenshot` - Screenshot
+- `mcp__chrome__wait` - Wait for Element
+- `mcp__chrome__evaluate` - JS Execution
+
+**Workflow:**
+1. Navigate zu DOI-URL
+2. Redirect zu Publisher Website
+3. Detect Paywall/Login
+4. Falls TIB Shibboleth:
+   - Navigate zu Shibboleth Login
+   - **PAUSE für manuellen Login** (User sieht Browser!)
+   - Screenshot zur Bestätigung
+5. Find PDF Download Link
+6. Click & Download
+7. Return PDF Path
+
 ---
 
-Für vollständige Code-Beispiele siehe [V2_ROADMAP_FULL.md](../V2_ROADMAP_FULL.md)
+## 🌍 DBIS Search Architecture (NEW v2.2)
+
+### Konzept: DBIS als Meta-Portal
+
+**Problem:** Hunderte von Fachdatenbanken, jeweils eigene API/Interface
+**Lösung:** DBIS (Database Information System) als einheitlicher Zugang
+
+**Vorteil:**
+- Eine Integration → Zugang zu 100+ Datenbanken
+- Automatische TIB-Lizenz Aktivierung
+- Fachgebiets-basierte Selektion
+
+### Phase 2a: Discipline Classification
+
+**discipline_classifier Agent (Haiku)**
+
+Input:
+```json
+{
+  "user_query": "Lateinische Metrik",
+  "expanded_queries": ["Latin Meter", "Classical Prosody", ...]
+}
+```
+
+Output:
+```json
+{
+  "primary_discipline": "Klassische Philologie",
+  "secondary_disciplines": ["Literaturwissenschaft", "Linguistik"],
+  "dbis_categories": ["2.1", "2.2"],  // DBIS Fachgebiet-IDs
+  "relevant_databases": [
+    "L'Année philologique",
+    "JSTOR Classics",
+    "Perseus Digital Library"
+  ]
+}
+```
+
+### Phase 3: DBIS Search Agent
+
+**dbis_search Agent (Sonnet + Chrome MCP)**
+
+**Workflow:**
+```
+1. Navigate zu DBIS Portal
+   → https://dbis.ur.de/UBTIB
+
+2. Select Discipline
+   → Klickt Fachgebiet (z.B. "Klassische Philologie")
+
+3. Filter for Licensed Databases
+   → Nur grüne Ampel (TIB-Lizenz vorhanden)
+
+4. For each relevant database:
+   a) Click "Zur Datenbank"
+      → Aktiviert TIB-Lizenz via DBIS Redirect!
+
+   b) Wait for database website load
+
+   c) Find search interface
+      → Database-specific strategies (config/dbis_disciplines.yaml)
+
+   d) Execute search
+      → Enter query, apply filters
+
+   e) Extract results
+      → Scrape HTML for papers (Title, Authors, Year, DOI)
+      → Or use Export function (BibTeX/RIS if available)
+
+   f) Return to DBIS for next database
+
+5. Merge all results
+   → Annotate source (database name)
+   → Return to coordinator
+```
+
+**Database-Specific Strategies:**
+
+```yaml
+# config/dbis_disciplines.yaml
+databases:
+  "L'Année philologique":
+    search_selector: "#search-field"
+    search_type: "advanced"
+    export_format: "bibtex"
+
+  "JSTOR":
+    search_selector: "input[name='Query']"
+    search_type: "basic"
+    result_selector: ".card--result"
+
+  "IEEE Xplore":
+    search_selector: "#xploreSearchInput"
+    filters: ["Conference", "Journal"]
+```
+
+### DBIS Auto-Discovery (NEW v2.3)
+
+**Problem:** Manually defining all databases for each discipline doesn't scale
+- Jura: only 2 DBs defined, but DBIS has 20+
+- New databases added to DBIS → not automatically available
+- 100+ databases × 15 disciplines = too much manual config
+
+**Solution:** Automatic Database Discovery
+
+**Architecture:**
+
+```
+discipline_classifier → discipline + dbis_url
+                              ↓
+                    dbis_search Agent
+                              ↓
+                  ┌──────────┴──────────┐
+                  ↓                     ↓
+         Discovery Mode          Config Mode
+         (Try First)             (Fallback)
+                  ↓                     ↓
+    1. Navigate to DBIS      Use predefined
+       discipline page       databases from
+    2. Scrape database       config file
+       list from HTML
+    3. Filter:
+       - Green/yellow only
+       - Blacklist applied
+    4. Prioritize:
+       - Preferred DBs first
+       - Quality score
+    5. Select TOP 3-5
+                  ↓                     ↓
+                  └──────────┬──────────┘
+                             ↓
+                    Search Selected DBs
+```
+
+**Discovery Algorithm:**
+
+```python
+def discover_databases(discipline_url, config):
+    # 1. Navigate to DBIS discipline page
+    driver.get(discipline_url)
+
+    # 2. Extract all database entries
+    databases = []
+    for entry in find_all(".datenbank"):
+        name = entry.find(".db-name").text
+        traffic_light = entry.find("img[src*='amp']").attr("src")
+        link = entry.find("a:contains('Zur Datenbank')").attr("href")
+
+        # 3. Filter by traffic light (green/yellow only)
+        if "amp_gruen" in traffic_light or "amp_gelb" in traffic_light:
+            # 4. Apply blacklist
+            if not any(blocked in name for blocked in BLACKLIST):
+                databases.append({
+                    "name": name,
+                    "link": link,
+                    "access": "free" if "gruen" in traffic_light else "tib"
+                })
+
+    # 5. Prioritize by preferred databases
+    preferred = config.get("preferred_databases", [])
+    databases.sort(key=lambda db: (
+        0 if db["name"] in preferred else 1,  # Preferred first
+        0 if db["access"] == "free" else 1,   # Green before yellow
+        db["name"]                             # Alphabetical
+    ))
+
+    # 6. Select TOP N
+    return databases[:config.get("discovery_max_databases", 5)]
+```
+
+**Blacklist (global):**
+```yaml
+discovery_blacklist:
+  - "Katalog"         # Library catalogs
+  - "Directory"       # Directories
+  - "Encyclopedia"    # Reference works
+  - "Handbook"        # Handbooks
+  - "Lexikon"         # Lexica
+```
+
+**Config Example:**
+
+```yaml
+"Rechtswissenschaft":
+  dbis_category_id: "9.1"
+  dbis_url: "https://dbis.ur.de/dbis/dbliste.php?bib_id=ubtib&lett=f&sGeb=9.1"
+
+  # Discovery Settings
+  discovery_enabled: true          # Try discovery first
+  discovery_max_databases: 5       # Select TOP 5
+
+  # Preferred (if found during discovery, prioritize)
+  preferred_databases:
+    - "Beck-Online"
+    - "Juris"
+    - "HeinOnline"
+
+  # Fallback (if discovery fails)
+  fallback_databases:
+    - name: "Beck-Online"
+      priority: 1
+    - name: "Juris"
+      priority: 2
+```
+
+**Caching Strategy:**
+
+```python
+# Cache discovered databases for 24h
+cache_key = f"dbis_discovery_{discipline}_{date.today()}"
+
+if cache_key in cache:
+    databases = cache.get(cache_key)
+else:
+    databases = discover_databases(discipline_url, config)
+    cache.set(cache_key, databases, ttl=86400)  # 24h
+```
+
+**Why cache?**
+- Discovery scraping is slow (~10-20 seconds)
+- DBIS database list doesn't change daily
+- Multiple queries same day → reuse discovery
+
+**Fallback Chain:**
+
+```
+1. Try Discovery
+   ↓ (failed?)
+2. Try fallback_databases from config
+   ↓ (empty?)
+3. Use general_databases (CrossRef, OpenAlex)
+   ↓ (failed?)
+4. Return empty + log error
+```
+
+**Performance Impact:**
+- **First run (no cache):** +15 seconds (discovery scraping)
+- **Subsequent runs (cached):** +0 seconds (instant)
+- **Config mode:** +0 seconds (no discovery)
+
+**Benefits:**
+- 📈 **Scalability:** New DBIS databases automatically available
+- 🔄 **Maintainability:** Less manual config needed
+- 🌍 **Coverage:** All disciplines get 100% DBIS coverage
+
+---
+
+### Result Merging
+
+**Coordinator merges:**
+- API Papers (CrossRef, OpenAlex, S2)
+- DBIS Papers (all databases)
+
+**Deduplication:**
+- Primary: DOI matching
+- Secondary: Title similarity (>85%)
+- Keeps source annotation
+
+**Source-Aware Ranking:**
+- DBIS papers get +0.05 boost if discipline matches
+- Reason: More likely to be relevant if found in specialized DB
+
+---
+
+## 💾 State Management
+
+### SQLite Database (state/database.py)
+
+**Tables:**
+- `sessions` - Research Sessions
+- `papers` - Candidate Papers
+- `quotes` - Extracted Quotes
+- `checkpoints` - Resume Points
+
+**Features:**
+- Atomic Transactions
+- Auto-Commit
+- Checkpoint & Resume
+- JSON Export
+
+---
+
+## 📁 Repository-Struktur
+
+```
+AcademicAgent/
+├── setup.sh                       # ← Installation (inkl Chrome MCP)
+├── .claude/
+│   ├── settings.json             # ← Chrome MCP Config
+│   ├── agents/
+│   │   ├── linear_coordinator.md       # Master Agent
+│   │   ├── query_generator.md          # Query Expansion
+│   │   ├── discipline_classifier.md    # Discipline Detection (NEW v2.2)
+│   │   ├── llm_relevance_scorer.md     # Relevanz-Bewertung
+│   │   ├── quote_extractor.md          # Zitat-Extraktion
+│   │   ├── dbis_browser.md             # PDF Download (Chrome MCP)
+│   │   └── dbis_search.md              # DBIS Search (NEW v2.2, Chrome MCP)
+│   └── skills/research/
+│       └── SKILL.md                 # Entry Point
+├── config/
+│   ├── research_modes.yaml          # Quick/Standard/Deep
+│   ├── dbis_disciplines.yaml        # DBIS Database Registry (NEW v2.2)
+│   └── academic_context.md          # Optional User Context
+├── src/
+│   ├── classification/                  # NEW v2.2
+│   │   └── discipline_classifier.py # CLI Module
+│   ├── search/
+│   │   ├── search_engine.py         # CLI Wrapper (Hybrid in v2.2)
+│   │   ├── dbis_search_orchestrator.py  # NEW v2.2
+│   │   ├── crossref_client.py
+│   │   ├── openalex_client.py
+│   │   ├── semantic_scholar_client.py
+│   │   └── deduplicator.py
+│   ├── ranking/
+│   │   └── five_d_scorer.py         # CLI Wrapper
+│   ├── pdf/
+│   │   ├── pdf_fetcher.py           # Wrapper (Unpaywall+CORE)
+│   │   ├── unpaywall_client.py
+│   │   └── core_client.py
+│   ├── extraction/
+│   │   ├── pdf_parser.py            # CLI Wrapper
+│   │   └── quote_validator.py
+│   ├── state/
+│   │   ├── database.py              # SQLite Schema
+│   │   ├── state_manager.py
+│   │   └── checkpointer.py
+│   ├── ui/
+│   │   ├── progress_ui.py
+│   │   └── error_formatter.py
+│   └── utils/
+│       ├── config.py
+│       ├── rate_limiter.py
+│       ├── retry.py
+│       └── cache.py
+└── tests/
+    ├── unit/
+    ├── integration/
+    └── agents/                      # Agent Tests
+```
+
+---
+
+## 🔄 Workflow: User → Result
+
+```
+1. User: /research "DevOps Governance"
+   ↓
+2. SKILL.md:
+   - Mode Selection (Quick/Standard/Deep)
+   - Load Configs
+   - Spawn linear_coordinator Agent
+   ↓
+3. linear_coordinator Agent:
+   Phase 1: Context Setup
+   Phase 2: Query Gen → query_generator Agent
+   Phase 3: Search → search_engine.py (Bash)
+   Phase 4: Ranking → five_d_scorer.py + llm_relevance_scorer Agent
+   Phase 5: PDF → unpaywall/core + dbis_browser Agent (fallback)
+   Phase 6: Quotes → pdf_parser.py + quote_extractor Agent
+   ↓
+4. Output: Research Results mit Zitaten
+```
+
+---
+
+## 🎯 Design-Prinzipien
+
+1. **Agent-First:** Alle LLM-Calls via Claude Code Agenten
+2. **No API Keys:** Keine direkten Anthropic API-Calls
+3. **Chrome MCP:** Browser Automation via MCP (nicht Playwright)
+4. **CLI-Python:** Module sind CLI-fähig, von Agents aufrufbar
+5. **Interaktiv:** User sieht Browser bei DBIS Login
+6. **State-First:** Alles in SQLite, Resume-fähig
+
+---
+
+Für Details siehe:
+- [MODULE_SPECS_v2.md](./MODULE_SPECS_v2.md) - Modul-Spezifikationen
+- [WORKFLOW.md](../WORKFLOW.md) - Detaillierter Workflow
+- [INSTALLATION.md](../INSTALLATION.md) - Setup-Anleitung

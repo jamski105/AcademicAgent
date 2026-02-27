@@ -1,0 +1,606 @@
+# DBIS Disciplines & Database Registry
+# Academic Agent v2.2
+#
+# This file maps academic disciplines to DBIS databases
+# and provides database-specific search strategies.
+#
+# Format:
+#   discipline_name:
+#     dbis_category_id: "X.Y"  # DBIS Fachgebiet ID
+#     dbis_url: "..."  # Direct URL to DBIS discipline page
+#     keywords: [...]  # Keywords for discipline detection
+#     databases: [...]  # List of databases for this discipline
+
+---
+
+disciplines:
+
+  # ========================================
+  # HUMANITIES
+  # ========================================
+
+  "Klassische Philologie":
+    dbis_category_id: "2.1"
+    dbis_url: "https://dbis.ur.de/dbis/dbliste.php?bib_id=ubtib&colors=15&lett=f&sGeb=2.1"
+    keywords:
+      - "lateinisch"
+      - "griechisch"
+      - "klassisch"
+      - "antike"
+      - "homer"
+      - "vergil"
+      - "cicero"
+    databases:
+      - name: "L'Année philologique"
+        priority: 1
+        search_selector: "#search-box"
+        search_type: "advanced"
+        result_selector: ".result-item"
+        export_available: true
+        export_format: "bibtex"
+        pagination: true
+        max_pages: 5
+
+      - name: "JSTOR"
+        priority: 2
+        search_selector: "input[name='Query']"
+        search_type: "basic"
+        result_selector: ".card--result"
+        pagination: true
+        max_pages: 3
+
+      - name: "Perseus Digital Library"
+        priority: 3
+        search_selector: "#query"
+        search_type: "catalog"
+        result_selector: ".catalog-entry"
+
+  "Literaturwissenschaft":
+    dbis_category_id: "2.2"
+    dbis_url: "https://dbis.ur.de/dbis/dbliste.php?bib_id=ubtib&colors=15&lett=f&sGeb=2.2"
+    keywords:
+      - "literatur"
+      - "roman"
+      - "gedicht"
+      - "autor"
+      - "erzählung"
+    databases:
+      - name: "JSTOR"
+        priority: 1
+        search_selector: "input[name='Query']"
+        result_selector: ".card--result"
+
+      - name: "Project MUSE"
+        priority: 2
+        search_selector: "#search_text"
+        result_selector: ".title"
+
+      - name: "MLA International Bibliography"
+        priority: 3
+        search_selector: "#query"
+        result_selector: ".result"
+
+  "Geschichte":
+    dbis_category_id: "2.3"
+    dbis_url: "https://dbis.ur.de/dbis/dbliste.php?bib_id=ubtib&colors=15&lett=f&sGeb=2.3"
+    keywords:
+      - "geschichte"
+      - "historisch"
+      - "mittelalter"
+      - "frühneuzeit"
+    databases:
+      - name: "JSTOR"
+        priority: 1
+
+      - name: "Historical Abstracts"
+        priority: 2
+        search_selector: "#searchField"
+        result_selector: ".citation"
+
+  # ========================================
+  # STEM
+  # ========================================
+
+  "Informatik":
+    dbis_category_id: "3.11"
+    dbis_url: "https://dbis.ur.de/dbis/dbliste.php?bib_id=ubtib&colors=15&lett=f&sGeb=3.11"
+    keywords:
+      - "computer"
+      - "software"
+      - "algorithm"
+      - "programming"
+      - "machine learning"
+      - "AI"
+    databases:
+      - name: "IEEE Xplore"
+        priority: 1
+        search_selector: "#xploreSearchInput"
+        search_type: "basic"
+        result_selector: ".List-results-items"
+        filters: ["Conferences", "Journals"]
+        pagination: true
+        max_pages: 3
+
+      - name: "ACM Digital Library"
+        priority: 2
+        search_selector: "input[name='AllField']"
+        result_selector: ".issue-item"
+        pagination: true
+        max_pages: 3
+
+      - name: "SpringerLink"
+        priority: 3
+        search_selector: "#query"
+        result_selector: ".title"
+
+  "Elektrotechnik":
+    dbis_category_id: "3.21"
+    keywords:
+      - "elektrisch"
+      - "elektronik"
+      - "signal"
+      - "schaltung"
+    databases:
+      - name: "IEEE Xplore"
+        priority: 1
+
+      - name: "SpringerLink"
+        priority: 2
+
+  "Mathematik":
+    dbis_category_id: "3.31"
+    keywords:
+      - "mathematik"
+      - "beweis"
+      - "theorem"
+      - "geometrie"
+      - "algebra"
+    databases:
+      - name: "SpringerLink"
+        priority: 1
+
+      - name: "MathSciNet"
+        priority: 2
+        search_selector: "#query"
+        result_selector: ".headline"
+
+  "Physik":
+    dbis_category_id: "3.41"
+    keywords:
+      - "physik"
+      - "quantum"
+      - "particle"
+      - "relativity"
+    databases:
+      - name: "SpringerLink"
+        priority: 1
+
+      - name: "APS Journals"
+        priority: 2
+        search_selector: "#query"
+        result_selector: ".article"
+
+  # ========================================
+  # MEDICINE & LIFE SCIENCES
+  # ========================================
+
+  "Medizin":
+    dbis_category_id: "7.1"
+    dbis_url: "https://dbis.ur.de/dbis/dbliste.php?bib_id=ubtib&colors=15&lett=f&sGeb=7.1"
+    keywords:
+      - "medizin"
+      - "krankheit"
+      - "therapie"
+      - "patient"
+      - "klinisch"
+      - "behandlung"
+    databases:
+      - name: "PubMed"
+        priority: 1
+        search_selector: "#term"
+        search_type: "mesh"
+        result_selector: ".docsum-content"
+        pagination: true
+        max_pages: 5
+
+      - name: "Cochrane Library"
+        priority: 2
+        search_selector: "#searchText"
+        result_selector: ".search-results-item"
+
+      - name: "SpringerLink"
+        priority: 3
+
+  "Biologie":
+    dbis_category_id: "7.2"
+    keywords:
+      - "biologie"
+      - "evolution"
+      - "genetik"
+      - "ökologie"
+      - "species"
+    databases:
+      - name: "PubMed"
+        priority: 1
+
+      - name: "SpringerLink"
+        priority: 2
+
+      - name: "BioOne"
+        priority: 3
+        search_selector: "#query"
+        result_selector: ".title"
+
+  # ========================================
+  # SOCIAL SCIENCES
+  # ========================================
+
+  "Psychologie":
+    dbis_category_id: "8.1"
+    keywords:
+      - "psychologie"
+      - "verhalten"
+      - "kognition"
+      - "emotion"
+      - "mental"
+    databases:
+      - name: "PsycINFO"
+        priority: 1
+        search_selector: "#query"
+        result_selector: ".citation"
+
+      - name: "JSTOR"
+        priority: 2
+
+  "Wirtschaftswissenschaften":
+    dbis_category_id: "8.2"
+    keywords:
+      - "wirtschaft"
+      - "ökonomie"
+      - "markt"
+      - "handel"
+      - "finanzen"
+    databases:
+      - name: "EconLit"
+        priority: 1
+        search_selector: "#query"
+        result_selector: ".result"
+
+      - name: "JSTOR"
+        priority: 2
+
+  "Soziologie":
+    dbis_category_id: "8.3"
+    keywords:
+      - "sozial"
+      - "gesellschaft"
+      - "kultur"
+      - "gruppe"
+    databases:
+      - name: "Sociological Abstracts"
+        priority: 1
+
+      - name: "JSTOR"
+        priority: 2
+
+  "Politikwissenschaft":
+    dbis_category_id: "8.4"
+    keywords:
+      - "politik"
+      - "regierung"
+      - "demokratie"
+      - "staat"
+    databases:
+      - name: "JSTOR"
+        priority: 1
+
+      - name: "Political Science Complete"
+        priority: 2
+
+  # ========================================
+  # LAW
+  # ========================================
+
+  "Rechtswissenschaft":
+    dbis_category_id: "9.1"
+    dbis_url: "https://dbis.ur.de/dbis/dbliste.php?bib_id=ubtib&colors=15&lett=f&sGeb=9.1"
+    keywords:
+      - "recht"
+      - "gesetz"
+      - "juristisch"
+      - "gericht"
+      - "jura"
+      - "rechtsprechung"
+
+    # Discovery Settings (v2.3) - Enable auto-discovery for Jura!
+    discovery_enabled: true
+    discovery_max_databases: 5
+
+    # Preferred Databases (prioritized if found during discovery)
+    preferred_databases:
+      - "Beck-Online"
+      - "Juris"
+      - "HeinOnline"
+      - "vLex"
+      - "Legios"
+
+    # Fallback Databases (if discovery fails)
+    fallback_databases:
+      - name: "Beck-Online"
+        priority: 1
+        search_selector: "#query"
+        result_selector: ".treffer"
+
+      - name: "Juris"
+        priority: 2
+        search_selector: "#searchfield"
+
+      - name: "HeinOnline"
+        priority: 3
+        search_selector: "#query"
+
+    # Extended Database List (for reference - discovery will find these!)
+    databases:
+      - name: "Beck-Online"
+        priority: 1
+        search_selector: "#query"
+        result_selector: ".treffer"
+        coverage: "Umfassend: Rechtsprechung, Kommentare, Zeitschriften"
+
+      - name: "Juris"
+        priority: 2
+        search_selector: "#searchfield"
+        coverage: "Rechtsprechung und Verwaltungsvorschriften"
+
+      - name: "HeinOnline"
+        priority: 3
+        search_selector: "#query"
+        coverage: "Internationale Rechtszeitschriften"
+
+      - name: "vLex"
+        priority: 4
+        coverage: "Internationale Rechtsdatenbank"
+
+      - name: "Legios"
+        priority: 5
+        coverage: "Gesetze und Verordnungen"
+
+      - name: "juris Das Rechtsportal"
+        priority: 6
+        coverage: "Rechtsprechung und Fachliteratur"
+
+      - name: "BeckRS"
+        priority: 7
+        coverage: "Rechtsprechung online"
+
+      - name: "NJW - Neue Juristische Wochenschrift"
+        priority: 8
+        coverage: "Fachzeitschrift"
+
+      - name: "Zeitschriftendienst Öffentliches Recht"
+        priority: 9
+        coverage: "Zeitschriften Öffentliches Recht"
+
+      - name: "ZDB - Zeitschriftendatenbank"
+        priority: 10
+        coverage: "Bibliografische Datenbank"
+
+# ========================================
+# GLOBAL DISCOVERY SETTINGS (v2.3)
+# ========================================
+
+discovery_defaults:
+  # Default settings for all disciplines
+  enabled: false                    # Opt-in per discipline
+  max_databases: 5                  # TOP N to select
+  cache_ttl_hours: 24               # Cache duration
+  timeout_seconds: 30               # Max scraping time
+  retry_attempts: 2                 # Retries on failure
+
+discovery_blacklist:
+  # Exclude these database types (global)
+  - "Katalog"                       # Library catalogs
+  - "Directory"                     # Directories
+  - "Encyclopedia"                  # Reference works
+  - "Enzyklopädie"                  # Encyclopedias (German)
+  - "Handbook"                      # Handbooks
+  - "Handbuch"                      # Handbooks (German)
+  - "Lexikon"                       # Encyclopedias
+  - "Bibliography"                  # Pure bibliographies
+  - "Bibliographie"                 # Bibliographies (German)
+  - "Portal"                        # Portals (not databases)
+  - "Gateway"                       # Gateways
+  - "Verzeichnis"                   # Directories (German)
+
+general_fallback_databases:
+  # Last resort if discipline-specific discovery & fallback both fail
+  - name: "JSTOR"
+    search_selector: "input[name='Query']"
+  - name: "CrossRef"
+    api_based: true
+  - name: "OpenAlex"
+    api_based: true
+
+# ========================================
+# DISCIPLINE MAPPING RULES
+# ========================================
+
+# These rules help the discipline_classifier agent
+# map user queries to DBIS categories
+
+mapping_rules:
+  # Primary keywords for automatic classification
+  automatic:
+    "Klassische Philologie":
+      - "lateinisch"
+      - "griechisch"
+      - "antike"
+      - "römisch"
+    "Informatik":
+      - "software"
+      - "algorithm"
+      - "machine learning"
+      - "programming"
+    "Medizin":
+      - "krankheit"
+      - "therapie"
+      - "patient"
+      - "medizinisch"
+
+  # Fallback for ambiguous queries
+  fallback_databases:
+    - "JSTOR"  # Broad humanities/social sciences
+    - "SpringerLink"  # Broad STEM
+    - "PubMed"  # Broad life sciences
+
+# ========================================
+# DBIS CONFIGURATION
+# ========================================
+
+dbis:
+  base_url: "https://dbis.ur.de/UBTIB"
+  search_url: "https://dbis.ur.de/UBTIB/suche?q={query}"
+
+  # Rate limiting to avoid IP bans
+  rate_limit:
+    requests_per_second: 1
+    requests_per_hour: 100
+
+  # Timeouts
+  timeouts:
+    page_load: 10  # seconds
+    user_login: 300  # 5 minutes for manual login
+    search: 30  # seconds per database search
+    download: 120  # seconds
+
+  # Traffic light colors (license availability)
+  license_colors:
+    green: "TIB license available"  # Search these
+    yellow: "Free access"  # Search these
+    red: "No access"  # Skip these
+
+# ========================================
+# SEARCH STRATEGIES
+# ========================================
+
+search_strategies:
+  # How to optimize queries for different database types
+
+  advanced_search:
+    # Databases with advanced search interfaces
+    - "L'Année philologique"
+    - "MLA International Bibliography"
+    strategy: "Use field-specific search (Title, Author, Keyword)"
+
+  basic_search:
+    # Databases with simple search boxes
+    - "JSTOR"
+    - "SpringerLink"
+    strategy: "Use full query string, apply filters afterward"
+
+  mesh_terms:
+    # Medical databases with MeSH vocabulary
+    - "PubMed"
+    strategy: "Convert query keywords to MeSH terms if possible"
+
+  export_first:
+    # Databases with good export functionality
+    - "L'Année philologique"
+    - "IEEE Xplore"
+    strategy: "Use export function (BibTeX/RIS) instead of scraping"
+
+# ========================================
+# COMMON SELECTORS
+# ========================================
+
+# If database-specific selector not found, try these
+fallback_selectors:
+  search_field:
+    - "#search"
+    - "#query"
+    - "#searchbox"
+    - "input[type='search']"
+    - "input[name='q']"
+    - "input[name='query']"
+
+  search_button:
+    - "button[type='submit']"
+    - ".search-button"
+    - "#search-button"
+    - "button.btn-search"
+
+  result_items:
+    - ".result"
+    - ".search-result"
+    - ".paper"
+    - ".article"
+    - ".citation"
+    - ".item"
+
+  title:
+    - ".title"
+    - "h2.title"
+    - "h3.title"
+    - ".article-title"
+
+  authors:
+    - ".authors"
+    - ".author"
+    - ".creator"
+
+  year:
+    - ".year"
+    - ".date"
+    - ".published"
+
+  doi:
+    - ".doi"
+    - "a[href*='doi.org']"
+
+# ========================================
+# ERROR MESSAGES
+# ========================================
+
+error_detection:
+  # Strings that indicate errors/problems
+
+  no_results:
+    - "no results found"
+    - "keine treffer"
+    - "0 results"
+
+  paywall:
+    - "purchase"
+    - "subscribe"
+    - "access denied"
+
+  login_required:
+    - "anmelden"
+    - "login required"
+    - "sign in"
+
+  database_down:
+    - "temporarily unavailable"
+    - "maintenance"
+    - "error 503"
+
+# ========================================
+# NOTES
+# ========================================
+
+# This config is used by:
+# 1. discipline_classifier agent - Maps queries to disciplines
+# 2. dbis_search agent - Navigates DBIS and searches databases
+# 3. search_engine.py - Merges API + DBIS results
+
+# To add a new database:
+# 1. Find its DBIS name
+# 2. Add to relevant discipline
+# 3. Test search_selector and result_selector
+# 4. Add search_strategy if needed
+
+# Database selector discovery:
+# 1. Open database in browser
+# 2. Right-click search field → Inspect
+# 3. Copy CSS selector
+# 4. Test in browser console: document.querySelector("selector")

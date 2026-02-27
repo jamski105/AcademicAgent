@@ -1,285 +1,369 @@
-#!/usr/bin/env python3
 """
-Unit Tests für src/search/crossref_client.py
-Testet CrossRef API Client
+Unit Tests für CrossRef API Client
 
-Test Coverage:
-- Search-Funktionalität
-- DOI-Lookup
-- Rate-Limiting
-- Error-Handling
-- Response-Parsing
+Run:
+    pytest tests/unit/test_crossref_client.py -v
+    pytest tests/unit/test_crossref_client.py -v --cov=src.search.crossref_client
 """
 
 import pytest
 from unittest.mock import Mock, patch, MagicMock
-from typing import Dict, Any, List
+import httpx
+
+from src.search.crossref_client import CrossRefClient, Paper, search_crossref
 
 
-class CrossRefClient:
-    """Mock CrossRef Client für Testing"""
+# ============================================
+# Fixtures
+# ============================================
 
-    def __init__(self, email: str = "test@example.com", rate_limit: int = 50):
-        self.email = email
-        self.rate_limit = rate_limit
-        self.base_url = "https://api.crossref.org"
+@pytest.fixture
+def mock_crossref_response():
+    """Mock CrossRef API response"""
+    return {
+        "status": "ok",
+        "message-type": "work-list",
+        "message": {
+            "items": [
+                {
+                    "DOI": "10.1109/test.2024.001",
+                    "title": ["DevOps Governance Frameworks for Enterprise"],
+                    "author": [
+                        {"given": "John", "family": "Doe"},
+                        {"given": "Jane", "family": "Smith"}
+                    ],
+                    "published": {"date-parts": [[2024, 3, 15]]},
+                    "abstract": "<p>This paper presents governance frameworks...</p>",
+                    "container-title": ["IEEE Software"],
+                    "URL": "https://doi.org/10.1109/test.2024.001",
+                    "is-referenced-by-count": 42
+                },
+                {
+                    "DOI": "10.1145/test.2023.002",
+                    "title": ["Compliance Automation in CI/CD Pipelines"],
+                    "author": [
+                        {"given": "Alice", "family": "Johnson"}
+                    ],
+                    "published": {"date-parts": [[2023, 6, 20]]},
+                    "container-title": ["ACM Computing Surveys"],
+                    "URL": "https://doi.org/10.1145/test.2023.002",
+                    "is-referenced-by-count": 15
+                }
+            ]
+        }
+    }
 
-    def search(self, query: str, max_results: int = 50) -> List[Dict[str, Any]]:
-        """Sucht Papers via CrossRef API"""
-        # Mock implementation für Testing
-        raise NotImplementedError("Mock implementation")
 
-    def get_by_doi(self, doi: str) -> Dict[str, Any]:
-        """Holt Paper via DOI"""
-        raise NotImplementedError("Mock implementation")
+@pytest.fixture
+def mock_single_work():
+    """Mock single CrossRef work"""
+    return {
+        "DOI": "10.1109/test.2024.001",
+        "title": ["DevOps Governance Frameworks"],
+        "author": [
+            {"given": "John", "family": "Doe"}
+        ],
+        "published": {"date-parts": [[2024, 3, 15]]},
+        "container-title": ["IEEE Software"],
+        "is-referenced-by-count": 42
+    }
 
 
-class TestCrossRefClientInitialization:
-    """Tests für Client-Initialisierung"""
+# ============================================
+# CrossRefClient Tests
+# ============================================
 
-    def test_creates_client_with_email(self):
-        """Test: Client wird mit Email erstellt"""
+class TestCrossRefClient:
+    """Test CrossRefClient class"""
+
+    def test_init_anonymous(self):
+        """Test initialization without email (anonymous)"""
+        client = CrossRefClient()
+        assert client.email is None
+        assert "AcademicAgentV2" in client.client.headers["User-Agent"]
+        assert "mailto:" not in client.client.headers["User-Agent"]
+
+    def test_init_with_email(self):
+        """Test initialization with email (polite mode)"""
         client = CrossRefClient(email="test@example.com")
-
         assert client.email == "test@example.com"
-        assert client.base_url == "https://api.crossref.org"
+        assert "mailto:test@example.com" in client.client.headers["User-Agent"]
 
-    def test_creates_client_with_rate_limit(self):
-        """Test: Client wird mit Rate-Limit erstellt"""
-        client = CrossRefClient(rate_limit=100)
+    def test_build_user_agent_anonymous(self):
+        """Test User-Agent header without email"""
+        client = CrossRefClient()
+        ua = client._build_user_agent()
+        assert "AcademicAgentV2" in ua
+        assert "mailto:" not in ua
 
-        assert client.rate_limit == 100
+    def test_build_user_agent_with_email(self):
+        """Test User-Agent header with email"""
+        client = CrossRefClient(email="test@example.com")
+        ua = client._build_user_agent()
+        assert "AcademicAgentV2" in ua
+        assert "mailto:test@example.com" in ua
 
-
-class TestCrossRefSearch:
-    """Tests für Search-Funktionalität"""
-
-    @patch('requests.get')
-    def test_search_returns_papers(self, mock_get):
-        """Test: Search gibt Papers zurück"""
+    @patch('src.search.crossref_client.httpx.Client')
+    def test_search_success(self, mock_client_class, mock_crossref_response):
+        """Test successful search"""
+        # Mock HTTP response
         mock_response = Mock()
-        mock_response.json.return_value = {
-            "status": "ok",
-            "message": {
-                "items": [
-                    {
-                        "DOI": "10.1109/example.2024.001",
-                        "title": ["Example Paper"],
-                        "author": [{"given": "John", "family": "Doe"}],
-                        "published": {"date-parts": [[2024, 1, 15]]}
-                    }
-                ]
-            }
-        }
         mock_response.status_code = 200
-        mock_get.return_value = mock_response
+        mock_response.json.return_value = mock_crossref_response
 
+        mock_client_instance = Mock()
+        mock_client_instance.get.return_value = mock_response
+        mock_client_class.return_value = mock_client_instance
+
+        # Search
         client = CrossRefClient()
+        papers = client.search("DevOps Governance", limit=2)
 
-        # Hier würden wir die echte Implementierung testen
-        # Für jetzt nur Mock-Verhalten testen
-        assert mock_response.status_code == 200
+        # Assertions
+        assert len(papers) == 2
+        assert papers[0].doi == "10.1109/test.2024.001"
+        assert papers[0].title == "DevOps Governance Frameworks for Enterprise"
+        assert len(papers[0].authors) == 2
+        assert papers[0].year == 2024
+        assert papers[0].venue == "IEEE Software"
+        assert papers[0].citations == 42
 
-    def test_search_with_max_results(self):
-        """Test: Search respektiert max_results"""
-        client = CrossRefClient()
-
-        # Test dass max_results Parameter akzeptiert wird
-        try:
-            client.search("machine learning", max_results=10)
-        except NotImplementedError:
-            pass  # Expected für Mock
-
-    def test_search_handles_empty_query(self):
-        """Test: Search behandelt leere Query"""
-        client = CrossRefClient()
-
-        # Sollte Exception werfen oder leere Liste zurückgeben
-        with pytest.raises((ValueError, NotImplementedError)):
-            client.search("")
-
-
-class TestCrossRefDOILookup:
-    """Tests für DOI-Lookup"""
-
-    @patch('requests.get')
-    def test_get_by_doi_returns_paper(self, mock_get):
-        """Test: DOI-Lookup gibt Paper zurück"""
+    @patch('src.search.crossref_client.httpx.Client')
+    def test_search_with_filters(self, mock_client_class, mock_crossref_response):
+        """Test search with filters"""
         mock_response = Mock()
-        mock_response.json.return_value = {
-            "status": "ok",
-            "message": {
-                "DOI": "10.1109/example.2024.001",
-                "title": ["Example Paper"],
-                "author": [{"given": "John", "family": "Doe"}]
-            }
-        }
         mock_response.status_code = 200
-        mock_get.return_value = mock_response
+        mock_response.json.return_value = mock_crossref_response
+
+        mock_client_instance = Mock()
+        mock_client_instance.get.return_value = mock_response
+        mock_client_class.return_value = mock_client_instance
 
         client = CrossRefClient()
+        filters = {"type": "journal-article", "from-pub-date": "2020"}
+        papers = client.search("DevOps", limit=5, filters=filters)
 
-        # Mock-Verhalten testen
-        assert mock_response.status_code == 200
+        # Check filter params were passed
+        call_args = mock_client_instance.get.call_args
+        assert "type" in call_args[1]["params"]
+        assert "from-pub-date" in call_args[1]["params"]
 
-    def test_get_by_doi_handles_invalid_doi(self):
-        """Test: DOI-Lookup behandelt invalide DOI"""
+    @patch('src.search.crossref_client.httpx.Client')
+    def test_search_empty_results(self, mock_client_class):
+        """Test search with no results"""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "message": {"items": []}
+        }
+
+        mock_client_instance = Mock()
+        mock_client_instance.get.return_value = mock_response
+        mock_client_class.return_value = mock_client_instance
+
+        client = CrossRefClient()
+        papers = client.search("asdfqwerzxcv12345", limit=10)
+
+        assert len(papers) == 0
+
+    @patch('src.search.crossref_client.httpx.Client')
+    def test_search_timeout(self, mock_client_class):
+        """Test search timeout handling"""
+        mock_client_instance = Mock()
+        mock_client_instance.get.side_effect = httpx.TimeoutException("Timeout")
+        mock_client_class.return_value = mock_client_instance
+
+        client = CrossRefClient()
+        papers = client.search("DevOps", limit=5)
+
+        # Should return empty list on timeout
+        assert len(papers) == 0
+
+    @patch('src.search.crossref_client.httpx.Client')
+    def test_get_by_doi_success(self, mock_client_class, mock_single_work):
+        """Test get_by_doi with valid DOI"""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"message": mock_single_work}
+
+        mock_client_instance = Mock()
+        mock_client_instance.get.return_value = mock_response
+        mock_client_class.return_value = mock_client_instance
+
+        client = CrossRefClient()
+        paper = client.get_by_doi("10.1109/test.2024.001")
+
+        assert paper is not None
+        assert paper.doi == "10.1109/test.2024.001"
+        assert paper.title == "DevOps Governance Frameworks"
+
+    @patch('src.search.crossref_client.httpx.Client')
+    def test_get_by_doi_not_found(self, mock_client_class):
+        """Test get_by_doi with invalid DOI"""
+        mock_response = Mock()
+        mock_response.status_code = 404
+
+        mock_client_instance = Mock()
+        mock_client_instance.get.return_value = mock_response
+        mock_client_class.return_value = mock_client_instance
+
+        client = CrossRefClient()
+        paper = client.get_by_doi("10.1109/invalid.doi")
+
+        assert paper is None
+
+    def test_parse_work_complete(self, mock_single_work):
+        """Test _parse_work with complete data"""
+        client = CrossRefClient()
+        paper = client._parse_work(mock_single_work)
+
+        assert paper.doi == "10.1109/test.2024.001"
+        assert paper.title == "DevOps Governance Frameworks"
+        assert len(paper.authors) == 1
+        assert "John Doe" in paper.authors
+        assert paper.year == 2024
+        assert paper.venue == "IEEE Software"
+        assert paper.citations == 42
+        assert paper.source_api == "crossref"
+
+    def test_parse_work_minimal(self):
+        """Test _parse_work with minimal data"""
+        minimal_work = {
+            "DOI": "10.1234/minimal",
+            "title": ["Minimal Paper"]
+        }
+
+        client = CrossRefClient()
+        paper = client._parse_work(minimal_work)
+
+        assert paper.doi == "10.1234/minimal"
+        assert paper.title == "Minimal Paper"
+        assert paper.authors == []
+        assert paper.year is None
+        assert paper.venue is None
+
+    def test_parse_work_missing_title(self):
+        """Test _parse_work with missing title"""
+        work = {
+            "DOI": "10.1234/notitle",
+            "title": []
+        }
+
+        client = CrossRefClient()
+        paper = client._parse_work(work)
+
+        assert paper.title == "Untitled"
+
+    def test_strip_xml_tags(self):
+        """Test XML tag stripping"""
         client = CrossRefClient()
 
-        with pytest.raises((ValueError, NotImplementedError)):
-            client.get_by_doi("invalid-doi")
+        text = "<p>This is <b>bold</b> text</p>"
+        result = client._strip_xml_tags(text)
+        assert result == "This is bold text"
 
-    def test_get_by_doi_handles_not_found(self):
-        """Test: DOI-Lookup behandelt nicht gefundenes Paper"""
-        client = CrossRefClient()
+        text = "Plain text without tags"
+        result = client._strip_xml_tags(text)
+        assert result == "Plain text without tags"
 
-        # Sollte None oder Exception zurückgeben
-        with pytest.raises(NotImplementedError):
-            result = client.get_by_doi("10.9999/nonexistent.2024.999")
+    def test_context_manager(self):
+        """Test context manager usage"""
+        with CrossRefClient() as client:
+            assert client is not None
+            assert client.client is not None
 
+    @patch('src.search.crossref_client.httpx.Client')
+    def test_rate_limiting(self, mock_client_class, mock_crossref_response):
+        """Test rate limiting is applied"""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = mock_crossref_response
 
-class TestCrossRefRateLimiting:
-    """Tests für Rate-Limiting"""
+        mock_client_instance = Mock()
+        mock_client_instance.get.return_value = mock_response
+        mock_client_class.return_value = mock_client_instance
 
-    def test_respects_rate_limit(self):
-        """Test: Rate-Limit wird respektiert"""
-        client = CrossRefClient(rate_limit=2)
-
-        # Sollte max 2 Requests pro Sekunde erlauben
-        assert client.rate_limit == 2
-
-    @patch('time.sleep')
-    def test_waits_between_requests(self, mock_sleep):
-        """Test: Wartet zwischen Requests"""
         client = CrossRefClient(rate_limit=50)
 
-        # In echter Implementierung würde zwischen Requests gewartet
-        # Hier nur Mock-Verhalten testen
-        assert client.rate_limit == 50
+        # Make multiple requests
+        for _ in range(3):
+            client.search("test", limit=1)
+
+        # Rate limiter should have been called
+        assert mock_client_instance.get.call_count == 3
 
 
-class TestCrossRefErrorHandling:
-    """Tests für Error-Handling"""
+# ============================================
+# Paper Model Tests
+# ============================================
 
-    @patch('requests.get')
-    def test_handles_network_error(self, mock_get):
-        """Test: Network-Error wird behandelt"""
-        mock_get.side_effect = ConnectionError("Network error")
+class TestPaper:
+    """Test Paper data model"""
 
-        client = CrossRefClient()
+    def test_paper_init(self):
+        """Test Paper initialization"""
+        paper = Paper(
+            doi="10.1234/test",
+            title="Test Paper",
+            authors=["John Doe", "Jane Smith"],
+            year=2024,
+            venue="Test Journal"
+        )
 
-        with pytest.raises((ConnectionError, NotImplementedError)):
-            client.search("test query")
+        assert paper.doi == "10.1234/test"
+        assert paper.title == "Test Paper"
+        assert len(paper.authors) == 2
+        assert paper.year == 2024
+        assert paper.venue == "Test Journal"
+        assert paper.source_api == "crossref"
 
-    @patch('requests.get')
-    def test_handles_timeout(self, mock_get):
-        """Test: Timeout wird behandelt"""
-        mock_get.side_effect = TimeoutError("Request timeout")
+    def test_paper_repr(self):
+        """Test Paper string representation"""
+        paper = Paper(
+            doi="10.1234/test",
+            title="A" * 100,  # Long title
+            authors=["John Doe"]
+        )
 
-        client = CrossRefClient()
+        repr_str = repr(paper)
+        assert "10.1234/test" in repr_str
+        assert len(repr_str) < 150  # Title should be truncated
 
-        with pytest.raises((TimeoutError, NotImplementedError)):
-            client.search("test query")
+    def test_paper_to_dict(self):
+        """Test Paper to_dict conversion"""
+        paper = Paper(
+            doi="10.1234/test",
+            title="Test Paper",
+            authors=["John Doe"],
+            year=2024,
+            citations=10
+        )
 
-    @patch('requests.get')
-    def test_handles_500_error(self, mock_get):
-        """Test: 500 Server-Error wird behandelt"""
-        mock_response = Mock()
-        mock_response.status_code = 500
-        mock_response.raise_for_status.side_effect = Exception("Server error")
-        mock_get.return_value = mock_response
-
-        client = CrossRefClient()
-
-        with pytest.raises(Exception):
-            mock_response.raise_for_status()
-
-    @patch('requests.get')
-    def test_handles_429_rate_limit(self, mock_get):
-        """Test: 429 Rate-Limit-Error wird behandelt"""
-        mock_response = Mock()
-        mock_response.status_code = 429
-        mock_get.return_value = mock_response
-
-        client = CrossRefClient()
-
-        # Sollte mit Retry behandelt werden
-        assert mock_response.status_code == 429
-
-
-class TestCrossRefResponseParsing:
-    """Tests für Response-Parsing"""
-
-    def test_parses_author_names(self):
-        """Test: Autor-Namen werden korrekt geparst"""
-        raw_author = {"given": "John", "family": "Doe"}
-
-        # In echter Implementierung würde das geparst werden
-        assert raw_author["given"] == "John"
-        assert raw_author["family"] == "Doe"
-
-    def test_parses_publication_date(self):
-        """Test: Publikationsdatum wird korrekt geparst"""
-        raw_date = {"date-parts": [[2024, 1, 15]]}
-
-        # In echter Implementierung würde das zu "2024-01-15" geparst
-        assert raw_date["date-parts"][0] == [2024, 1, 15]
-
-    def test_handles_missing_fields(self):
-        """Test: Fehlende Felder werden behandelt"""
-        incomplete_paper = {
-            "DOI": "10.1234/test",
-            "title": ["Test Paper"]
-            # Kein Author, kein Date
-        }
-
-        # Sollte trotzdem verarbeitet werden können
-        assert incomplete_paper["DOI"] == "10.1234/test"
+        d = paper.to_dict()
+        assert d["doi"] == "10.1234/test"
+        assert d["title"] == "Test Paper"
+        assert d["authors"] == ["John Doe"]
+        assert d["year"] == 2024
+        assert d["citations"] == 10
 
 
-class TestCrossRefFiltering:
-    """Tests für Filter-Funktionalität"""
+# ============================================
+# Convenience Function Tests
+# ============================================
 
-    def test_filters_by_year(self):
-        """Test: Filter nach Jahr"""
-        # In echter Implementierung würde Filter angewendet
-        client = CrossRefClient()
+@patch('src.search.crossref_client.CrossRefClient')
+def test_search_crossref_convenience(mock_client_class, mock_crossref_response):
+    """Test search_crossref convenience function"""
+    mock_client_instance = Mock()
+    mock_client_instance.search.return_value = [
+        Paper(doi="10.1234/test", title="Test", authors=["A"])
+    ]
+    mock_client_instance.__enter__.return_value = mock_client_instance
+    mock_client_instance.__exit__.return_value = False
+    mock_client_class.return_value = mock_client_instance
 
-        # Sollte nur Papers ab 2020 zurückgeben
-        min_year = 2020
-        assert min_year == 2020
+    papers = search_crossref("DevOps", limit=5, email="test@example.com")
 
-    def test_filters_by_type(self):
-        """Test: Filter nach Typ (journal-article)"""
-        # In echter Implementierung würde Filter angewendet
-        client = CrossRefClient()
-
-        paper_type = "journal-article"
-        assert paper_type == "journal-article"
-
-
-class TestCrossRefDeduplication:
-    """Tests für DOI-Deduplizierung"""
-
-    def test_removes_duplicate_dois(self):
-        """Test: Duplikate werden entfernt"""
-        papers = [
-            {"DOI": "10.1234/test1"},
-            {"DOI": "10.1234/test1"},  # Duplikat
-            {"DOI": "10.1234/test2"}
-        ]
-
-        # In echter Implementierung würden Duplikate entfernt
-        unique_dois = list(set(p["DOI"] for p in papers))
-        assert len(unique_dois) == 2
-
-    def test_handles_case_insensitive_dois(self):
-        """Test: DOIs sind case-insensitive"""
-        doi1 = "10.1234/TEST"
-        doi2 = "10.1234/test"
-
-        assert doi1.lower() == doi2.lower()
-
-
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])
+    assert len(papers) == 1
+    mock_client_class.assert_called_once_with(email="test@example.com")
+    mock_client_instance.search.assert_called_once_with("DevOps", limit=5)

@@ -1,10 +1,16 @@
 name: CI/CD Pipeline
 
+# Academic Agent v2.2 - CI/CD for:
+# - Unit Tests (discipline_classifier, dbis_search, etc.)
+# - Integration Tests (hybrid search, DBIS integration)
+# - Code Coverage (target: 70%+)
+# - Linting & Type Checking
+
 on:
   push:
-    branches: [ main, v2.0 ]
+    branches: [ main, v2.0, v2.2 ]
   pull_request:
-    branches: [ main, v2.0 ]
+    branches: [ main, v2.0, v2.2 ]
 
 jobs:
   test:
@@ -36,9 +42,23 @@ jobs:
       env:
         PYTHONPATH: ${{ github.workspace }}
 
+    - name: Test v2.2 Discipline Classifier
+      run: |
+        pytest tests/unit/test_discipline_classifier.py -v --tb=short --color=yes
+      continue-on-error: false
+      env:
+        PYTHONPATH: ${{ github.workspace }}
+
     - name: Run Integration Tests (without API keys)
       run: |
         pytest tests/integration/ -v --tb=short --color=yes -m "not requires_api_key"
+      continue-on-error: true
+      env:
+        PYTHONPATH: ${{ github.workspace }}
+
+    - name: Test v2.2 Hybrid Search (skeletons)
+      run: |
+        pytest tests/integration/test_hybrid_search.py tests/integration/test_dbis_search.py -v --tb=short --color=yes
       continue-on-error: true
       env:
         PYTHONPATH: ${{ github.workspace }}

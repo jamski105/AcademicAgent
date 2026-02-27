@@ -1,0 +1,159 @@
+# Academic Agent v2.2 - Research Modes Configuration
+#
+# Definiert verschiedene Recherche-Modi mit unterschiedlichen Parametern
+# Standard-Modus: Standard Mode (mit DBIS Search)
+
+# ============================================
+# Research Modes
+# ============================================
+
+modes:
+  # Quick Mode - Schnelle Recherche (15-20 Min)
+  quick:
+    max_papers: 15
+    estimated_duration_min: 20
+    api_sources:
+      - crossref
+      - openalex
+      - semantic_scholar
+    dbis_search:
+      enabled: false  # Disabled for speed (API only)
+      max_databases: 2
+      timeout_per_database: 30
+    scoring:
+      relevance_weight: 0.4
+      recency_weight: 0.2
+      quality_weight: 0.2
+      authority_weight: 0.2
+    pdf_fetcher:
+      fallback_chain:
+        - unpaywall
+        - core
+        - dbis_browser
+      max_parallel: 3
+      timeout_per_pdf: 60
+    quote_extraction:
+      quotes_per_paper: 2
+      max_quote_length: 25
+
+  # Standard Mode - Ausgewogene Recherche (40-50 Min) [EMPFOHLEN]
+  standard:
+    max_papers: 25
+    estimated_duration_min: 50  # Updated for DBIS search
+    api_sources:
+      - crossref
+      - openalex
+      - semantic_scholar
+    dbis_search:
+      enabled: true  # ⭐ NEW v2.2 - Enabled for comprehensive coverage
+      max_databases: 3
+      timeout_per_database: 60
+      parallel_execution: false  # Sequential for stability
+    scoring:
+      relevance_weight: 0.4
+      recency_weight: 0.2
+      quality_weight: 0.2
+      authority_weight: 0.2
+    pdf_fetcher:
+      fallback_chain:
+        - unpaywall
+        - core
+        - dbis_browser
+      max_parallel: 3
+      timeout_per_pdf: 60
+    quote_extraction:
+      quotes_per_paper: 2
+      max_quote_length: 25
+
+  # Deep Mode - Tiefgehende Recherche (70-90 Min)
+  deep:
+    max_papers: 40
+    estimated_duration_min: 90  # Updated for DBIS search
+    api_sources:
+      - crossref
+      - openalex
+      - semantic_scholar
+    dbis_search:
+      enabled: true  # ⭐ NEW v2.2
+      max_databases: 5  # More databases for deep mode
+      timeout_per_database: 90
+      parallel_execution: false
+    scoring:
+      relevance_weight: 0.35
+      recency_weight: 0.15
+      quality_weight: 0.25
+      authority_weight: 0.25
+      apply_portfolio_balance: true  # Diversität in Ergebnissen
+    pdf_fetcher:
+      fallback_chain:
+        - unpaywall
+        - core
+        - dbis_browser
+      max_parallel: 5
+      timeout_per_pdf: 90
+    quote_extraction:
+      quotes_per_paper: 3
+      max_quote_length: 30
+
+  # Custom Mode - User-definierbar
+  custom:
+    max_papers: 20
+    estimated_duration_min: 30
+    api_sources:
+      - crossref
+      - openalex
+    dbis_search:
+      enabled: false  # User can enable manually
+      max_databases: 2
+      timeout_per_database: 60
+    scoring:
+      relevance_weight: 0.4
+      recency_weight: 0.2
+      quality_weight: 0.2
+      authority_weight: 0.2
+    pdf_fetcher:
+      fallback_chain:
+        - unpaywall
+      max_parallel: 2
+      timeout_per_pdf: 60
+    quote_extraction:
+      quotes_per_paper: 2
+      max_quote_length: 25
+
+# ============================================
+# Default Mode
+# ============================================
+
+default_mode: "standard"
+
+# ============================================
+# Global Settings (gelten für alle Modi)
+# ============================================
+
+global_settings:
+  # Workflow
+  auto_resume_on_error: true
+  checkpoint_interval_minutes: 5
+
+  # API Fallback
+  google_scholar_fallback: true  # Wenn alle APIs <10 Results liefern
+
+  # PDF Downloads
+  dbis_browser_delay_seconds: 15  # Human-like behavior
+  skip_pdf_if_all_failed: true    # KEIN Manual-Wait!
+
+  # DBIS Search (NEW v2.2)
+  dbis_search:
+    auto_discipline_detection: true  # Use discipline_classifier agent
+    fallback_to_api_only: true  # If DBIS fails, continue with API results
+    source_annotation: true  # Annotate papers with source (api/dbis)
+    source_aware_scoring: true  # Give DBIS papers slight boost if discipline matches
+    dbis_score_boost: 0.05  # +5% for DBIS papers matching discipline
+
+  # LLM Usage (Szenario B)
+  use_llm_relevance: true  # Haiku für semantisches Relevanz-Scoring
+
+  # Output
+  output_format: "markdown"  # oder "json"
+  include_metadata: true
+  include_context: true  # 50 Wörter vor/nach Zitat

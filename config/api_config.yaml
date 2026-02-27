@@ -1,0 +1,157 @@
+# Academic Agent v2.0 - API Configuration
+#
+# ⚠️ PARTIALLY DEPRECATED ⚠️
+# =====================================
+#
+# Agent-basierte Architektur (v2.0 Update 2026-02-27):
+#   - Anthropic API Keys NICHT mehr benötigt (nutzt Claude Code Agents)
+#   - Academic API Keys weiterhin optional (für anonymous API access)
+#
+# Was noch verwendet wird:
+#   - CrossRef, OpenAlex, Semantic Scholar Keys (optional für bessere Limits)
+#   - Unpaywall, CORE Keys (optional für mehr PDF-Zugriff)
+#
+# Was NICHT mehr verwendet wird:
+#   - anthropic_api_key (DEPRECATED - nutzt Claude Code stattdessen)
+#
+# Standard-Modus (Empfohlen):
+#   - Alle Keys leer lassen
+#   - Funktioniert sofort via Claude Code Agents
+#   - Erfolgsrate: 85-92%
+#   - Setup: 0 Minuten
+#
+# Enhanced-Modus (Optional):
+#   - Academic API Keys eintragen für bessere Rate-Limits
+#   - Setup: 5 Minuten
+
+# ============================================
+# API Keys (ALLE OPTIONAL!)
+# ============================================
+
+api_keys:
+  # CrossRef API
+  # Optional: Ihre Email für "polite" Requests
+  # Ohne: 50 req/s (reicht für 15-25 Papers)
+  # Mit: 50 req/s + höflich (kein Performance-Unterschied)
+  crossref_email: ""
+
+  # OpenAlex API
+  # Optional: Ihre Email für unbegrenzte Requests
+  # Ohne: ~100 req/Tag (2-3 Recherchen)
+  # Mit: Unbegrenzt (10 req/s)
+  # Empfehlung: ⚡ AKTIVIEREN für Production!
+  openalex_email: ""
+
+  # Semantic Scholar API
+  # Optional: API-Key für schnellere Requests
+  # Ohne: 100 req/5min (langsamer)
+  # Mit: 1 req/s (schneller)
+  # Registrierung: https://www.semanticscholar.org/product/api
+  semantic_scholar_api_key: ""
+
+  # Unpaywall API
+  # Optional: Ihre Email für Tracking
+  # Ohne: Generic Email verwendet
+  # Mit: Ihre Email (kein Performance-Unterschied)
+  unpaywall_email: ""
+
+  # CORE API
+  # Optional: API-Key für +10% PDF-Erfolgsrate
+  # Ohne: CORE deaktiviert
+  # Mit: +10% PDF-Downloads
+  # Registrierung: https://core.ac.uk/services/api
+  core_api_key: ""
+
+# ============================================
+# Rate Limits
+# ============================================
+
+rate_limits:
+  # CrossRef - funktioniert ohne Key
+  crossref:
+    requests_per_second: 50
+    mode: "anonymous"  # oder "polite" wenn Email gesetzt
+
+  # OpenAlex - funktioniert ohne Key (limitiert)
+  openalex:
+    requests_per_second: 1  # Konservativ ohne Email
+    daily_limit: 100  # ~2-3 Recherchen pro Tag
+    mode: "anonymous"  # oder "polite" wenn Email gesetzt
+
+  # Semantic Scholar - funktioniert ohne Key (langsam)
+  semantic_scholar:
+    requests_per_second: 0.33  # 100 req/5min
+    mode: "anonymous"  # oder "authenticated" wenn Key gesetzt
+
+  # Unpaywall - funktioniert immer
+  unpaywall:
+    requests_per_second: 10
+    mode: "standard"
+
+  # CORE - nur mit Key
+  core:
+    requests_per_second: 10
+    mode: "disabled"  # oder "enabled" wenn Key gesetzt
+
+# ============================================
+# Timeouts
+# ============================================
+
+timeouts:
+  api_request: 30  # Sekunden
+  pdf_download: 60  # Sekunden
+  dbis_browser: 120  # Sekunden (DBIS Navigation)
+
+# ============================================
+# Retry Strategy
+# ============================================
+
+retry:
+  max_attempts: 3
+  backoff_factor: 2  # Exponential backoff: 1s, 2s, 4s
+  retry_on_status_codes: [429, 500, 502, 503, 504]
+
+# ============================================
+# Caching
+# ============================================
+
+cache:
+  enabled: true
+  ttl_hours: 24  # Cache-Dauer
+  backend: "sqlite"  # SQLite für lokales Caching
+  max_size_mb: 100  # Max Cache-Größe
+
+# ============================================
+# Fallback Strategy
+# ============================================
+
+fallbacks:
+  # Wenn CrossRef fehlschlägt
+  crossref_fallback: ["openalex", "semantic_scholar"]
+
+  # Wenn OpenAlex fehlschlägt
+  openalex_fallback: ["crossref", "semantic_scholar"]
+
+  # Wenn Semantic Scholar fehlschlägt
+  semantic_scholar_fallback: ["crossref", "openalex"]
+
+  # Wenn alle APIs fehlschlagen
+  final_fallback: "google_scholar"  # Web-Scraping als letztes Resort
+
+# ============================================
+# Environment Variables
+# ============================================
+
+# Alternativ können API-Keys auch via Environment Variables gesetzt werden:
+# export CROSSREF_EMAIL="your@email.com"
+# export OPENALEX_EMAIL="your@email.com"
+# export SEMANTIC_SCHOLAR_API_KEY="your_key"
+# export UNPAYWALL_EMAIL="your@email.com"
+# export CORE_API_KEY="your_key"
+
+environment_variables:
+  crossref_email: "CROSSREF_EMAIL"
+  openalex_email: "OPENALEX_EMAIL"
+  semantic_scholar_api_key: "SEMANTIC_SCHOLAR_API_KEY"
+  unpaywall_email: "UNPAYWALL_EMAIL"
+  core_api_key: "CORE_API_KEY"

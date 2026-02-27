@@ -1,4 +1,37 @@
 {
+  "mcpServers": {
+    "chrome": {
+      "command": "npx",
+      "args": ["-y", "@eddym06/custom-chrome-mcp@latest"],
+      "env": {
+        "CHROME_PATH": "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+      }
+    }
+  },
+  "permissions": {
+    "allow": [
+      "Bash(python3 .claude/skills/research/scripts/config_loader.py --mode * --query *)",
+      "Bash(python3 -m src.*)",
+      "Bash(python3 -c *)",
+      "Bash(pytest *)",
+      "Bash(npx -y @eddym06/custom-chrome-mcp@latest --version)",
+      "Bash(source venv/bin/activate *)",
+      "Bash(mkdir -p runs/*)",
+      "Bash(ls * config/* runs/* logs/*)",
+      "Bash(cat config/* runs/*/results.json logs/*.log)",
+      "Bash(grep * logs/* runs/*)",
+      "Bash(tail * logs/* runs/*)",
+      "Bash(head * runs/* logs/*)",
+      "Bash(wc -l *)",
+      "Bash(find src tests -name \"*.py\" *)"
+    ],
+    "additionalDirectories": [
+      ".claude/skills/research",
+      "runs",
+      "logs",
+      "tests"
+    ]
+  },
   "agents": {
     "linear_coordinator": {
       "model": "claude-sonnet-4-5",
@@ -14,7 +47,14 @@
       "timeout_seconds": 60,
       "description": "Generiert Boolean-Queries für API-Suche"
     },
-    "five_d_scorer": {
+    "discipline_classifier": {
+      "model": "claude-haiku-4",
+      "max_tokens": 1024,
+      "temperature": 0.2,
+      "timeout_seconds": 30,
+      "description": "Detects academic discipline for DBIS database selection (v2.2)"
+    },
+    "llm_relevance_scorer": {
       "model": "claude-haiku-4",
       "max_tokens": 4096,
       "temperature": 0.2,
@@ -27,6 +67,20 @@
       "temperature": 0.1,
       "timeout_seconds": 180,
       "description": "Extrahiert präzise Zitate aus PDFs"
+    },
+    "dbis_browser": {
+      "model": "claude-sonnet-4-5",
+      "max_tokens": 8192,
+      "temperature": 0.2,
+      "timeout_seconds": 600,
+      "description": "Browser automation für PDF-Downloads via DBIS institutional access"
+    },
+    "dbis_search": {
+      "model": "claude-sonnet-4-5",
+      "max_tokens": 8192,
+      "temperature": 0.2,
+      "timeout_seconds": 900,
+      "description": "Browser automation for DBIS database search (v2.2)"
     }
   },
   "workflow": {
@@ -49,9 +103,21 @@
   },
   "pdf": {
     "max_parallel_downloads": 3,
-    "fallback_chain": ["unpaywall", "core", "dbis_browser"],
+    "fallback_chain": [
+      "unpaywall",
+      "core",
+      "dbis_browser"
+    ],
     "dbis_browser_delay_seconds": 15,
     "skip_after_all_failed": true
+  },
+  "dbis_search": {
+    "enabled": true,
+    "max_databases_per_query": 3,
+    "timeout_per_database": 60,
+    "fallback_to_api_only": true,
+    "source_annotation": true,
+    "discipline_boost": 0.05
   },
   "scoring": {
     "relevance_weight": 0.4,
@@ -61,8 +127,17 @@
     "use_llm_relevance": true
   },
   "output": {
-    "base_directory": "output",
+    "base_directory": "runs",
+    "create_timestamp_folder": true,
+    "citation_style": "apa7",
+    "save_logs": true,
+    "save_temp_files": true,
     "create_bibliography": true,
-    "export_formats": ["json", "markdown", "bibtex"]
+    "export_formats": [
+      "json",
+      "csv",
+      "markdown",
+      "bibtex"
+    ]
   }
 }
