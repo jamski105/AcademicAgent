@@ -1,4 +1,4 @@
-"""Export modules for Academic Agent v2.1"""
+"""Export modules for Academic Agent v2.3+"""
 
 from src.export.citation_formatter import (
     format_citation,

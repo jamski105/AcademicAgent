@@ -1,5 +1,5 @@
 """
-SQLite-basiertes Caching für Academic Agent v2.0
+SQLite-basiertes Caching für Academic Agent v2.3+
 
 Features:
 - TTL (Time-To-Live) Support

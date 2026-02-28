@@ -1,4 +1,4 @@
-"""State Manager für Academic Agent v2.0 - Verwaltet Research Session State"""
+"""State Manager für Academic Agent v2.3+ - Verwaltet Research Session State"""
 
 import json
 import uuid

@@ -1,0 +1,101 @@
+{
+  "database_entry": "a[href*='/resources/']",
+  "database_name": "a[href*='/resources/']",
+  "traffic_light": "img.traffic-light",
+  "counts": {
+    "entries": 80,
+    "names": 80,
+    "lights": 32
+  },
+  "metadata": {
+    "test_date": "2026-02-27",
+    "test_url": "https://dbis.ur.de/UBTIB/browse/subjects/9/",
+    "test_subject": "Buch- und Bibliothekswesen, Informationswissenschaft",
+    "page_structure": "Modern SPA (Single Page Application) with React/Vue",
+    "css_framework": "Bulma CSS",
+    "validation_status": "PASSED",
+    "screenshots": [
+      "/tmp/dbis_screenshot_1.png",
+      "/tmp/dbis_database_list.png",
+      "/tmp/dbis_final.png"
+    ],
+    "html_dumps": [
+      "/tmp/dbis_working_page.html",
+      "/tmp/dbis_database_list.html"
+    ]
+  },
+  "selector_details": {
+    "database_entry": {
+      "selector": "a[href*='/resources/']",
+      "description": "Links to database resource pages",
+      "count": 80,
+      "element_type": "a",
+      "sample_html": "<a href=\"/UBTIB/resources/104296\"><span class=\"traffic-light-container\"><img class=\"traffic-light\" src=\"/img/icons/ampel_green.svg\" alt=\"\"></span> <span>Fachinformationsdienst Buch-, Bibliotheks- und Informationswissenschaft</span></a>",
+      "sample_href": "https://dbis.ur.de/UBTIB/resources/104296",
+      "extraction_method": "Use .get_attribute('href') for URL, .text for name"
+    },
+    "database_name": {
+      "selector": "a[href*='/resources/']",
+      "description": "Same as database_entry - extract text content",
+      "count": 80,
+      "element_type": "a",
+      "sample_text": "Fachinformationsdienst Buch-, Bibliotheks- und Informationswissenschaft",
+      "extraction_method": "Use .text property of the link element"
+    },
+    "traffic_light": {
+      "selector": "img.traffic-light",
+      "description": "SVG images indicating access status",
+      "count": 32,
+      "element_type": "img",
+      "sample_html": "<img class=\"traffic-light\" src=\"/img/icons/ampel_green.svg\" alt=\"\">",
+      "color_patterns": {
+        "green": {
+          "pattern": "ampel_green.svg",
+          "meaning": "Free access (no login required)",
+          "selector": "img[src*='ampel_green']"
+        },
+        "yellow": {
+          "pattern": "ampel_yellow.svg",
+          "meaning": "Institutional license (TIB access required)",
+          "selector": "img[src*='ampel_yellow']"
+        },
+        "red": {
+          "pattern": "ampel_red.svg",
+          "meaning": "No access / restricted",
+          "selector": "img[src*='ampel_red']"
+        }
+      },
+      "extraction_method": "Use .get_attribute('src') and check for color in filename"
+    }
+  },
+  "alternative_selectors": {
+    "database_entry": [
+      "a[href*='resources']",
+      "span.tag a"
+    ],
+    "traffic_light": [
+      "img[src*='ampel']",
+      "span.traffic-light-container img"
+    ]
+  },
+  "deprecated_selectors": {
+    "note": "These selectors no longer work due to DBIS redesign",
+    "database_entry_old": "tr[id^='db_']",
+    "database_name_old": "td.td2 a",
+    "traffic_light_old": "img[src*='dbis_']",
+    "reason": "DBIS migrated from table-based HTML to modern SPA structure"
+  },
+  "implementation_notes": {
+    "wait_time": "5 seconds minimum for JavaScript to load",
+    "selenium_required": true,
+    "headless_compatible": true,
+    "pagination": "Page may show ~80 results with pagination controls",
+    "url_structure": "New URLs use pattern: /UBTIB/browse/subjects/{id}/",
+    "old_urls_status": "404 errors on old dbliste.php URLs"
+  },
+  "configuration_updated": {
+    "file": "/Users/jonas/Desktop/AcademicAgent/config/dbis_selectors.yaml",
+    "timestamp": "2026-02-27",
+    "status": "Updated and ready for testing"
+  }
+}

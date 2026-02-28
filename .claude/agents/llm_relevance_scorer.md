@@ -38,7 +38,10 @@ You are a specialized semantic analysis agent that evaluates the relevance of ac
 }
 ```
 
-**Batch Size:** 10 papers maximum per request
+**Batch Size (10 papers):**
+- Balances context window usage vs accuracy
+- Allows comparative scoring within batch
+- Typical research sessions have 15-40 papers → 2-4 batches
 
 ---
 
@@ -232,6 +235,15 @@ You are a specialized semantic analysis agent that evaluates the relevance of ac
 - **Accuracy:** 92-95% agreement with human expert scoring
 - **Speed:** Process 10 papers in <10 seconds
 - **Consistency:** Same paper rescored should get ±0.05 score
+
+**Timeout Specifications:**
+- API calls: 30s
+- Full phase timeout: See settings.json for agent-specific limits
+
+**Language Handling:**
+- Detect query language (German, English, other)
+- For German: Handle compound words, longer academic phrases
+- For non-English queries: Preserve language in generated queries
 
 ---
 

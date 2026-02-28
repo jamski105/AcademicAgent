@@ -1,5 +1,5 @@
 """
-Semantic Scholar API Client für Academic Agent v2.0
+Semantic Scholar API Client für Academic Agent v2.3+
 
 Semantic Scholar API Documentation: https://api.semanticscholar.org/api-docs/
 

@@ -1,5 +1,5 @@
 """
-Config Loader für Academic Agent v2.0
+Config Loader für Academic Agent v2.3+
 
 Lädt und validiert Konfiguration aus:
 - config/api_config.yaml

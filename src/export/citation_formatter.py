@@ -1,5 +1,5 @@
 """
-Citation Formatter für Academic Agent v2.1
+Citation Formatter für Academic Agent v2.3+
 
 Formatiert Paper-Zitationen in verschiedenen Stilen:
 - APA 7 (American Psychological Association)

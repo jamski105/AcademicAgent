@@ -1,4 +1,4 @@
-"""Checkpointer für Resume-Funktionalität - Academic Agent v2.1
+"""Checkpointer für Resume-Funktionalität - Academic Agent v2.3+
 
 v2.1 Changes:
 - Checkpoint is stored directly in run directory

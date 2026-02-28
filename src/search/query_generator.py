@@ -1,5 +1,5 @@
 """
-Query Generator Python Wrapper für Academic Agent v2.0
+Query Generator Python Wrapper für Academic Agent v2.3+
 
 Wrapper für query_generator.md Haiku-Agent
 
@@ -147,7 +147,7 @@ class QueryGenerator:
         Returns:
             Formatted prompt string
         """
-        prompt = f"""You are the Query Generator for Academic Agent v2.0.
+        prompt = f"""You are the Query Generator for Academic Agent v2.3+.
 
 Generate optimized Boolean search queries for academic APIs.
 

@@ -1,5 +1,5 @@
 """
-Deduplicator für Academic Agent v2.0
+Deduplicator für Academic Agent v2.3+
 
 Entfernt Duplikate aus Paper-Listen basierend auf DOI und Title-Similarity
 

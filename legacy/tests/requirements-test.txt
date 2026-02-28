@@ -1,6 +1,0 @@
-# Test Dependencies for AcademicAgent CI/CD
-# Used by GitHub Actions workflow (.github/workflows/ci.yml)
-
-pytest>=7.4.0
-pytest-cov>=4.1.0
-jsonschema>=4.17.0

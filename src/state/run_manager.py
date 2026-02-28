@@ -1,5 +1,5 @@
 """
-Run Directory Manager für Academic Agent v2.1
+Run Directory Manager für Academic Agent v2.3+
 
 Verwaltet timestamped run directories für Research Sessions.
 Alle Outputs (PDFs, Results, Logs) werden in runs/{timestamp}/ gespeichert.

@@ -1,5 +1,5 @@
 """
-Unpaywall API Client für Academic Agent v2.0
+Unpaywall API Client für Academic Agent v2.3+
 
 API: https://unpaywall.org/products/api
 - Kostenlos, kein API-Key nötig (nur Email)
@@ -52,7 +52,7 @@ class UnpaywallClient:
         """
         self.email = email or self.DEFAULT_EMAIL
         self.timeout = timeout
-        self.rate_limiter = RateLimiter(max_requests_per_second=rate_limit_rps)
+        self.rate_limiter = RateLimiter(requests_per_second=rate_limit_rps)
         self.client = httpx.Client(timeout=self.timeout)
 
     @retry_with_backoff(max_attempts=3, backoff_factor=2)

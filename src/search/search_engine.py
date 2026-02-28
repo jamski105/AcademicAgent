@@ -1,5 +1,5 @@
 """
-SearchEngine Orchestrator für Academic Agent v2.2
+SearchEngine Orchestrator für Academic Agent v2.3+
 
 Orchestriert Multi-API Paper-Suche + DBIS Search:
 - CrossRef (150M+ papers)

@@ -3,7 +3,7 @@ model: claude-haiku-4
 tools: []
 ---
 
-# Query Generator Agent - Academic Agent v2.0
+# Query Generator Agent - Academic Agent v2.3+
 
 **Role:** Generiert optimierte Boolean Search Queries für verschiedene APIs
 **Responsibility:** User-Query → API-spezifische Boolean-Queries
@@ -299,6 +299,19 @@ Vor Output-Generierung, prüfe:
 ### Weitere Disziplinen (falls Academic Context gegeben)
 - Nutze Domain-spezifische Begriffe
 - Beispiel Psychology: "mental health" → "wellbeing", "depression", "anxiety"
+
+---
+
+## Language Handling
+
+**Language Handling:**
+- Detect query language (German, English, other)
+- For German: Handle compound words, longer academic phrases
+- For non-English queries: Preserve language in generated queries
+
+**Timeout Specifications:**
+- API calls: 30s
+- Full phase timeout: See settings.json for agent-specific limits
 
 ---
 

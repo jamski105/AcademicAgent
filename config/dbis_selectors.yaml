@@ -4,8 +4,8 @@
 # These selectors are used by dbis_search agent to scrape database lists
 # from DBIS discipline pages.
 #
-# ⚠️ IMPORTANT: These selectors need to be tested against real DBIS pages!
-# Test URL: https://dbis.ur.de/dbis/dbliste.php?bib_id=ubtib&lett=f&sGeb=9.1
+# ✅ TESTED: 2026-02-27 - Selectors validated against live DBIS pages
+# Test URL: https://dbis.ur.de/UBTIB/browse/subjects/9/
 
 ---
 
@@ -15,14 +15,15 @@
 
 database_entry:
   # Primary selector for database list items
-  primary: "tr[id^='db_']"
+  # DBIS uses links with /resources/ in href for database entries
+  primary: "a[href*='/resources/']"
 
   # Fallback selectors (try in order)
   fallbacks:
+    - "a[href*='resources']"
+    - "span.tag a"
+    - "tr[id^='db_']"  # Old table-based structure (deprecated)
     - ".db-entry"
-    - ".datenbank"
-    - "tr.dbis-row"
-    - "div[class*='database']"
 
 # ========================================
 # DATABASE METADATA SELECTORS
@@ -30,13 +31,14 @@ database_entry:
 
 database_name:
   # Selector for database name/title
-  primary: "td.td2 a"
+  # Same as database_entry (the link text contains the name)
+  primary: "a[href*='/resources/']"
 
   fallbacks:
+    - "a[href*='resources']"
+    - "td.td2 a"  # Old structure (deprecated)
     - ".db-name"
     - "h3"
-    - ".title"
-    - "td:nth-child(2) a"
 
 database_link:
   # Selector for "Zur Datenbank" link (activates TIB license!)
@@ -53,31 +55,36 @@ database_link:
 
 traffic_light:
   # Image selector for access status icon
-  primary: "img[src*='dbis_']"
+  # DBIS now uses SVG files for traffic lights
+  primary: "img.traffic-light"
 
   fallbacks:
+    - "img[src*='ampel']"
+    - "span.traffic-light-container img"
+    - "img[src*='dbis_']"  # Old structure (deprecated)
     - ".access-status img"
-    - "img[alt*='frei']"
-    - "img[alt*='lizenziert']"
 
   # Traffic light color patterns (in image src)
   green:
-    - "dbis_gr_"     # Free access (grün)
+    - "ampel_green"   # Free access (grün)
+    - "dbis_gr_"      # Old format
     - "amp_gruen"
     - "green"
     - "frei"
 
   yellow:
-    - "dbis_ge_"     # TIB license (gelb)
+    - "ampel_yellow"  # TIB license (gelb)
+    - "dbis_ge_"      # Old format
     - "amp_gelb"
     - "yellow"
     - "lizenziert"
 
   red:
-    - "dbis_ro_"     # No access (rot)
+    - "ampel_red"     # No access (rot)
+    - "dbis_ro_"      # Old format
     - "amp_rot"
     - "red"
-    - "nzg"          # "Nicht zugänglich"
+    - "nzg"           # "Nicht zugänglich"
 
 # ========================================
 # PAGINATION SELECTORS
@@ -121,10 +128,15 @@ patterns:
 # ========================================
 
 test_urls:
-  rechtswissenschaft: "https://dbis.ur.de/dbis/dbliste.php?bib_id=ubtib&colors=15&lett=f&sGeb=9.1"
-  medizin: "https://dbis.ur.de/dbis/dbliste.php?bib_id=ubtib&colors=15&lett=f&sGeb=7"
-  informatik: "https://dbis.ur.de/dbis/dbliste.php?bib_id=ubtib&colors=15&lett=f&sGeb=11"
-  klassische_philologie: "https://dbis.ur.de/dbis/dbliste.php?bib_id=ubtib&colors=15&lett=f&sGeb=2.1"
+  # NEW URL STRUCTURE (2026+)
+  bibliothekswesen: "https://dbis.ur.de/UBTIB/browse/subjects/9/"
+  rechtswissenschaft: "https://dbis.ur.de/UBTIB/browse/subjects/9.1/"
+  medizin: "https://dbis.ur.de/UBTIB/browse/subjects/7/"
+  informatik: "https://dbis.ur.de/UBTIB/browse/subjects/11/"
+
+  # OLD URLs (deprecated - may return 404)
+  # rechtswissenschaft_old: "https://dbis.ur.de/dbis/dbliste.php?bib_id=ubtib&colors=15&lett=f&sGeb=9.1"
+  # medizin_old: "https://dbis.ur.de/dbis/dbliste.php?bib_id=ubtib&colors=15&lett=f&sGeb=7"
 
 # ========================================
 # NOTES
@@ -134,11 +146,22 @@ test_urls:
 # 1. Open one of the test_urls in a browser
 # 2. Open browser DevTools (F12)
 # 3. Use Console to test selectors:
-#    document.querySelectorAll("tr[id^='db_']")
+#    document.querySelectorAll("a[href*='/resources/']")
 # 4. Verify correct elements are selected
 # 5. Update selectors if needed
 
-# DBIS page structure (typical):
+# DBIS page structure (NEW - 2026):
+# Modern SPA with React/Vue components:
+# <span class="tag is-medium m-1 has-text-link">
+#   <a href="/UBTIB/resources/104296">
+#     <span class="traffic-light-container">
+#       <img class="traffic-light" src="/img/icons/ampel_green.svg" alt="">
+#     </span>
+#     <span>Database Name Here</span>
+#   </a>
+# </span>
+
+# OLD page structure (DEPRECATED - pre-2026):
 # <table id="dbliste">
 #   <tr id="db_123" class="even">
 #     <td class="td1"><img src="dbis_ge_01.gif" alt="lizenziert"></td>
@@ -149,3 +172,11 @@ test_urls:
 #     <td class="td3">Description...</td>
 #   </tr>
 # </table>
+
+# VALIDATION RESULTS (2026-02-27):
+# Test URL: https://dbis.ur.de/UBTIB/browse/subjects/9/
+# - Database entries: a[href*='/resources/'] → 80 found ✓
+# - Database names: a[href*='/resources/'] → 80 found ✓
+# - Traffic lights: img.traffic-light → 32 found ✓
+# - Traffic lights (alt): img[src*='ampel'] → 32 found ✓
+# Screenshot: /tmp/dbis_final.png

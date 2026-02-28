@@ -2,7 +2,7 @@
 
 **Projekt:** Academic Agent v2.0 - KI-Agenten-System für akademische Recherche
 **Ziel:** 90-95% Erfolgsrate, vollständig autonom, cross-disciplinary
-**Status:** v2.2 - DBIS Search Integration - 📋 PLANNED (2026-02-27)
+**Status:** v2.3+ - Web UI Integration - ✅ COMPLETE (2026-02-27)
 
 ---
 
@@ -23,6 +23,80 @@ Jede Änderung sollte folgendes Format haben:
 ---
 
 ## 📅 Änderungen
+
+---
+
+## 🔥 v2.3.2 - Web UI Integration (2026-02-27) - ✅ COMPLETE
+
+### Overview
+
+**Goal:** Real-time progress tracking via Web UI dashboard
+
+**Features Implemented:**
+- FastAPI backend with WebSocket support
+- Live progress updates (phase, papers found, PDFs downloaded)
+- Agent spawning notifications
+- Session status tracking
+- UI Notifier module for coordinator integration
+
+**New Files:**
+- `src/web_ui/server.py` - FastAPI server with REST API + WebSocket
+- `src/web_ui/static/index.html` - Frontend dashboard
+- `src/utils/ui_notifier.py` - Progress notification utility
+
+**Updated Files:**
+- `.claude/agents/linear_coordinator.md` - Added UI update calls to all phases
+- `requirements-v2.txt` - Added fastapi, uvicorn, websockets
+- `setup.sh` - Added Web UI verification, Quick Start instructions
+- `README.md` - Added Web UI feature, updated Quick Start
+
+**Benefits:**
+- ✅ Real-time visibility into research progress
+- ✅ No more "black box" waiting
+- ✅ Phase-by-phase updates
+- ✅ Auto-detects if UI server is running (no errors if disabled)
+- ✅ Backward compatible (works with/without Web UI)
+
+**Usage:**
+```bash
+# Start Web UI
+python3 -m src.web_ui.server
+# Open http://localhost:8000
+
+# Run research (UI updates automatically)
+/research "Your query"
+```
+
+**Status:** ✅ Complete
+
+---
+
+## 🔥 v2.3.1 - Setup Script Fix (2026-02-27) - ✅ COMPLETE
+
+### [2026-02-27] - setup.sh - System-wide Installation
+
+**Problem:**
+- setup.sh installed dependencies in venv
+- Claude Code Skills use system Python → ModuleNotFoundError: yaml
+
+**Solution:**
+- Changed setup.sh to install system-wide with `pip3 install --user`
+- Remove venv creation steps
+- Updated documentation (INSTALLATION.md, README.md, WORKFLOW.md)
+
+**Changes:**
+- `setup.sh`: System-wide installation, auto-remove old venv
+- `INSTALLATION.md`: Updated Quick Start & Manual Installation
+- `README.md`: Updated Quick Start
+- `WORKFLOW.md`: Updated Quick Start
+
+**Benefits:**
+- ✅ Skills work immediately after setup.sh
+- ✅ No venv activation needed
+- ✅ Simpler user experience
+- ✅ Works with Claude Code architecture
+
+**Status:** ✅ Complete
 
 ---
 

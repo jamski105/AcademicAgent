@@ -1,5 +1,5 @@
 """
-SQLAlchemy Database Models für Academic Agent v2.1
+SQLAlchemy Database Models für Academic Agent v2.3+
 
 Tables:
 - research_sessions: Recherche-Sessions

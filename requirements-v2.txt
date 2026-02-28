@@ -1,7 +1,8 @@
-# Academic Agent v2.0 - Python Dependencies
+# Academic Agent v2.3+ - Python Dependencies
 # Agent-basierte Architektur via Claude Code
 #
-# ⚠️ UPDATED 2026-02-27:
+# ⚠️ UPDATED 2026-02-27 (v2.3):
+#   - Web UI: FastAPI + uvicorn + websockets (für Live Dashboard)
 #   - Anthropic SDK: OPTIONAL (nur für lokale Tests, nicht für Production)
 #   - Playwright: DEPRECATED (ersetzt durch Chrome MCP)
 #   - Chrome MCP: Installiert via npm (nicht Python)
@@ -52,6 +53,13 @@ lxml>=5.3.0              # XML/HTML parser
 rich>=13.9.0             # Beautiful terminal output
 click>=8.1.0             # CLI framework
 colorama>=0.4.6          # Cross-platform colored terminal
+
+# ============================================================
+# Web UI - FastAPI Server & WebSocket (v2.3+)
+# ============================================================
+fastapi>=0.128.0         # Web framework for live UI
+uvicorn>=0.30.0          # ASGI server
+websockets>=13.0         # WebSocket support for live updates
 
 # ============================================================
 # Utilities - Retry, Rate Limiting, Caching

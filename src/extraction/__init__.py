@@ -1,5 +1,5 @@
 """
-Extraction Module - Academic Agent v2.0
+Extraction Module - Academic Agent v2.3+
 
 PDF Text Extraction + Quote Extraction + Validation
 """

@@ -11,12 +11,11 @@
 # 1. Installation
 ./setup.sh
 
-# 2. Aktiviere venv
-source venv/bin/activate
-
-# 3. Starte Research
+# 2. Starte Research (kein venv aktivieren nötig!)
 /research "Your research question"
 ```
+
+**Hinweis:** Dependencies sind system-weit installiert. Kein virtuelles Environment nötig!
 
 ---
 

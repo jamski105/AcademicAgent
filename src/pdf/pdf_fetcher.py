@@ -1,5 +1,5 @@
 """
-PDF Fetcher Orchestrator für Academic Agent v2.1
+PDF Fetcher Orchestrator für Academic Agent v2.3+
 
 Koordiniert 2-Step Fallback-Chain (Python):
 1. Unpaywall API    → ~40% Erfolg (1-2s, schnell)

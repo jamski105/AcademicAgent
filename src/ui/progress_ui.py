@@ -1,5 +1,5 @@
 """
-Progress UI für Academic Agent v2.0
+Progress UI für Academic Agent v2.3+
 
 Real-time Progress Bars mit rich library:
 - Phase Progress (6 Phasen)

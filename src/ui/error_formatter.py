@@ -1,5 +1,5 @@
 """
-Error Formatter für Academic Agent v2.0
+Error Formatter für Academic Agent v2.3+
 
 User-friendly Error Messages mit:
 - Clear error descriptions

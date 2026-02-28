@@ -1,5 +1,5 @@
 """
-CORE API Client für Academic Agent v2.0
+CORE API Client für Academic Agent v2.3+
 
 API: https://core.ac.uk/services/api
 - Aggregiert Papers von 1000+ Repositories

@@ -1,4 +1,4 @@
-# Academic Agent v2.0 - Agent Prompts
+# Academic Agent v2.3+ - Agent Prompts
 
 Agent-Definitionen für Claude Code
 

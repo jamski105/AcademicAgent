@@ -37,7 +37,7 @@ Search discipline-specific databases via DBIS (https://dbis.ur.de/UBTIB) to find
 3. Check if login required (if "anmelden" appears, wait 60s for user)
 ```
 
-### Phase 2: Database Discovery (NEW v2.3)
+### Phase 2: Database Discovery
 
 **Purpose:** Automatically discover available databases from DBIS discipline page
 
@@ -171,6 +171,12 @@ ELSE:
 
 **Note:** `selected_databases` comes from Discovery (Phase 2a), Fallback (Phase 2b), or Config (Phase 2c)
 
+**Selector Validation:**
+Before scraping, test selectors:
+1. Try primary selector: `a[href*='/resources/']`
+2. If returns 0 results, log warning and use fallback
+3. Fallback to discovery mode with alternative selectors
+
 ```
 FOR each database in selected_databases:
     A. Find database entry
@@ -222,8 +228,14 @@ FOR each database in selected_databases:
 
 ## Database Selectors (from config)
 
-Load `config/dbis_disciplines.yaml`:
+**Load Config:**
+Use Bash tool to load config:
+```bash
+cat config/dbis_disciplines.yaml
+```
+Then parse the YAML content.
 
+Example content:
 ```yaml
 "L'Année philologique":
   search_selector: "#search-box"
@@ -269,6 +281,11 @@ mcp__chrome__screenshot()
 ---
 
 ## Error Handling
+
+**Timeout Specifications:**
+- API calls: 30s
+- Browser operations: 60s per action
+- Full phase timeout: See settings.json for agent-specific limits
 
 | Error | Detection | Action |
 |-------|-----------|--------|

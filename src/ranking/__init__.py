@@ -1,5 +1,5 @@
 """
-Ranking Engine für Academic Agent v2.0
+Ranking Engine für Academic Agent v2.3+
 
 Module:
 - five_d_scorer.py: 5D-Scoring (Relevanz, Recency, Quality, Authority, Portfolio)

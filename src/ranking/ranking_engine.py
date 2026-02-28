@@ -1,5 +1,5 @@
 """
-Ranking Engine Orchestrator für Academic Agent v2.0
+Ranking Engine Orchestrator für Academic Agent v2.3+
 
 Orchestriert 5D-Scoring + LLM-Relevanz
 

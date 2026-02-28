@@ -1,8 +1,8 @@
-# Academic Agent v2.2 - Roadmap
+# Academic Agent v2.3 - Roadmap
 
 **Erstellt:** 2026-02-23
-**Aktualisiert:** 2026-02-27 (v2.2 - DBIS Search Integration)
-**Status:** v2.1 Complete ✅, v2.2 In Progress 🔄
+**Aktualisiert:** 2026-02-27 (v2.3 - DBIS Search Integration)
+**Status:** v2.1 Complete ✅, v2.3 In Progress 🔄
 
 ---
 
@@ -62,15 +62,15 @@
 - [x] llm_relevance_scorer.md
 - [x] quote_extractor.md
 - [x] dbis_browser.md (Chrome MCP)
-- [x] discipline_classifier.md (NEW v2.2)
-- [x] dbis_search.md (NEW v2.2)
+- [x] discipline_classifier.md (NEW v2.3)
+- [x] dbis_search.md (NEW v2.3)
 
 #### C. CLI-Module (3-4h) ✅ COMPLETE
 - [x] search_engine.py argparse
 - [x] five_d_scorer.py argparse
 - [x] pdf_parser.py argparse
-- [x] discipline_classifier.py (NEW v2.2)
-- [x] dbis_search_orchestrator.py (NEW v2.2)
+- [x] discipline_classifier.py (NEW v2.3)
+- [x] dbis_search_orchestrator.py (NEW v2.3)
 
 #### D. Integration (2-3h) ✅ COMPLETE
 - [x] SKILL.md anpassen
@@ -110,7 +110,7 @@
 - [x] ACM Digital Library
 - [x] Springer
 - [x] Elsevier/ScienceDirect
-- [x] DBIS Portal Integration (v2.2)
+- [x] DBIS Portal Integration (v2.3)
 
 ---
 
@@ -147,7 +147,7 @@
 
 ## 🎯 Success Criteria (UPDATED)
 
-### Must-Have (v2.2 Status)
+### Must-Have (v2.3 Status)
 1. ✅ Kein API Key nötig (via Claude Code Agents)
 2. ✅ Agent-Prompts ≤500 Zeilen (discipline_classifier: 419, dbis_search: 189)
 3. ✅ PDF-Download ≥85% (mit DBIS) - Implementation ready
@@ -157,8 +157,8 @@
 ### Nice-to-Have
 1. ✅ Chrome MCP Browser Automation (v2.1)
 2. ✅ Interaktiver DBIS Login (v2.1)
-3. ✅ DBIS Search Integration (v2.2)
-4. ✅ Cross-Disciplinary Coverage 92% (v2.2)
+3. ✅ DBIS Search Integration (v2.3)
+4. ✅ Cross-Disciplinary Coverage 92% (v2.3)
 5. ⏳ Portfolio-Balance (Deep Mode)
 6. ⏳ Resume nach Error
 7. ⏳ Live Progress Bars
@@ -167,12 +167,12 @@
 
 ## 📊 Timeline
 
-**v2.2 Completed in 1 Day! (2026-02-27)**
+**v2.3 Completed in 1 Day! (2026-02-27)**
 
 ```
 ✅ Phase 5.5: Agent-Migration        [██████████] 100%
 ✅ Phase 6: Chrome MCP Integration   [██████████] 100%
-✅ v2.2: DBIS Search Integration     [█████████░] 95%
+✅ v2.3: DBIS Search Integration     [█████████░] 95%
 ⏳ Phase 7: Testing                  [███░░░░░░░] 30%
 ```
 
@@ -189,7 +189,7 @@
 4. ✅ linear_coordinator Agent (8-phase workflow)
 5. ✅ Subagenten (discipline_classifier, dbis_search)
 6. ✅ Integration (hybrid search)
-7. ✅ v2.2 DBIS Search Implementation
+7. ✅ v2.3 DBIS Search Implementation
 
 ### ⏳ Pending:
 1. **Functional Testing** (User executes `/research`)
@@ -346,7 +346,7 @@
 
 - [ARCHITECTURE_v2.md](./docs/ARCHITECTURE_v2.md) - Agent Design
 - [GAP_ANALYSIS.md](./GAP_ANALYSIS.md) - Implementation Tracking
-- [DBIS_SEARCH_v2.2.md](./DBIS_SEARCH_v2.2.md) - DBIS Integration Details
+- [DBIS_SEARCH_v2.3.md](./DBIS_SEARCH_v2.3.md) - DBIS Integration Details
 - [CHANGELOG.md](./CHANGELOG.md) - Detailed TODO List
 
 ---

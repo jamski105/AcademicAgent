@@ -1,5 +1,5 @@
 """
-Retry Logic für Academic Agent v2.0
+Retry Logic für Academic Agent v2.3+
 
 Nutzt tenacity für robuste Retry-Mechanik:
 - Exponential Backoff
@@ -316,7 +316,7 @@ def create_retry_decorator_from_config(retry_config: dict):
 # Testing
 # ============================================
 
-if __name__ == "__main__":
+def _run_tests():
     """
     Test Retry Logic
 
@@ -361,3 +361,7 @@ if __name__ == "__main__":
     print("✅ Test 3 passed: Status code checks")
 
     print("\n✅ All tests passed!")
+
+
+if __name__ == "__main__":
+    _run_tests()

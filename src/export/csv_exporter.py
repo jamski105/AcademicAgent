@@ -1,5 +1,5 @@
 """
-CSV Exporter für Academic Agent v2.2
+CSV Exporter für Academic Agent v2.3+
 
 Exportiert Quotes als CSV mit formatierten Zitationen und Source-Annotation.
 

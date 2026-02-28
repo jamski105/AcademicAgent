@@ -1,5 +1,5 @@
 """
-5D-Scorer für Academic Agent v2.0
+5D-Scorer für Academic Agent v2.3+
 
 5 Dimensionen:
 1. Relevanz (0.4) - Semantic relevance to query

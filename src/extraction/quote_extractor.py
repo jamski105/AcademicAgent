@@ -1,5 +1,5 @@
 """
-Quote Extractor für Academic Agent v2.0
+Quote Extractor für Academic Agent v2.3+
 
 ⚠️ PARTIALLY DEPRECATED ⚠️
 

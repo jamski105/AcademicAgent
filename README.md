@@ -1,8 +1,8 @@
-# Academic Agent v2.2
+# Academic Agent v2.3
 
 **AI-powered academic research assistant with cross-disciplinary database search**
 
-[![Version](https://img.shields.io/badge/version-2.2-blue.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-2.3-blue.svg)](./CHANGELOG.md)
 [![Python](https://img.shields.io/badge/python-3.10+-green.svg)](https://python.org)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
 [![CI/CD](https://github.com/yourusername/AcademicAgent/actions/workflows/ci.yml/badge.svg)](https://github.com/yourusername/AcademicAgent/actions/workflows/ci.yml)
@@ -33,6 +33,7 @@
 
 - 🤖 **Agent-Based Architecture:** Claude Code agents (no API keys needed!)
 - 🌐 **Chrome MCP Integration:** Browser automation for PDF downloads
+- 🎨 **Web UI with Live Updates:** Real-time progress dashboard (v2.3+)
 - 📄 **High PDF Success Rate:** 85-90% (Unpaywall + CORE + DBIS)
 - 📊 **Smart Ranking:** 5D scoring + LLM relevance analysis
 - 📝 **Quote Extraction:** AI-powered relevant quote finding
@@ -66,10 +67,11 @@ git clone https://github.com/yourusername/AcademicAgent.git
 cd AcademicAgent
 ./setup.sh
 
-# 2. Activate environment
-source venv/bin/activate
+# 2. (Optional) Start Web UI for live progress tracking
+python3 -m src.web_ui.server
+# Open browser: http://localhost:8000
 
-# 3. Start research
+# 3. Start research (no venv activation needed!)
 /research "Your research question"
 ```
 
@@ -77,6 +79,8 @@ source venv/bin/activate
 - Python 3.11+
 - Node.js 18+ (for Chrome MCP)
 - Google Chrome
+
+**Note:** Dependencies are installed system-wide. No virtual environment needed!
 
 **📖 Detailed Setup:** See [SETUP.md](./SETUP.md) for complete installation guide
 

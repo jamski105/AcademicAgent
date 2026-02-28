@@ -16,7 +16,79 @@ You are a specialized browser automation agent that downloads academic PDFs thro
 
 ---
 
-## v2.1 Output Configuration
+## Startup Verification
+
+**BEFORE starting workflow, verify Chrome MCP is configured:**
+
+```bash
+# Check if Chrome MCP is available
+echo "🔍 Verifying Chrome MCP configuration..."
+
+python3 -c "
+import json
+import sys
+
+try:
+    with open('.claude/settings.json') as f:
+        config = json.load(f)
+        mcp_servers = config.get('mcpServers', {})
+
+        if 'chrome' not in mcp_servers:
+            print('❌ ERROR: Chrome MCP not configured in .claude/settings.json', file=sys.stderr)
+            print('', file=sys.stderr)
+            print('Chrome MCP is required for browser automation.', file=sys.stderr)
+            print('Please add Chrome MCP to your settings.json:', file=sys.stderr)
+            print('', file=sys.stderr)
+            print('{', file=sys.stderr)
+            print('  \"mcpServers\": {', file=sys.stderr)
+            print('    \"chrome\": {', file=sys.stderr)
+            print('      \"command\": \"npx\",', file=sys.stderr)
+            print('      \"args\": [\"-y\", \"@modelcontextprotocol/server-chrome\"]', file=sys.stderr)
+            print('    }', file=sys.stderr)
+            print('  }', file=sys.stderr)
+            print('}', file=sys.stderr)
+            sys.exit(1)
+
+        print('✅ Chrome MCP is configured')
+
+        # Show Chrome MCP details
+        chrome_config = mcp_servers['chrome']
+        print(f'   Command: {chrome_config.get(\"command\", \"unknown\")}')
+        print(f'   Args: {chrome_config.get(\"args\", [])}')
+
+except FileNotFoundError:
+    print('❌ ERROR: .claude/settings.json not found', file=sys.stderr)
+    sys.exit(1)
+except json.JSONDecodeError:
+    print('❌ ERROR: .claude/settings.json is not valid JSON', file=sys.stderr)
+    sys.exit(1)
+except Exception as e:
+    print(f'❌ ERROR: {e}', file=sys.stderr)
+    sys.exit(1)
+"
+
+# Check exit code
+if [ $? -ne 0 ]; then
+  echo ""
+  echo "🚨 Startup verification failed!"
+  echo "Cannot proceed without Chrome MCP."
+  exit 1
+fi
+
+echo ""
+echo "✅ Startup verification complete"
+echo "Proceeding with DBIS browser workflow..."
+echo ""
+```
+
+**If verification fails:**
+- Stop execution immediately
+- Report error to linear_coordinator
+- Coordinator will skip this PDF and try others
+
+---
+
+## v2.3+ Output Configuration
 
 **IMPORTANT:** PDF output path is provided by linear_coordinator:
 
@@ -52,7 +124,14 @@ OUTPUT_DIR="runs/2026-02-27_14-30-00/pdfs"
 **Steps:**
 
 1. **Load Publisher Config:**
-   - Read `/Users/j65674/Repos/AcademicAgent/config/dbis_publishers.yaml`
+
+**Load Config:**
+Use Bash tool to load config:
+```bash
+cat config/dbis_publishers.yaml
+```
+Then parse the YAML content.
+
    - Extract DOI prefix (e.g., `10.1109` from DOI)
    - Match to publisher (e.g., `10.1109` → IEEE)
 
@@ -346,6 +425,11 @@ Action:
 ---
 
 ## Rate Limiting
+
+**Timeout Specifications:**
+- API calls: 30s
+- Browser operations: 60s per action
+- Full phase timeout: See settings.json for agent-specific limits
 
 **DBIS Rate Limits:**
 - 1 request per second

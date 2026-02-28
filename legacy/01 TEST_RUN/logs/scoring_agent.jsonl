@@ -1,7 +1,0 @@
-{"timestamp": "2026-02-23T10:30:00Z", "event": "phase_start", "run_id": "run_20260223_095905", "phase": "Phase 3: Screening & Ranking", "agent": "scoring-agent", "candidates_input": 15}
-{"timestamp": "2026-02-23T10:30:15Z", "event": "deduplication", "run_id": "run_20260223_095905", "candidates_before": 15, "candidates_after": 6, "duplicates_removed": 9}
-{"timestamp": "2026-02-23T10:30:30Z", "event": "knockout_applied", "run_id": "run_20260223_095905", "candidates_knocked_out": 0, "candidates_remaining": 6, "min_year": 2019}
-{"timestamp": "2026-02-23T10:31:00Z", "event": "scoring_completed", "run_id": "run_20260223_095905", "candidates_scored": 6, "avg_relevance": 84.17, "avg_quality": 56.67, "avg_recency": 81.67, "avg_accessibility": 84.17, "avg_utility": 80.83, "avg_total_score": 77.5}
-{"timestamp": "2026-02-23T10:31:15Z", "event": "ranking_completed", "run_id": "run_20260223_095905", "top_candidate_id": "C001", "top_candidate_title": "Data Driven Change Control: The Role of Predictive Risk Scoring in DevOps Oriented IT Governance", "top_score": 81.0}
-{"timestamp": "2026-02-23T10:31:30Z", "event": "portfolio_balance", "run_id": "run_20260223_095905", "primary_count": 4, "management_count": 2, "standards_count": 0, "total_ranked": 6}
-{"timestamp": "2026-02-23T10:31:45Z", "event": "phase_complete", "run_id": "run_20260223_095905", "phase": "Phase 3: Screening & Ranking", "output_file": "metadata/ranked_candidates.json", "status": "success"}

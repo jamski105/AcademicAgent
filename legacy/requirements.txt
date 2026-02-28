@@ -1,6 +1,0 @@
-# AcademicAgent Python Runtime Dependencies
-# Install via: pip3 install -r requirements.txt
-
-# Required by validation_gate.py (Phase 3 output validation)
-# Used for JSON schema validation of agent outputs
-jsonschema>=4.17.0

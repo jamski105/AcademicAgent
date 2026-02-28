@@ -1,5 +1,5 @@
 """
-Rate Limiter für Academic Agent v2.0
+Rate Limiter für Academic Agent v2.3+
 
 Sliding Window Token-Bucket Rate Limiter
 - Thread-safe
@@ -130,6 +130,21 @@ class RateLimiter:
                 return True
             return False
 
+    def wait_if_needed(self, tokens: int = 1) -> None:
+        """
+        Waits if rate limit would be exceeded (alias for acquire).
+
+        This is a convenience method that matches the naming convention
+        used in some API clients. It simply calls acquire() internally.
+
+        Args:
+            tokens: Number of tokens to acquire (default: 1)
+
+        Raises:
+            ValueError: If daily limit is reached
+        """
+        self.acquire(tokens=tokens)
+
     def get_wait_time(self, tokens: int = 1) -> float:
         """
         Berechnet Wartezeit bis tokens verfügbar
@@ -255,6 +270,21 @@ class AsyncRateLimiter:
                     self.daily_count += tokens
                 return True
             return False
+
+    async def wait_if_needed(self, tokens: int = 1) -> None:
+        """
+        Waits if rate limit would be exceeded (async alias for acquire).
+
+        This is a convenience method that matches the naming convention
+        used in some API clients. It simply calls acquire() internally.
+
+        Args:
+            tokens: Number of tokens to acquire (default: 1)
+
+        Raises:
+            ValueError: If daily limit is reached
+        """
+        await self.acquire(tokens=tokens)
 
     def get_wait_time(self, tokens: int = 1) -> float:
         """Berechnet Wartezeit (sync, weil Lock nicht benötigt wird für Estimation)"""

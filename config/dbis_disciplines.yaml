@@ -488,25 +488,29 @@ search_strategies:
 
   advanced_search:
     # Databases with advanced search interfaces
-    - "L'Année philologique"
-    - "MLA International Bibliography"
+    databases:
+      - "L'Année philologique"
+      - "MLA International Bibliography"
     strategy: "Use field-specific search (Title, Author, Keyword)"
 
   basic_search:
     # Databases with simple search boxes
-    - "JSTOR"
-    - "SpringerLink"
+    databases:
+      - "JSTOR"
+      - "SpringerLink"
     strategy: "Use full query string, apply filters afterward"
 
   mesh_terms:
     # Medical databases with MeSH vocabulary
-    - "PubMed"
+    databases:
+      - "PubMed"
     strategy: "Convert query keywords to MeSH terms if possible"
 
   export_first:
     # Databases with good export functionality
-    - "L'Année philologique"
-    - "IEEE Xplore"
+    databases:
+      - "L'Année philologique"
+      - "IEEE Xplore"
     strategy: "Use export function (BibTeX/RIS) instead of scraping"
 
 # ========================================

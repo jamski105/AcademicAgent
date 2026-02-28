@@ -38,7 +38,7 @@
       "max_tokens": 8192,
       "temperature": 0.3,
       "timeout_seconds": 600,
-      "description": "Haupt-Coordinator für v2.0 Workflow"
+      "description": "Haupt-Coordinator für v2.3+ Workflow"
     },
     "query_generator": {
       "model": "claude-haiku-4",
@@ -52,7 +52,7 @@
       "max_tokens": 1024,
       "temperature": 0.2,
       "timeout_seconds": 30,
-      "description": "Detects academic discipline for DBIS database selection (v2.2)"
+      "description": "Detects academic discipline for DBIS database selection (v2.3+ with LLM)"
     },
     "llm_relevance_scorer": {
       "model": "claude-haiku-4",
@@ -80,7 +80,7 @@
       "max_tokens": 8192,
       "temperature": 0.2,
       "timeout_seconds": 900,
-      "description": "Browser automation for DBIS database search (v2.2)"
+      "description": "Browser automation for DBIS database search (v2.3+ with updated selectors)"
     }
   },
   "workflow": {

@@ -1,5 +1,5 @@
 """
-UI Module - Academic Agent v2.0
+UI Module - Academic Agent v2.3+
 
 Progress Bars + Error Formatting + Live Metrics
 """

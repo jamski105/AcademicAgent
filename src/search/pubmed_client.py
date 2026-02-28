@@ -1,5 +1,5 @@
 """
-PubMed/MEDLINE Client für Academic Agent v2.1
+PubMed/MEDLINE Client für Academic Agent v2.3+
 
 NICHT IMPLEMENTIERT - SKELETON für zukünftige Erweiterung
 

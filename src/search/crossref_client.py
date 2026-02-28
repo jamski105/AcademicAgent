@@ -1,5 +1,5 @@
 """
-CrossRef API Client für Academic Agent v2.0
+CrossRef API Client für Academic Agent v2.3+
 
 CrossRef API Documentation: https://api.crossref.org/swagger-ui/index.html
 

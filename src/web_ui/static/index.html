@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Academic Agent v2.3 - Research UI</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        h1 { color: #333; margin-bottom: 20px; }
+        .status-bar {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .phase-indicator {
+            display: flex;
+            justify-content: space-between;
+            margin: 20px 0;
+        }
+        .phase {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            background: #e0e0e0;
+            margin: 0 5px;
+            border-radius: 4px;
+        }
+        .phase.active { background: #4CAF50; color: white; }
+        .phase.completed { background: #2196F3; color: white; }
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: #e0e0e0;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #45a049);
+            width: 0%;
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .stat-box {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        .stat-label {
+            color: #666;
+            margin-top: 5px;
+        }
+        .results-table {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background: #f5f5f5;
+            font-weight: 600;
+        }
+        .pdf-status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .pdf-available { background: #4CAF50; color: white; }
+        .pdf-pending { background: #FF9800; color: white; }
+        .pdf-failed { background: #f44336; color: white; }
+        .log-container {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 8px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            margin-top: 20px;
+        }
+        .log-entry {
+            margin: 5px 0;
+            padding: 3px 0;
+        }
+        .connection-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .connected { background: #4CAF50; color: white; }
+        .disconnected { background: #f44336; color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎓 Academic Agent v2.3 - Research Dashboard</h1>
+
+        <div class="connection-status" id="connectionStatus">⚫ Disconnected</div>
+
+        <div class="status-bar">
+            <h2 id="queryTitle">Waiting for session...</h2>
+            <p id="sessionInfo">Session ID: -</p>
+
+            <div class="phase-indicator" id="phaseIndicator">
+                <div class="phase" data-phase="1">Phase 1<br>Setup</div>
+                <div class="phase" data-phase="2">Phase 2<br>Query Gen</div>
+                <div class="phase" data-phase="3">Phase 3<br>API Search</div>
+                <div class="phase" data-phase="4">Phase 4<br>Ranking</div>
+                <div class="phase" data-phase="5">Phase 5<br>PDF Download</div>
+                <div class="phase" data-phase="6">Phase 6<br>Export</div>
+            </div>
+
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill">0%</div>
+            </div>
+
+            <div class="stats">
+                <div class="stat-box">
+                    <div class="stat-value" id="papersFound">0</div>
+                    <div class="stat-label">Papers Found</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="pdfsDownloaded">0</div>
+                    <div class="stat-label">PDFs Downloaded</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="pdfRate">0%</div>
+                    <div class="stat-label">PDF Success Rate</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="results-table">
+            <h2>📄 Research Results</h2>
+            <table id="resultsTable">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Authors</th>
+                        <th>Year</th>
+                        <th>Citations</th>
+                        <th>Score</th>
+                        <th>PDF</th>
+                    </tr>
+                </thead>
+                <tbody id="resultsBody">
+                    <tr><td colspan="6" style="text-align:center; color:#999;">No results yet...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="log-container" id="logContainer">
+            <div class="log-entry">🔌 Connecting to server...</div>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        let currentSessionId = null;
+
+        // Connect to WebSocket
+        function connectWebSocket() {
+            ws = new WebSocket('ws://localhost:8000/ws');
+
+            ws.onopen = () => {
+                console.log('WebSocket connected');
+                updateConnectionStatus(true);
+                addLog('✅ Connected to server');
+            };
+
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                handleMessage(data);
+            };
+
+            ws.onerror = (error) => {
+                console.error('WebSocket error:', error);
+                addLog('❌ Connection error');
+            };
+
+            ws.onclose = () => {
+                console.log('WebSocket disconnected');
+                updateConnectionStatus(false);
+                addLog('⚠️ Disconnected from server');
+
+                // Reconnect after 3 seconds
+                setTimeout(connectWebSocket, 3000);
+            };
+        }
+
+        // Handle WebSocket messages
+        function handleMessage(data) {
+            console.log('Received:', data);
+
+            if (data.type === 'session_started') {
+                currentSessionId = data.session.session_id;
+                document.getElementById('queryTitle').textContent = `Query: ${data.session.query}`;
+                document.getElementById('sessionInfo').textContent = `Session ID: ${currentSessionId} | Mode: ${data.session.mode}`;
+                addLog(`🚀 Session started: ${data.session.query}`);
+            }
+
+            if (data.type === 'session_update') {
+                updateDashboard(data.data);
+            }
+        }
+
+        // Update dashboard
+        function updateDashboard(data) {
+            if (data.current_phase) {
+                updatePhase(data.current_phase);
+            }
+
+            if (data.progress !== undefined) {
+                updateProgress(data.progress);
+            }
+
+            if (data.papers_found !== undefined) {
+                document.getElementById('papersFound').textContent = data.papers_found;
+            }
+
+            if (data.pdfs_downloaded !== undefined) {
+                const papersFound = parseInt(document.getElementById('papersFound').textContent) || 1;
+                const pdfCount = data.pdfs_downloaded;
+                const rate = Math.round((pdfCount / papersFound) * 100);
+
+                document.getElementById('pdfsDownloaded').textContent = pdfCount;
+                document.getElementById('pdfRate').textContent = rate + '%';
+            }
+
+            if (data.log_message) {
+                addLog(data.log_message);
+            }
+        }
+
+        // Update phase indicator
+        function updatePhase(phaseNumber) {
+            const phases = document.querySelectorAll('.phase');
+            phases.forEach((phase, index) => {
+                const num = index + 1;
+                phase.classList.remove('active', 'completed');
+
+                if (num < phaseNumber) {
+                    phase.classList.add('completed');
+                } else if (num === phaseNumber) {
+                    phase.classList.add('active');
+                }
+            });
+        }
+
+        // Update progress bar
+        function updateProgress(percent) {
+            const fill = document.getElementById('progressFill');
+            fill.style.width = percent + '%';
+            fill.textContent = Math.round(percent) + '%';
+        }
+
+        // Update connection status
+        function updateConnectionStatus(connected) {
+            const status = document.getElementById('connectionStatus');
+            if (connected) {
+                status.textContent = '🟢 Connected';
+                status.className = 'connection-status connected';
+            } else {
+                status.textContent = '🔴 Disconnected';
+                status.className = 'connection-status disconnected';
+            }
+        }
+
+        // Add log entry
+        function addLog(message) {
+            const container = document.getElementById('logContainer');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+
+            const timestamp = new Date().toLocaleTimeString();
+            entry.textContent = `[${timestamp}] ${message}`;
+
+            container.appendChild(entry);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // Initialize
+        connectWebSocket();
+
+        // Simulate updates for testing (remove in production)
+        /*
+        setTimeout(() => {
+            handleMessage({
+                type: 'session_started',
+                session: {
+                    session_id: 'test-123',
+                    query: 'DevOps Governance',
+                    mode: 'quick'
+                }
+            });
+
+            let phase = 1;
+            let progress = 0;
+            setInterval(() => {
+                progress += 5;
+                if (progress > 100) progress = 0;
+                if (progress % 20 === 0) phase = (phase % 6) + 1;
+
+                updateDashboard({
+                    current_phase: phase,
+                    progress: progress,
+                    papers_found: Math.floor(progress / 5),
+                    pdfs_downloaded: Math.floor(progress / 8),
+                    log_message: `Progress update: ${progress}%`
+                });
+            }, 1000);
+        }, 2000);
+        */
+    </script>
+</body>
+</html>

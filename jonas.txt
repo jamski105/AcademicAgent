@@ -1,8 +1,0 @@
-Nutze die Daten aus dem WORKFLOW.md und nutze modus 2 und sage mir ob pahso 2 erfolgreich implemetiert wurd eoder ob noch was verbessert werden muss. Alles doppelt prüfen und mir im chat ein SumUp geben
-
-Kannst du nun mit Phase 3 komplett implementieren? mit den regeln aus dem WORKFLOW.md bite und modus 1. Nutze dafür eine ToDo Liste. Danach bitte einmal alles doppelt auf funktion und funtkionaliutät überprüfen
-
-Kannst du nun mit Phase 3 komplett implementieren? mit den regeln aus dem WORKFLOW.md bite und modus 1. Nutze dafür eine ToDo Liste. Danach bitte einmal alles doppelt auf funktion und funtkionaliutät überprüfen
-
-
-Guck dir einmal alle docs an, VOR ALLEM V2_ROADMAP.md und sage mir ob alles funktioniert und erfolgrich implementeirt wurde. Nutze 

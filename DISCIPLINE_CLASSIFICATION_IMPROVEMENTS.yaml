@@ -1,0 +1,288 @@
+# Recommended Keyword Updates for dbis_disciplines.yaml
+# Based on Discipline Classification Test Results (2026-02-27)
+
+# These additions will improve keyword-based classification accuracy from 60% to ~80%+
+
+disciplines:
+
+  "Informatik":
+    add_keywords:
+      # Modern DevOps & Cloud
+      - "devops"
+      - "ci/cd"
+      - "continuous integration"
+      - "continuous deployment"
+      - "kubernetes"
+      - "docker"
+      - "container"
+      - "microservices"
+      - "cloud computing"
+      - "aws"
+      - "azure"
+      - "terraform"
+
+      # IT Governance & Management
+      - "governance"
+      - "itil"
+      - "agile"
+      - "scrum"
+      - "it management"
+      - "software development"
+
+      # English synonyms (for international queries)
+      - "computer science"
+      - "programming"
+      - "coding"
+      - "development"
+
+  "Medizin":
+    add_keywords:
+      # English medical terms
+      - "medicine"
+      - "medical"
+      - "health"
+      - "healthcare"
+      - "clinical"
+      - "disease"
+      - "treatment"
+      - "diagnosis"
+      - "patient"
+      - "therapy"
+      - "surgery"
+      - "pharmaceutical"
+
+      # COVID-19 specific
+      - "covid"
+      - "covid-19"
+      - "coronavirus"
+      - "pandemic"
+      - "epidemic"
+      - "vaccine"
+      - "vaccination"
+
+      # Modern health topics
+      - "telehealth"
+      - "digital health"
+      - "health informatics"
+
+  "Psychologie":
+    add_keywords:
+      # English psychology terms
+      - "psychology"
+      - "mental health"
+      - "mental"
+      - "behavioral"
+      - "behavior"
+      - "cognitive"
+      - "emotional"
+      - "wellbeing"
+      - "well-being"
+      - "psychiatric"
+
+      # Modern psychology topics
+      - "social media"
+      - "digital psychology"
+      - "online behavior"
+      - "internet addiction"
+      - "screen time"
+      - "social network"
+
+      # Clinical psychology
+      - "depression"
+      - "anxiety"
+      - "stress"
+      - "trauma"
+      - "therapy"
+      - "counseling"
+
+  "Rechtswissenschaft":
+    add_keywords:
+      # English law terms
+      - "law"
+      - "legal"
+      - "legislation"
+      - "regulation"
+      - "statute"
+      - "court"
+      - "judicial"
+      - "litigation"
+
+      # Specific law areas
+      - "contract law"
+      - "criminal law"
+      - "civil law"
+      - "administrative law"
+      - "commercial law"
+
+      # Modern law topics
+      - "data protection"
+      - "gdpr"
+      - "privacy law"
+      - "cyber law"
+      - "intellectual property"
+
+  "Klassische Philologie":
+    add_keywords:
+      # English classical studies terms
+      - "latin"
+      - "greek"
+      - "classical"
+      - "ancient"
+      - "classical philology"
+      - "classics"
+
+      # Literary terms
+      - "metric"
+      - "metrik"
+      - "prosody"
+      - "verse"
+      - "poetry"
+      - "epic"
+      - "rhetoric"
+
+      # Ancient authors (English & German)
+      - "virgil"
+      - "horace"
+      - "ovid"
+      - "plato"
+      - "aristotle"
+
+  "Wirtschaftswissenschaften":
+    add_keywords:
+      # English business/economics terms
+      - "economics"
+      - "business"
+      - "management"
+      - "finance"
+      - "accounting"
+      - "marketing"
+      - "entrepreneurship"
+      - "commerce"
+      - "trade"
+
+      # Modern business topics
+      - "digital transformation"
+      - "e-commerce"
+      - "business analytics"
+      - "supply chain"
+      - "logistics"
+
+  "Naturwissenschaften":
+    add_keywords:
+      # English science terms
+      - "science"
+      - "natural science"
+      - "physics"
+      - "chemistry"
+      - "biology"
+      - "environment"
+      - "climate"
+      - "ecology"
+      - "sustainability"
+
+  "Ingenieurwissenschaften":
+    add_keywords:
+      # English engineering terms
+      - "engineering"
+      - "mechanical"
+      - "civil"
+      - "electrical"
+      - "industrial"
+      - "structural"
+      - "construction"
+      - "automotive"
+      - "manufacturing"
+
+  "Sozialwissenschaften":
+    add_keywords:
+      # English social science terms
+      - "social science"
+      - "sociology"
+      - "anthropology"
+      - "social studies"
+      - "society"
+      - "culture"
+      - "community"
+      - "social research"
+
+  "Geschichtswissenschaft":
+    add_keywords:
+      # English history terms
+      - "history"
+      - "historical"
+      - "medieval"
+      - "ancient history"
+      - "modern history"
+      - "historiography"
+      - "archaeology"
+      - "heritage"
+
+# ============================================
+# IMPACT ANALYSIS
+# ============================================
+
+expected_improvements:
+  before: "60% accuracy (3/5 correct)"
+  after: "80-100% accuracy (4-5/5 correct)"
+
+  specific_fixes:
+    - query: "COVID-19 Treatment"
+      before: "Unknown (no match)"
+      after: "Medizin (matches: covid, treatment, health)"
+
+    - query: "DevOps Governance"
+      before: "Unknown (no match)"
+      after: "Informatik (matches: devops, governance)"
+
+    - query: "Social Media Impact on Mental Health"
+      before: "Psychologie (low confidence 0.40)"
+      after: "Psychologie (high confidence 0.75+ - matches: social media, mental health, psychology)"
+
+# ============================================
+# IMPLEMENTATION NOTES
+# ============================================
+
+implementation:
+  file: "config/dbis_disciplines.yaml"
+  method: "Merge new keywords into existing keyword lists"
+
+  example:
+    before: |
+      "Informatik":
+        keywords:
+          - "computer"
+          - "software"
+          - "algorithm"
+
+    after: |
+      "Informatik":
+        keywords:
+          - "computer"
+          - "software"
+          - "algorithm"
+          - "devops"  # NEW
+          - "ci/cd"  # NEW
+          - "governance"  # NEW
+
+# ============================================
+# TESTING CHECKLIST
+# ============================================
+
+testing:
+  - action: "Add keywords to dbis_disciplines.yaml"
+  - action: "Run: python -m src.classification.discipline_classifier --test"
+  - action: "Verify accuracy improves from 60% to 80%+"
+  - action: "Test edge cases (mixed German/English queries)"
+  - action: "Measure classification confidence scores"
+
+# ============================================
+# LONG-TERM RECOMMENDATIONS
+# ============================================
+
+long_term:
+  1. "Maintain bilingual keywords (German + English) for all disciplines"
+  2. "Add synonyms and related terms regularly (quarterly review)"
+  3. "Monitor modern terminology (DevOps, COVID-19, NFTs, etc.)"
+  4. "Use LLM-based classification as primary, keywords as fallback"
+  5. "Log failed classifications to identify missing keywords"
+  6. "Implement fuzzy matching for typos (e.g., 'devops' vs 'dev ops')"

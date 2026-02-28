@@ -1,26 +1,32 @@
 """
-Discipline Classifier für Academic Agent v2.2
+Discipline Classifier für Academic Agent v2.3+
 
 Klassifiziert akademische Queries nach Disziplin für DBIS-Datenbank-Selektion.
 
-WICHTIG: In v2.2 nutzen wir primär den discipline_classifier Agent (Haiku).
-Dieses Modul dient als:
-- Fallback wenn Agent nicht verfügbar
-- Deterministisches Keyword-Matching
-- CLI-Tool für Testing
+UPDATED v2.3: Zwei Modi verfügbar:
+1. LLM-basiert (Haiku/Sonnet) - High Accuracy (~80%+)
+2. Keyword-basiert - Fallback (~40%)
 
 Usage:
     from src.classification.discipline_classifier import classify_discipline
 
+    # LLM mode (recommended)
+    result = classify_discipline(
+        user_query="COVID-19 Treatment",
+        use_llm=True  # Uses AgentFactory with auto-fallback
+    )
+
+    # Keyword mode (fallback)
     result = classify_discipline(
         user_query="Lateinische Metrik",
-        expanded_queries=["Latin meter", "Classical prosody"]
+        expanded_queries=["Latin meter", "Classical prosody"],
+        use_llm=False
     )
 
     # CLI
     python -m src.classification.discipline_classifier \
         --query "DevOps Governance" \
-        --expanded "continuous delivery,infrastructure as code"
+        --llm  # Use LLM mode
 """
 
 import yaml
@@ -159,6 +165,58 @@ class DisciplineClassifier:
             reasoning=reasoning
         )
 
+    def classify_llm(
+        self,
+        user_query: str,
+        expanded_queries: Optional[List[str]] = None
+    ) -> DisciplineResult:
+        """
+        Classify using LLM-based semantic analysis (Haiku/Sonnet with auto-fallback).
+
+        Args:
+            user_query: Original user query
+            expanded_queries: Optional expanded query variations
+
+        Returns:
+            DisciplineResult with classification
+        """
+        try:
+            # Import AgentFactory here to avoid circular imports
+            from src.agents.agent_factory import AgentFactory
+
+            factory = AgentFactory()
+            discipline_name = factory.classify_discipline(user_query, expanded_queries)
+
+            # Map discipline to config
+            if discipline_name in self.config.get('disciplines', {}):
+                discipline_data = self.config['disciplines'][discipline_name]
+                dbis_category_id = discipline_data.get('dbis_category_id', '')
+                databases = discipline_data.get('databases', [])
+
+                relevant_databases = [
+                    db['name'] for db in databases[:5]
+                ]
+
+                return DisciplineResult(
+                    primary_discipline=discipline_name,
+                    secondary_disciplines=[],
+                    dbis_category_id=dbis_category_id,
+                    relevant_databases=relevant_databases,
+                    confidence=0.85,  # High confidence for LLM-based
+                    reasoning=f"LLM semantic analysis classified as '{discipline_name}'"
+                )
+            else:
+                # Unknown discipline, use fallback
+                return self._fallback_result(
+                    f"LLM returned unknown discipline: {discipline_name}"
+                )
+
+        except Exception as e:
+            # LLM failed, use keyword-based fallback
+            import logging
+            logging.warning(f"LLM classification failed: {e}, using keyword fallback")
+            return self.classify(user_query, expanded_queries)
+
     def _fallback_result(self, reason: str) -> DisciplineResult:
         """Return fallback result when no discipline detected"""
         # Get fallback databases from config
@@ -182,7 +240,8 @@ def classify_discipline(
     user_query: str,
     expanded_queries: Optional[List[str]] = None,
     academic_context: Optional[str] = None,
-    config_path: Optional[Path] = None
+    config_path: Optional[Path] = None,
+    use_llm: bool = True
 ) -> Dict:
     """
     Convenience function for discipline classification
@@ -192,12 +251,18 @@ def classify_discipline(
         expanded_queries: Optional expanded queries
         academic_context: Optional user context
         config_path: Optional config file path
+        use_llm: Use LLM-based classification (default: True, recommended)
 
     Returns:
         Dict with classification result
     """
     classifier = DisciplineClassifier(config_path=config_path)
-    result = classifier.classify(user_query, expanded_queries, academic_context)
+
+    if use_llm:
+        result = classifier.classify_llm(user_query, expanded_queries)
+    else:
+        result = classifier.classify(user_query, expanded_queries, academic_context)
+
     return asdict(result)
 
 
@@ -214,7 +279,7 @@ def main():
     )
     parser.add_argument(
         '--query',
-        required=True,
+        required=False,
         help='User query to classify'
     )
     parser.add_argument(
@@ -235,6 +300,11 @@ def main():
         help='Output JSON only'
     )
     parser.add_argument(
+        '--llm',
+        action='store_true',
+        help='Use LLM-based classification (recommended)'
+    )
+    parser.add_argument(
         '--test',
         action='store_true',
         help='Run tests'
@@ -244,7 +314,8 @@ def main():
 
     # Test mode
     if args.test:
-        print("Running discipline classifier tests...")
+        mode_name = "LLM-based" if args.llm else "Keyword-based"
+        print(f"Running discipline classifier tests ({mode_name})...")
         test_cases = [
             ("Lateinische Metrik", "Klassische Philologie"),
             ("Machine Learning Optimization", "Informatik"),
@@ -258,7 +329,11 @@ def main():
         failed = 0
 
         for query, expected in test_cases:
-            result = classifier.classify(query)
+            if args.llm:
+                result = classifier.classify_llm(query)
+            else:
+                result = classifier.classify(query)
+
             if result.primary_discipline == expected:
                 print(f"✅ PASS: '{query}' → {expected} (conf: {result.confidence})")
                 passed += 1
@@ -278,7 +353,8 @@ def main():
             user_query=args.query,
             expanded_queries=expanded,
             academic_context=args.context,
-            config_path=config_path
+            config_path=config_path,
+            use_llm=args.llm
         )
 
         if args.json:

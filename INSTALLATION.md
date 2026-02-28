@@ -20,14 +20,16 @@ cd AcademicAgent
 
 **Das macht setup.sh:**
 1. ✅ Python 3.11+ Check
-2. ✅ Virtual Environment erstellen
-3. ✅ Dependencies installieren (requirements-v2.txt)
-4. ✅ Chrome MCP Server installieren (npm)
-5. ✅ NLTK Data downloaden
-6. ✅ Cache Directories erstellen
-7. ✅ Optional: Unit Tests laufen
+2. ✅ Dependencies installieren system-weit (requirements-v2.txt)
+3. ✅ Chrome MCP Server installieren (npm)
+4. ✅ NLTK Data downloaden
+5. ✅ Cache Directories erstellen
+6. ✅ .claude/settings.json konfigurieren
 
 **Dauer:** ~5-8 Minuten (je nach Internet)
+
+**Hinweis:** Dependencies werden system-weit mit `pip3 install --user` installiert.
+Kein virtuelles Environment nötig!
 
 ---
 
@@ -155,8 +157,9 @@ export TIB_PASSWORD="your_tib_password"
 ### 1. Python Environment Test
 
 ```bash
-python --version  # ≥ 3.11
-pip list | grep anthropic
+python3 --version  # ≥ 3.11
+python3 -m pip list | grep httpx
+python3 -c "import httpx, pydantic, pymupdf, rich; print('✓ Core packages OK')"
 ```
 
 ### 2. Chrome MCP Test
@@ -181,21 +184,22 @@ pytest tests/unit/ -v
 
 ## 🛠️ Manuelle Installation (Falls setup.sh nicht läuft)
 
-### Schritt 1: Virtual Environment
+### Schritt 1: Upgrade pip
 
 ```bash
-python3 -m venv venv
-source venv/bin/activate  # macOS/Linux
-# ODER
-venv\Scripts\activate     # Windows
+python3 -m pip install --upgrade pip setuptools wheel --user
 ```
 
-### Schritt 2: Python Dependencies
+### Schritt 2: Python Dependencies (System-weit)
 
 ```bash
-pip install --upgrade pip setuptools wheel
-pip install -r requirements-v2.txt
+python3 -m pip install -r requirements-v2.txt --user
 ```
+
+**Hinweis:** Mit `--user` werden Packages im User-Verzeichnis installiert:
+- macOS: `~/Library/Python/3.x/lib/python/site-packages`
+- Linux: `~/.local/lib/python3.x/site-packages`
+- Windows: `%APPDATA%\Python\Python3x\site-packages`
 
 ### Schritt 3: Node.js & Chrome MCP
 

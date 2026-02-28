@@ -1,5 +1,5 @@
 """
-Quote Validator für Academic Agent v2.0
+Quote Validator für Academic Agent v2.3+
 
 Validiert extrahierte Zitate gegen PDF-Text:
 - Prüft ob Zitat wirklich im PDF existiert

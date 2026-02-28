@@ -1,5 +1,5 @@
 """
-DEPRECATED: DBIS Browser Downloader für Academic Agent v2.0
+DEPRECATED: DBIS Browser Downloader für Academic Agent v2.3+
 
 ⚠️ THIS FILE IS DEPRECATED ⚠️
 

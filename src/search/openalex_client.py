@@ -1,5 +1,5 @@
 """
-OpenAlex API Client für Academic Agent v2.0
+OpenAlex API Client für Academic Agent v2.3+
 
 OpenAlex API Documentation: https://docs.openalex.org/
 

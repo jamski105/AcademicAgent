@@ -1,5 +1,5 @@
 """
-PDF Parser für Academic Agent v2.0
+PDF Parser für Academic Agent v2.3+
 
 Extrahiert Text aus PDFs mit PyMuPDF (fitz)
 - Page-by-page Extraction

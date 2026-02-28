@@ -1,5 +1,5 @@
 """
-DEPRECATED: LLM-Relevanz-Scorer für Academic Agent v2.0
+DEPRECATED: LLM-Relevanz-Scorer für Academic Agent v2.3+
 
 ⚠️ THIS FILE IS DEPRECATED ⚠️
 
@@ -162,7 +162,7 @@ class LLMRelevanceScorer:
         Returns:
             Formatted prompt
         """
-        prompt = f"""You are the Relevance Scorer for Academic Agent v2.0.
+        prompt = f"""You are the Relevance Scorer for Academic Agent v2.3+.
 
 Score papers based on semantic relevance to the research query.
 
