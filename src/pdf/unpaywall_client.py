@@ -34,7 +34,7 @@ class UnpaywallClient:
     """Client for Unpaywall API"""
 
     BASE_URL = "https://api.unpaywall.org/v2"
-    DEFAULT_EMAIL = "academic-agent@example.com"  # Generic Email für Standard-Modus
+    DEFAULT_EMAIL = "research@academic-agent.org"  # Generic Email für Standard-Modus (polite pool)
 
     def __init__(
         self,
@@ -69,8 +69,36 @@ class UnpaywallClient:
         # Rate Limiting
         self.rate_limiter.wait_if_needed()
 
-        # Clean DOI (remove "https://doi.org/" prefix if present)
-        clean_doi = doi.replace("https://doi.org/", "").strip()
+        # Clean DOI - strip whitespace and URL-decode first
+        from urllib.parse import unquote
+        clean_doi = unquote(doi.strip())
+
+        # Handle doi: / DOI: prefix (common in bibliographic software)
+        for prefix in ("DOI:", "doi:", "DOI: ", "doi: "):
+            if clean_doi.startswith(prefix):
+                clean_doi = clean_doi[len(prefix):].strip()
+                break
+
+        # Remove doi.org URL prefixes
+        for prefix in ("https://doi.org/", "http://doi.org/", "doi.org/"):
+            if clean_doi.startswith(prefix):
+                clean_doi = clean_doi[len(prefix):]
+                break
+
+        # Strip URL query params (?key=val) and fragments (#section) — both cause HTTP 422
+        for delimiter in ("?", "#"):
+            if delimiter in clean_doi:
+                clean_doi = clean_doi.split(delimiter)[0]
+
+        clean_doi = clean_doi.strip()
+
+        # Validate DOI format (must start with "10.")
+        if not clean_doi or not clean_doi.startswith("10."):
+            return UnpaywallResult(
+                success=False,
+                doi=clean_doi,
+                error=f"Invalid DOI format: '{clean_doi}' (must start with '10.')"
+            )
 
         # Build URL
         url = f"{self.BASE_URL}/{clean_doi}"
@@ -85,6 +113,14 @@ class UnpaywallClient:
                     success=False,
                     doi=clean_doi,
                     error="DOI not found in Unpaywall (likely not Open Access)"
+                )
+
+            # Handle 422 (invalid DOI format - Unprocessable Entity)
+            if response.status_code == 422:
+                return UnpaywallResult(
+                    success=False,
+                    doi=clean_doi,
+                    error=f"Unpaywall rejected DOI (HTTP 422 - invalid format): '{clean_doi}'"
                 )
 
             # Raise for other errors

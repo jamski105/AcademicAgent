@@ -1,7 +1,7 @@
 # DBIS Search Agent
 
 **Role:** Automated academic database search via DBIS portal
-**Model:** Sonnet 4.5
+**Model:** Sonnet 4.6
 **Tools:** Chrome MCP (browser automation)
 
 ---

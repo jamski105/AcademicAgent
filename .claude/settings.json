@@ -1,8 +1,11 @@
 {
   "mcpServers": {
     "chrome": {
-      "command": "npx",
-      "args": ["-y", "@eddym06/custom-chrome-mcp@latest"],
+      "command": "/opt/homebrew/bin/npx",
+      "args": [
+        "-y",
+        "@eddym06/custom-chrome-mcp@latest"
+      ],
       "env": {
         "CHROME_PATH": "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
       }
@@ -10,73 +13,105 @@
   },
   "permissions": {
     "allow": [
+      "Bash(venv/bin/python .claude/skills/research/scripts/config_loader.py --mode * --query *)",
+      "Bash(venv/bin/python -m src.*)",
+      "Bash(venv/bin/python -c *)",
       "Bash(python3 .claude/skills/research/scripts/config_loader.py --mode * --query *)",
       "Bash(python3 -m src.*)",
       "Bash(python3 -c *)",
       "Bash(pytest *)",
       "Bash(npx -y @eddym06/custom-chrome-mcp@latest --version)",
-      "Bash(source venv/bin/activate *)",
       "Bash(mkdir -p runs/*)",
-      "Bash(ls * config/* runs/* logs/*)",
-      "Bash(cat config/* runs/*/results.json logs/*.log)",
+      "Bash(mkdir -p logs)",
+      "Bash(mkdir -p /tmp/*)",
+      "Bash(ls *)",
+      "Bash(cat *)",
+      "Bash(cp *)",
+      "Bash(rm *)",
+      "Bash(echo *)",
       "Bash(grep * logs/* runs/*)",
       "Bash(tail * logs/* runs/*)",
       "Bash(head * runs/* logs/*)",
       "Bash(wc -l *)",
-      "Bash(find src tests -name \"*.py\" *)"
+      "Bash(find src tests -name \"*.py\" *)",
+      "Bash(curl -s http://localhost:8000/health)",
+      "Bash(curl -s http://localhost:8000/*)",
+      "Bash(venv/bin/python -m src.web_ui.server)",
+      "Bash(nohup venv/bin/python -m src.web_ui.server *)",
+      "Bash(open http://localhost:8000)",
+      "Bash(source /tmp/*)",
+      "Bash(jq *)",
+      "Bash(export *)",
+      "Bash(basename *)",
+      "Bash(mkdir -p $RUN_DIR*)",
+      "Bash(wc -w *)",
+      "Bash(tr -d *)",
+      "Bash(sed *)",
+      "Bash(for *)",
+      "Bash(if *)",
+      "Bash(while *)",
+      "Bash([ *)",
+      "Bash([[ *)",
+      "Bash(mkdir -p runs/*/pdfs)",
+      "Bash(mkdir -p runs/*/metadata)",
+      "Bash(mkdir -p runs/*/temp)",
+      "Bash(ls -1 *)",
+      "Bash(ls -lah *)",
+      "Bash(mv *)"
     ],
     "additionalDirectories": [
       ".claude/skills/research",
       "runs",
       "logs",
-      "tests"
+      "tests",
+      "/tmp"
     ]
   },
   "agents": {
     "linear_coordinator": {
-      "model": "claude-sonnet-4-5",
+      "model": "claude-sonnet-4-6",
       "max_tokens": 8192,
       "temperature": 0.3,
-      "timeout_seconds": 600,
-      "description": "Haupt-Coordinator für v2.3+ Workflow"
+      "timeout_seconds": 3600,
+      "description": "Haupt-Coordinator f\u00fcr v2.3+ Workflow (1h timeout f\u00fcr Standard/Deep Mode)"
     },
     "query_generator": {
-      "model": "claude-haiku-4",
+      "model": "claude-haiku-4-5-20251001",
       "max_tokens": 2048,
       "temperature": 0.5,
       "timeout_seconds": 60,
-      "description": "Generiert Boolean-Queries für API-Suche"
+      "description": "Generiert Boolean-Queries f\u00fcr API-Suche"
     },
     "discipline_classifier": {
-      "model": "claude-haiku-4",
+      "model": "claude-haiku-4-5-20251001",
       "max_tokens": 1024,
       "temperature": 0.2,
       "timeout_seconds": 30,
       "description": "Detects academic discipline for DBIS database selection (v2.3+ with LLM)"
     },
     "llm_relevance_scorer": {
-      "model": "claude-haiku-4",
+      "model": "claude-haiku-4-5-20251001",
       "max_tokens": 4096,
       "temperature": 0.2,
       "timeout_seconds": 120,
-      "description": "LLM-gestützte Relevanz-Bewertung für 5D-Scoring"
+      "description": "LLM-gest\u00fctzte Relevanz-Bewertung f\u00fcr 5D-Scoring"
     },
     "quote_extractor": {
-      "model": "claude-haiku-4",
+      "model": "claude-haiku-4-5-20251001",
       "max_tokens": 4096,
       "temperature": 0.1,
       "timeout_seconds": 180,
-      "description": "Extrahiert präzise Zitate aus PDFs"
+      "description": "Extrahiert pr\u00e4zise Zitate aus PDFs"
     },
     "dbis_browser": {
-      "model": "claude-sonnet-4-5",
+      "model": "claude-sonnet-4-6",
       "max_tokens": 8192,
       "temperature": 0.2,
       "timeout_seconds": 600,
-      "description": "Browser automation für PDF-Downloads via DBIS institutional access"
+      "description": "Browser automation f\u00fcr PDF-Downloads via DBIS institutional access"
     },
     "dbis_search": {
-      "model": "claude-sonnet-4-5",
+      "model": "claude-sonnet-4-6",
       "max_tokens": 8192,
       "temperature": 0.2,
       "timeout_seconds": 900,

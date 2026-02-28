@@ -89,7 +89,10 @@ class SemanticScholarClient:
         if api_key:
             headers["x-api-key"] = api_key
 
-        self.client = httpx.Client(headers=headers, timeout=timeout)
+        self.client = httpx.Client(
+            headers=headers,
+            timeout=httpx.Timeout(timeout, connect=10.0)
+        )
 
     @retry(
         stop=stop_after_attempt(3),

@@ -15,6 +15,28 @@ from pathlib import Path
 from typing import List, Dict, Any
 
 
+# Mapping of Unicode characters to LaTeX equivalents
+_LATEX_ESCAPE = {
+    'ä': r'{\"{a}}', 'ö': r'{\"{o}}', 'ü': r'{\"{u}}',
+    'Ä': r'{\"{A}}', 'Ö': r'{\"{O}}', 'Ü': r'{\"{U}}',
+    'ß': r'{\ss}',
+    'é': r"{\'e}", 'è': r"{\`e}", 'ê': r'{\^e}',
+    'á': r"{\'a}", 'à': r"{\`a}", 'â': r'{\^a}',
+    'ó': r"{\'o}", 'ò': r"{\`o}", 'ô': r'{\^o}',
+    'ú': r"{\'u}", 'ù': r"{\`u}", 'û': r'{\^u}',
+    'ñ': r'{\~n}', 'ç': r'{\c{c}}',
+}
+
+
+def escape_latex(text: str) -> str:
+    """Escape special characters in text for safe BibTeX output."""
+    if not text:
+        return text
+    for char, replacement in _LATEX_ESCAPE.items():
+        text = text.replace(char, replacement)
+    return text
+
+
 def sanitize_bibtex_key(doi: str, title: str, year: int) -> str:
     """Generate BibTeX key from metadata"""
     # Use first author last name + year if possible
@@ -52,22 +74,22 @@ def export_bibtex(papers: List[Dict[str, Any]], output_path: Path) -> None:
             # Write entry
             f.write(f"@{entry_type}{{{key},\n")
 
-            # Title
+            # Title (escape umlauts and special chars)
             if paper.get('title'):
-                f.write(f"  title = {{{paper['title']}}},\n")
+                f.write(f"  title = {{{escape_latex(paper['title'])}}},\n")
 
-            # Authors
+            # Authors (escape umlauts)
             if paper.get('authors'):
-                authors = " and ".join(paper['authors'])
+                authors = " and ".join(escape_latex(a) for a in paper['authors'])
                 f.write(f"  author = {{{authors}}},\n")
 
             # Year
             if paper.get('year'):
                 f.write(f"  year = {{{paper['year']}}},\n")
 
-            # Journal/Conference
+            # Journal/Conference (escape umlauts)
             if paper.get('venue'):
-                f.write(f"  journal = {{{paper['venue']}}},\n")
+                f.write(f"  journal = {{{escape_latex(paper['venue'])}}},\n")
 
             # Volume
             if paper.get('volume'):

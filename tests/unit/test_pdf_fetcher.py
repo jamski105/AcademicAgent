@@ -298,9 +298,10 @@ def test_paper_without_doi(temp_output_dir, session_id):
 def test_cached_pdf_not_redownloaded(temp_output_dir, session_id):
     """Test that already downloaded PDF is not re-downloaded"""
 
-    # Create fake cached PDF
+    # Create fake cached PDF using the SAME sanitization as PDFFetcher._get_output_path
+    import re
     doi = "10.1371/journal.pone.0000001"
-    safe_doi = doi.replace("/", "_").replace(".", "_")
+    safe_doi = re.sub(r'[^\w\-.]', '_', doi)  # Must match PDFFetcher logic
     session_dir = temp_output_dir / session_id
     session_dir.mkdir(parents=True, exist_ok=True)
     cached_pdf = session_dir / f"{safe_doi}.pdf"
@@ -347,12 +348,12 @@ def test_output_path_sanitization(temp_output_dir, session_id):
 
     fetcher = PDFFetcher(output_dir=temp_output_dir)
 
-    # DOI with special chars
+    # DOI with special chars (forward slash gets replaced, dots are preserved)
     doi = "10.1109/ACCESS.2021.1234567"
     output_path = fetcher._get_output_path(doi, session_id)
 
-    # Should replace special chars with _
-    assert "10_1109_ACCESS_2021_1234567" in str(output_path)
+    # Slash replaced with _, dots kept (regex: [^\w\-.] → only non-word chars except - and . are replaced)
+    assert "10.1109_ACCESS.2021.1234567" in str(output_path)
     assert output_path.suffix == ".pdf"
     assert session_id in str(output_path.parent)
 

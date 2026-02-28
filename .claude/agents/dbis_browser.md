@@ -2,7 +2,7 @@
 
 **Role:** Browser automation for PDF downloads via DBIS institutional access
 
-**Model:** Sonnet 4.5
+**Model:** Sonnet 4.6
 
 **Tools:** Chrome MCP (mcp__chrome__*)
 
@@ -24,7 +24,7 @@ You are a specialized browser automation agent that downloads academic PDFs thro
 # Check if Chrome MCP is available
 echo "🔍 Verifying Chrome MCP configuration..."
 
-python3 -c "
+venv/bin/python -c "
 import json
 import sys
 

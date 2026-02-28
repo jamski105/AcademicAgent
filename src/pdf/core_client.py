@@ -52,7 +52,7 @@ class COREClient:
         self.api_key = api_key
         self.enabled = api_key is not None
         self.timeout = timeout
-        self.rate_limiter = RateLimiter(max_requests_per_second=rate_limit_rps)
+        self.rate_limiter = RateLimiter(requests_per_second=rate_limit_rps)
 
         # Setup HTTP client
         headers = {}

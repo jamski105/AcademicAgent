@@ -7,7 +7,7 @@ Agent-Definitionen für Claude Code
 ## 📋 Active Agents (5)
 
 ### 1. linear_coordinator.md ✅
-**Model:** Sonnet 4.5
+**Model:** Sonnet 4.6
 **Role:** Master Orchestrator
 **Status:** ACTIVE
 **Description:** Orchestriert 6-Phasen Workflow, spawnt Subagenten, ruft Python-Module via Bash auf
@@ -31,7 +31,7 @@ Agent-Definitionen für Claude Code
 **Description:** Extrahiert 2-3 relevante Zitate pro Paper (≤25 Wörter), mit Context-Window
 
 ### 5. dbis_browser.md ✅
-**Model:** Sonnet 4.5
+**Model:** Sonnet 4.6
 **Role:** Browser Automation (Chrome MCP)
 **Status:** ACTIVE
 **Description:** PDF-Download via institutionellem Zugang (TIB Shibboleth), interaktiver Login
@@ -96,7 +96,7 @@ SKILL.md spawns:
 2. Add front matter:
 ```yaml
 ---
-model: claude-haiku-4
+model: claude-haiku-4-5-20251001
 tools: []
 ---
 ```

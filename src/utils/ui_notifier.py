@@ -36,6 +36,34 @@ class UINotifier:
         self.enabled = enabled
         self.update_url = f"{base_url}/api/update/{session_id}"
 
+    def register_session(self, query: str = "Research", mode: str = "standard") -> bool:
+        """
+        Register this session with the Web UI server.
+        Call once at the start of Phase 1.
+
+        Args:
+            query: Research query
+            mode: Research mode (quick/standard/deep)
+
+        Returns:
+            True if successful, False otherwise
+        """
+        if not self.enabled:
+            return True
+
+        try:
+            response = requests.post(
+                f"{self.base_url}/api/start-research",
+                json={"session_id": self.session_id, "query": query, "mode": mode},
+                timeout=2
+            )
+            response.raise_for_status()
+            logger.info(f"Session {self.session_id} registered with Web UI")
+            return True
+        except requests.RequestException as e:
+            logger.debug(f"Session registration failed (server may not be running): {e}")
+            return False
+
     def _send(self, data: Dict[str, Any]) -> bool:
         """
         Send update to Web UI
@@ -138,6 +166,16 @@ class UINotifier:
         return self._send({
             "log_message": message
         })
+
+    def error(self, message: str, phase: Optional[int] = None) -> bool:
+        """Send error notification to UI"""
+        data: Dict[str, Any] = {
+            "status": "error",
+            "log_message": f"❌ ERROR: {message}"
+        }
+        if phase is not None:
+            data["current_phase"] = phase
+        return self._send(data)
 
     # ============================================
     # Convenience Methods

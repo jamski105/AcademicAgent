@@ -34,21 +34,23 @@ def export_quotes_csv(
     output_path: Path
 ) -> None:
     """
-    Export quotes to CSV with formatted citations
+    Export quotes to CSV with formatted citations.
+
+    Every paper in `papers` appears at least once:
+    - Papers WITH extracted quotes: one row per quote (multiple rows per paper allowed)
+    - Papers WITHOUT quotes: one row using the abstract as fallback (truncated to 150 words)
 
     Args:
         quotes: List of quote dicts with keys: text, page, paper_doi, etc.
         papers: List of paper dicts with metadata
         citation_style: Citation style (apa7, ieee, harvard, mla, chicago)
         output_path: Output CSV file path
-
-    Example:
-        quotes = [{"text": "Quote...", "page": 5, "paper_doi": "10.1109/..."}]
-        papers = [{"doi": "10.1109/...", "title": "...", "authors": [...]}]
-        export_quotes_csv(quotes, papers, "apa7", Path("quotes.csv"))
     """
     # Create paper lookup by DOI
     paper_lookup = {p.get("doi", ""): p for p in papers}
+
+    # Track which papers already have quotes
+    papers_with_quotes: set = set()
 
     # Prepare rows
     rows = []
@@ -60,6 +62,8 @@ def export_quotes_csv(
         if not paper_data:
             # Skip quotes without matching paper
             continue
+
+        papers_with_quotes.add(doi)
 
         # Create Paper object for citation
         paper = Paper(
@@ -86,7 +90,47 @@ def export_quotes_csv(
             "DOI": paper_data.get("doi", ""),
             "Jahr": paper_data.get("year", ""),
             "Autoren": "; ".join(paper_data.get("authors", [])),
-            "Quelle": paper_data.get("source", "unknown")  # v2.2: source annotation
+            "Quelle": paper_data.get("source", "unknown")
+        }
+        rows.append(row)
+
+    # Add fallback rows for papers that have NO quotes (use abstract, truncated)
+    for paper_data in papers:
+        doi = paper_data.get("doi", "")
+        if doi in papers_with_quotes:
+            continue  # Already has at least one quote row
+
+        abstract = paper_data.get("abstract", "") or ""
+        if isinstance(abstract, dict):
+            abstract = str(abstract)
+        # Truncate to 150 words for readability
+        words = abstract.split()
+        fallback_text = " ".join(words[:150]) + ("..." if len(words) > 150 else "")
+        if not fallback_text:
+            fallback_text = "[Kein Abstract verfügbar]"
+
+        paper = Paper(
+            doi=paper_data.get("doi", ""),
+            title=paper_data.get("title", ""),
+            authors=paper_data.get("authors", []),
+            year=paper_data.get("year", 0),
+            venue=paper_data.get("venue"),
+            volume=paper_data.get("volume"),
+            issue=paper_data.get("issue"),
+            pages=paper_data.get("pages"),
+            url=paper_data.get("url")
+        )
+        formatted_citation = format_citation(paper, citation_style)
+
+        row = {
+            "Zitat": fallback_text,
+            "Seitenzahl": "Abstract",
+            "Werk": paper_data.get("title", ""),
+            "Formatiertes_Zitat": formatted_citation,
+            "DOI": doi,
+            "Jahr": paper_data.get("year", ""),
+            "Autoren": "; ".join(paper_data.get("authors", [])),
+            "Quelle": paper_data.get("source", "unknown")
         }
         rows.append(row)
 

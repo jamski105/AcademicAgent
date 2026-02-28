@@ -137,8 +137,8 @@ async def start_research(data: dict):
     if not query:
         raise HTTPException(status_code=400, detail="Query required")
 
-    # Create session
-    session_id = str(uuid.uuid4())
+    # Use provided session_id if given (from coordinator), else generate UUID
+    session_id = data.get("session_id") or str(uuid.uuid4())
     session = ResearchSession(session_id, query, mode)
     active_sessions[session_id] = session
 
@@ -166,7 +166,12 @@ async def update_session(session_id: str, data: dict):
     """Update session progress (called by research workflow)"""
     session = active_sessions.get(session_id)
     if not session:
-        raise HTTPException(status_code=404, detail="Session not found")
+        # Auto-create session when coordinator sends updates before /api/start-research
+        query = data.get("query", "Unknown")
+        mode = data.get("mode", "standard")
+        session = ResearchSession(session_id, query, mode)
+        active_sessions[session_id] = session
+        logger.info(f"Auto-created session {session_id} from update")
 
     # Update session
     if "current_phase" in data:

@@ -117,7 +117,7 @@ Wenn nein: Überspringe
 Rufe das Script auf um Config zu laden und validieren:
 
 ```bash
-python .claude/skills/research/scripts/config_loader.py --mode <selected_mode> --query "<user_query>"
+venv/bin/python .claude/skills/research/scripts/config_loader.py --mode <selected_mode> --query "<user_query>"
 ```
 
 Das Script gibt zurück:
@@ -172,6 +172,52 @@ Setup-Zeit: 0 Minuten ✅
 Für DBIS Search & PDF-Downloads öffnet sich ein Browser-Fenster.
 Du kannst dort manuell mit deinen TIB-Credentials einloggen.
 Das System erkennt automatisch deine Disziplin und wählt die besten Datenbanken!
+```
+
+---
+
+#### 6.5. Web UI automatisch starten
+
+Starte die Web UI im Hintergrund für Live-Fortschritts-Tracking, bevor die Recherche beginnt.
+
+Prüfe zuerst ob sie bereits läuft:
+
+```bash
+curl -s http://localhost:8000/health
+```
+
+Falls nicht erreichbar: Starte den Server im Hintergrund (Bash tool mit `run_in_background=true`):
+
+```bash
+mkdir -p logs && nohup venv/bin/python -m src.web_ui.server > logs/web_ui.log 2>&1
+```
+
+Warte 2 Sekunden, dann prüfe ob der Server gestartet ist:
+
+```bash
+curl -s http://localhost:8000/health
+```
+
+Öffne automatisch die Web UI im Browser:
+
+```bash
+open http://localhost:8000
+```
+
+Zeige dem User:
+
+```
+🌐 Web UI gestartet!
+   → http://localhost:8000 (wird automatisch im Browser geöffnet)
+   → Live-Fortschritts-Tracking im Browser verfügbar
+   → Logs: logs/web_ui.log
+```
+
+Falls der Start fehlschlägt, zeige eine Warnung aber fahre trotzdem fort:
+
+```
+⚠️ Web UI konnte nicht gestartet werden (siehe logs/web_ui.log)
+   Recherche wird trotzdem ausgeführt.
 ```
 
 ---
@@ -326,13 +372,13 @@ Der Workflow wird ab dem letzten Checkpoint fortgesetzt.
 
 ## Technische Details
 
-**Spawnt:** 1x Linear Coordinator Agent (Sonnet 4.5)
+**Spawnt:** 1x Linear Coordinator Agent (Sonnet 4.6)
 
 **Der Coordinator spawnt intern:**
 - 1x query_generator Agent (Haiku 4.5)
 - 1x llm_relevance_scorer Agent (Haiku 4.5)
 - 1x quote_extractor Agent (Haiku 4.5)
-- 0-N dbis_browser Agents (Sonnet 4.5 + Chrome MCP, 1 per failed PDF)
+- 0-N dbis_browser Agents (Sonnet 4.6 + Chrome MCP, 1 per failed PDF)
 
 **Python CLI-Module (via Bash):**
 - search_engine.py
@@ -373,10 +419,10 @@ Der Workflow wird ab dem letzten Checkpoint fortgesetzt.
 
 ```bash
 # Config Loader testen
-python .claude/skills/research/scripts/config_loader.py --mode standard --query "Test"
+venv/bin/python .claude/skills/research/scripts/config_loader.py --mode standard --query "Test"
 
 # Mit JSON Output
-python .claude/skills/research/scripts/config_loader.py --mode quick --query "AI" --json
+venv/bin/python .claude/skills/research/scripts/config_loader.py --mode quick --query "AI" --json
 ```
 
 ---

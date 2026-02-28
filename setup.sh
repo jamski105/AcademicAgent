@@ -69,6 +69,15 @@ print_success "Running on macOS"
 
 print_header "Step 1: Install Homebrew"
 
+# Also check known Homebrew paths in case brew is installed but not in PATH
+if ! command -v brew &> /dev/null; then
+    if [ -f /opt/homebrew/bin/brew ]; then
+        eval "$(/opt/homebrew/bin/brew shellenv)"
+    elif [ -f /usr/local/bin/brew ]; then
+        eval "$(/usr/local/bin/brew shellenv)"
+    fi
+fi
+
 if command -v brew &> /dev/null; then
     BREW_VERSION=$(brew --version | head -n1)
     print_success "Homebrew already installed: $BREW_VERSION"
@@ -78,8 +87,8 @@ else
 
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
-    # Add Homebrew to PATH for Apple Silicon
-    if [[ $(uname -m) == 'arm64' ]]; then
+    # Add Homebrew to PATH (Apple Silicon: /opt/homebrew, Intel: /usr/local)
+    if [ -f /opt/homebrew/bin/brew ]; then
         echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
         eval "$(/opt/homebrew/bin/brew shellenv)"
     fi
@@ -159,8 +168,12 @@ else
     fi
 fi
 
-NODE_VERSION=$(node --version)
-print_success "Using Node.js: $NODE_VERSION"
+if command -v node &> /dev/null; then
+    NODE_VERSION=$(node --version)
+    print_success "Using Node.js: $NODE_VERSION"
+else
+    print_warning "Node.js not available - Chrome MCP will be skipped"
+fi
 
 # ============================================================
 # Step 4: Install Google Chrome
@@ -218,7 +231,7 @@ print_success "Build tools upgraded"
 # Step 6: Install Python Dependencies (System-wide)
 # ============================================================
 
-print_header "Step 6: Install Python Dependencies"
+print_header "Step 6: Install Python Dependencies (into venv)"
 
 if [ ! -f "requirements-v2.txt" ]; then
     print_error "requirements-v2.txt not found!"
@@ -293,10 +306,27 @@ print_header "Step 10: Configure Claude Settings"
 
 mkdir -p .claude
 
-if [ -f ".claude/settings.json" ]; then
-    print_warning ".claude/settings.json already exists"
-    print_info "Keeping existing configuration"
+# Resolve full npx path to avoid PATH issues when Claude Code starts MCP server
+NPX_PATH=$(which npx 2>/dev/null || echo "")
+if [ -z "$NPX_PATH" ]; then
+    # Try known Homebrew locations (Apple Silicon: /opt/homebrew, Intel: /usr/local)
+    for candidate in /opt/homebrew/bin/npx /usr/local/bin/npx; do
+        if [ -x "$candidate" ]; then
+            NPX_PATH="$candidate"
+            break
+        fi
+    done
+fi
+
+if [ -n "$NPX_PATH" ]; then
+    print_success "npx found: $NPX_PATH"
 else
+    print_warning "npx not found - using 'npx' as fallback (may cause issues)"
+    NPX_PATH="npx"
+fi
+
+# Create settings.json if it doesn't exist
+if [ ! -f ".claude/settings.json" ]; then
     if [ -n "$CHROME_PATH" ]; then
         cat > .claude/settings.json <<EOF
 {
@@ -311,11 +341,29 @@ else
   }
 }
 EOF
-        print_success ".claude/settings.json created with Chrome MCP"
+        print_success ".claude/settings.json created"
     else
         print_warning "Chrome not found - .claude/settings.json not created"
         print_info "You'll need to configure this manually later"
     fi
+fi
+
+# Always patch npx path and Chrome path in settings.json (even after git clone)
+if [ -f ".claude/settings.json" ] && [ -n "$CHROME_PATH" ]; then
+    python3 -c "
+import json, sys
+with open('.claude/settings.json', 'r') as f:
+    config = json.load(f)
+if 'mcpServers' not in config:
+    config['mcpServers'] = {}
+if 'chrome' not in config['mcpServers']:
+    config['mcpServers']['chrome'] = {'args': ['-y', '@eddym06/custom-chrome-mcp@latest'], 'env': {}}
+config['mcpServers']['chrome']['command'] = '$NPX_PATH'
+config['mcpServers']['chrome']['env']['CHROME_PATH'] = '$CHROME_PATH'
+with open('.claude/settings.json', 'w') as f:
+    json.dump(config, f, indent=2)
+print('OK')
+" && print_success "settings.json patched: npx=$NPX_PATH, Chrome=$CHROME_PATH"
 fi
 
 # ============================================================
@@ -370,7 +418,11 @@ echo ""
 print_info "Installed Components:"
 echo "  ✓ Homebrew: $(brew --version | head -n1)"
 echo "  ✓ Python: $("$VENV_PYTHON" --version) (venv)"
-echo "  ✓ Node.js: $(node --version)"
+if command -v node &> /dev/null; then
+    echo "  ✓ Node.js: $(node --version)"
+else
+    echo "  ⚠ Node.js: not installed"
+fi
 if command -v npm &> /dev/null; then
     CHROME_MCP_VERSION=$(npm list -g @eddym06/custom-chrome-mcp 2>/dev/null | grep chrome-mcp | awk '{print $2}' || echo "not installed")
     echo "  ✓ Chrome MCP: $CHROME_MCP_VERSION"
@@ -386,22 +438,20 @@ echo ""
 
 print_info "📖 Quick Start:"
 echo ""
-echo "  1. Activate the virtual environment:"
-echo -e "     ${GREEN}source venv/bin/activate${NC}"
+echo "  1. Open Claude Code in this directory:"
+echo -e "     ${GREEN}claude${NC}"
 echo ""
-echo "  2. Start Web UI (optional, for live progress tracking):"
-echo -e "     ${GREEN}python3 -m src.web_ui.server${NC}"
-echo -e "     ${BLUE}Open: http://localhost:8000${NC}"
-echo ""
-echo "  3. Run a research query:"
+echo "  2. Run a research query:"
 echo -e "     ${GREEN}/research \"Your research question\"${NC}"
 echo ""
-echo "  4. (Optional) Configure TIB credentials for 85-90% PDF download:"
+echo -e "     ${BLUE}→ Web UI starts automatically: http://localhost:8000${NC}"
+echo -e "     ${BLUE}→ Live progress tracking in your browser${NC}"
+echo ""
+echo "  3. (Optional) Configure TIB credentials for 85-90% PDF download:"
 echo -e "     ${GREEN}export TIB_USERNAME=\"username\"${NC}"
 echo -e "     ${GREEN}export TIB_PASSWORD=\"password\"${NC}"
 echo ""
-echo "  Note: Python dependencies are installed inside venv/."
-echo "  Always activate with: source venv/bin/activate"
+echo "  Note: Python dependencies are installed inside venv/ (activated automatically)."
 echo ""
 
 print_info "📚 Documentation:"

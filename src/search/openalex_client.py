@@ -246,12 +246,11 @@ class OpenAlexClient:
         # Abstract (inverted index format)
         abstract = self._reconstruct_abstract(work.get("abstract_inverted_index", None))
 
-        # Venue (primary_location)
+        # Venue (primary_location) - all fields may be None
         venue = None
-        primary_location = work.get("primary_location", {})
-        if primary_location:
-            source = primary_location.get("source", {})
-            venue = source.get("display_name", None)
+        primary_location = work.get("primary_location") or {}
+        source = primary_location.get("source") or {}
+        venue = source.get("display_name") or None
 
         # URL
         url = work.get("id", None)  # OpenAlex ID URL

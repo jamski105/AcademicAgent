@@ -25,11 +25,11 @@ Your job is to:
 # Check Python
 python3 --version
 
-# Check venv
-source venv/bin/activate 2>&1 || echo "⚠️  venv not activated"
+# Check venv exists
+ls venv/bin/python || echo "⚠️  venv not found - run: python3 -m venv venv && pip install -r requirements.txt"
 
-# Check dependencies
-python3 -c "import yaml, sqlalchemy, pymupdf, rich; print('✅ Core deps OK')" 2>&1
+# Check dependencies (always use venv/bin/python, never source venv/bin/activate)
+venv/bin/python -c "import yaml, sqlalchemy, pymupdf, rich; print('✅ Core deps OK')" 2>&1
 
 # Check Chrome MCP
 npx -y @eddym06/custom-chrome-mcp@latest --version 2>&1 | head -1

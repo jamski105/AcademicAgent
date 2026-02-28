@@ -2,7 +2,7 @@
 
 **Role:** Master orchestrator for academic research workflow
 
-**Model:** Sonnet 4.5
+**Model:** Sonnet 4.6
 
 **Tools:** Bash, Read, Write, Task, Grep, Glob
 
@@ -37,17 +37,17 @@ Call these via Bash:
 
 ```bash
 # Search
-python -m src.search.search_engine --query "..." --mode standard --output results.json
+venv/bin/python -m src.search.search_engine --query "..." --mode standard --output results.json
 
 # Ranking (5D scoring without LLM)
-python -m src.ranking.five_d_scorer --papers papers.json --output scored.json
+venv/bin/python -m src.ranking.five_d_scorer --papers papers.json --output scored.json
 
 # PDF Parsing
-python -m src.extraction.pdf_parser --pdf paper.pdf --output text.json
+venv/bin/python -m src.extraction.pdf_parser --pdf paper.pdf --output text.json
 
 # PDF Download (Unpaywall + CORE)
-python -m src.pdf.unpaywall_client --doi "10.1109/..."
-python -m src.pdf.core_client --doi "10.1109/..."
+venv/bin/python -m src.pdf.unpaywall_client --doi "10.1109/..."
+venv/bin/python -m src.pdf.core_client --doi "10.1109/..."
 ```
 
 ---
@@ -63,7 +63,7 @@ python -m src.pdf.core_client --doi "10.1109/..."
 1. **Create Run Directory:**
 ```bash
 # Create timestamped run directory
-RUN_DIR=$(python3 -m src.state.run_manager --create)
+RUN_DIR=$(venv/bin/python -m src.state.run_manager --create)
 echo "Run directory: $RUN_DIR"
 
 # Store for all phases
@@ -73,8 +73,12 @@ echo "RUN_DIR=$RUN_DIR" > /tmp/run_config.env
 SESSION_ID=$(basename $RUN_DIR)
 echo "SESSION_ID=$SESSION_ID" >> /tmp/run_config.env
 
+# Register session with Web UI (CRITICAL: must happen before any update calls!)
+# This fixes the 404 mismatch bug - server must know our session_id
+venv/bin/python -c "from src.utils.ui_notifier import create_notifier; n = create_notifier('$SESSION_ID'); n.register_session(query='$QUERY', mode='$MODE')"
+
 # Notify Phase Start
-python3 -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').phase_start(1, 'Context Setup')"
+venv/bin/python -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').phase_start(1, 'Context Setup')"
 ```
 
 2. **Load Research Mode:**
@@ -99,20 +103,20 @@ Contains user preferences, disciplines, keywords
 5. **Initialize Database in Run Directory:**
 ```bash
 source /tmp/run_config.env
-python3 -m src.state.database init --db-path "$RUN_DIR/session.db"
+venv/bin/python -m src.state.database init --db-path "$RUN_DIR/session.db"
 ```
 
 6. **Start Session Logging:**
 ```bash
-python3 -m src.utils.logger --run-dir "$RUN_DIR" --start
-python3 -m src.utils.logger --run-dir "$RUN_DIR" --message "Session started" --level INFO
+venv/bin/python -m src.utils.logger --run-dir "$RUN_DIR" --start
+venv/bin/python -m src.utils.logger --run-dir "$RUN_DIR" --message "Session started" --level INFO
 ```
 
 7. **Notify Phase Complete:**
 ```bash
 source /tmp/run_config.env
-python3 -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').phase_complete(1, 'Context Setup')"
-python3 -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').progress(15)"
+venv/bin/python -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').phase_complete(1, 'Context Setup')"
+venv/bin/python -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').progress(15)"
 ```
 
 **Output:**
@@ -139,15 +143,15 @@ python3 -c "from src.utils.ui_notifier import create_notifier; create_notifier('
 **Step 1: Notify Phase Start**
 ```bash
 source /tmp/run_config.env
-python3 -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').phase_start(2, 'Query Generation')"
-python3 -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').progress(20)"
+venv/bin/python -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').phase_start(2, 'Query Generation')"
+venv/bin/python -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').progress(20)"
 ```
 
 **Step 2: Spawn query_generator Agent**
 
 ```bash
 # Notify agent spawn
-python3 -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').agent_spawn('query_generator', 'haiku')"
+venv/bin/python -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').agent_spawn('query_generator', 'haiku')"
 
 # Spawn agent (use Task tool):
 Task(
@@ -161,7 +165,7 @@ Task(
 )
 
 # Notify agent complete
-python3 -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').agent_complete('query_generator', 2.3)"
+venv/bin/python -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').agent_complete('query_generator', 2.3)"
 ```
 
 **Expected Output from Agent:**
@@ -184,8 +188,8 @@ echo '$AGENT_OUTPUT' > /tmp/queries.json
 
 **Step 4: Notify Phase Complete**
 ```bash
-python3 -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').phase_complete(2, 'Query Generation')"
-python3 -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').progress(30)"
+venv/bin/python -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').phase_complete(2, 'Query Generation')"
+venv/bin/python -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').progress(30)"
 ```
 
 **Error Handling:**
@@ -202,7 +206,7 @@ python3 -c "from src.utils.ui_notifier import create_notifier; create_notifier('
 
 ```bash
 # Notify agent spawn
-python3 -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').agent_spawn('discipline_classifier', 'haiku')"
+venv/bin/python -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').agent_spawn('discipline_classifier', 'haiku')"
 
 # Spawn agent
 Task(
@@ -216,7 +220,7 @@ Task(
 )
 
 # Notify agent complete
-python3 -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').agent_complete('discipline_classifier', 1.5)"
+venv/bin/python -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').agent_complete('discipline_classifier', 1.5)"
 ```
 
 **Expected Output:**
@@ -247,8 +251,8 @@ echo '$AGENT_OUTPUT' > /tmp/discipline.json
 
 **Step 1: Notify Phase Start**
 ```bash
-python3 -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').phase_start(3, 'API Search')"
-python3 -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').progress(40)"
+venv/bin/python -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').phase_start(3, 'API Search')"
+venv/bin/python -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').progress(40)"
 ```
 
 **Step 2: Call search_engine CLI module**
@@ -258,7 +262,7 @@ python3 -c "from src.utils.ui_notifier import create_notifier; create_notifier('
 - Full phase timeout: See settings.json for agent-specific limits
 
 ```bash
-python -m src.search.search_engine \
+venv/bin/python -m src.search.search_engine \
   --query "DevOps Governance" \
   --mode standard \
   --output /tmp/search_results.json
@@ -267,7 +271,7 @@ python -m src.search.search_engine \
 **Step 3: Update UI with results**
 ```bash
 PAPERS_FOUND=$(jq '.papers | length' /tmp/search_results.json)
-python3 -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').papers_found($PAPERS_FOUND)"
+venv/bin/python -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').papers_found($PAPERS_FOUND)"
 ```
 
 **Expected Output:**
@@ -295,8 +299,8 @@ cat /tmp/search_results.json
 
 **Step 5: Notify Phase Complete**
 ```bash
-python3 -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').phase_complete(3, 'API Search')"
-python3 -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').progress(50)"
+venv/bin/python -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').phase_complete(3, 'API Search')"
+venv/bin/python -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').progress(50)"
 ```
 
 **Error Handling:**
@@ -316,14 +320,14 @@ python3 -c "from src.utils.ui_notifier import create_notifier; create_notifier('
 
 **Step 0: Notify Phase Start**
 ```bash
-python3 -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').phase_start(4, 'Ranking')"
-python3 -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').progress(55)"
+venv/bin/python -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').phase_start(4, 'Ranking')"
+venv/bin/python -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').progress(55)"
 ```
 
 **Step 1: 5D Scoring (Python)**
 
 ```bash
-python -m src.ranking.five_d_scorer \
+venv/bin/python -m src.ranking.five_d_scorer \
   --papers /tmp/search_results.json \
   --weights relevance:0.4,recency:0.2,quality:0.2,authority:0.2 \
   --output /tmp/scored_5d.json
@@ -335,7 +339,7 @@ python -m src.ranking.five_d_scorer \
 
 ```bash
 # Notify agent spawn
-python3 -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').agent_spawn('llm_relevance_scorer', 'haiku')"
+venv/bin/python -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').agent_spawn('llm_relevance_scorer', 'haiku')"
 
 # Spawn llm_relevance_scorer Agent
 Task(
@@ -348,7 +352,7 @@ Task(
 )
 
 # Notify agent complete
-python3 -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').agent_complete('llm_relevance_scorer', 3.8)"
+venv/bin/python -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').agent_complete('llm_relevance_scorer', 3.8)"
 ```
 
 **Expected Output:**
@@ -381,8 +385,8 @@ echo '$MERGED' > /tmp/ranked_papers.json
 
 **Step 4: Notify Phase Complete**
 ```bash
-python3 -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').phase_complete(4, 'Ranking')"
-python3 -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').progress(65)"
+venv/bin/python -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').phase_complete(4, 'Ranking')"
+venv/bin/python -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').progress(65)"
 ```
 
 **Error Handling:**
@@ -395,10 +399,16 @@ python3 -c "from src.utils.ui_notifier import create_notifier; create_notifier('
 
 **Goal:** Download PDFs for top-ranked papers
 
+**CRITICAL RULES for this Phase:**
+1. ALWAYS use `src.pdf.pdf_fetcher.PDFFetcher` or `venv/bin/python -m src.pdf.pdf_fetcher` — do NOT write custom download code using httpx.get() or requests.get()
+2. ALWAYS validate PDFs with magic bytes check: first 4 bytes MUST be `%PDF`. Any file not starting with `%PDF` is a paywall redirect / HTML page and must be deleted, NOT saved.
+3. DBIS phase (5B) MUST run whenever any PDFs failed download. Do NOT decide "enough PDFs" and skip DBIS.
+4. NEVER write inline Python download code — use the existing PDFFetcher which already handles validation, retry, and %PDF checks.
+
 **Step 0: Notify Phase Start**
 ```bash
-python3 -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').phase_start(5, 'PDF Download')"
-python3 -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').progress(70)"
+venv/bin/python -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').phase_start(5, 'PDF Download')"
+venv/bin/python -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').progress(70)"
 ```
 
 **Step 1: Phase 5A - Attempt Unpaywall + CORE APIs**
@@ -410,7 +420,7 @@ echo "🔍 Phase 5A: Attempting Unpaywall + CORE APIs..."
 echo ""
 
 # Call unified PDF fetcher (handles both Unpaywall and CORE)
-python3 -m src.pdf.pdf_fetcher \
+venv/bin/python -m src.pdf.pdf_fetcher \
   --input $RUN_DIR/metadata/ranked_candidates.json \
   --output-dir $RUN_DIR/pdfs/ \
   --max-papers 25 \
@@ -425,7 +435,7 @@ echo "✅ Phase 5A Complete: $FREE_PDF_COUNT PDFs from free APIs"
 echo ""
 
 # Update UI
-python3 -c "from src.utils.ui_notifier import create_notifier; \
+venv/bin/python -c "from src.utils.ui_notifier import create_notifier; \
   create_notifier('$SESSION_ID').pdfs_downloaded($FREE_PDF_COUNT)"
 ```
 
@@ -444,14 +454,25 @@ echo "  Successfully downloaded: $FREE_PDF_COUNT"
 echo "  Failed (need DBIS): $FAILED_COUNT"
 echo ""
 
+# CRITICAL: DBIS MUST run if PDF rate < 75% target
+# Do NOT skip DBIS because "enough PDFs were found"
+PDF_RATE=0
+if [ "$TOTAL_PAPERS" -gt 0 ]; then
+  PDF_RATE=$((FREE_PDF_COUNT * 100 / TOTAL_PAPERS))
+fi
+
+echo "  PDF success rate: $PDF_RATE% (target: 75%)"
+echo ""
+
 if [ "$FAILED_COUNT" -gt 0 ]; then
-  echo "🌐 Phase 5B: Spawning DBIS browser agents for $FAILED_COUNT failed PDFs..."
+  echo "🌐 Phase 5B: MANDATORY - Spawning DBIS browser agents for $FAILED_COUNT failed PDFs..."
+  echo "   (DBIS is required whenever any PDFs failed - do NOT skip this!)"
   echo ""
   echo "💡 TIP: A Chrome window will open. You may need to log in to TIB."
   echo ""
 
   # Extract failed DOIs from download results
-  FAILED_DOIS=$(python3 -c "
+  FAILED_DOIS=$(venv/bin/python -c "
 import json
 import sys
 
@@ -479,7 +500,7 @@ except Exception as e:
     echo "[$AGENT_COUNT/$FAILED_COUNT] Spawning dbis_browser for DOI: $doi"
 
     # Get paper metadata
-    PAPER_TITLE=$(python3 -c "
+    PAPER_TITLE=$(venv/bin/python -c "
 import json
 with open('$RUN_DIR/metadata/ranked_candidates.json') as f:
     papers = json.load(f)['papers']
@@ -555,10 +576,10 @@ Success rate: +35-40% (total 85-90% with DBIS)
 
 **Step 4: Notify Phase Complete**
 ```bash
-FINAL_PDF_COUNT=$(ls /tmp/pdfs/*.pdf 2>/dev/null | wc -l | tr -d ' ')
-python3 -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').pdfs_downloaded($FINAL_PDF_COUNT)"
-python3 -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').phase_complete(5, 'PDF Download')"
-python3 -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').progress(80)"
+FINAL_PDF_COUNT=$(ls -1 $RUN_DIR/pdfs/*.pdf 2>/dev/null | wc -l | tr -d ' ')
+venv/bin/python -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').pdfs_downloaded($FINAL_PDF_COUNT)"
+venv/bin/python -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').phase_complete(5, 'PDF Download')"
+venv/bin/python -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').progress(80)"
 ```
 
 **Error Handling:**
@@ -601,11 +622,11 @@ if [ "$PDF_COUNT" -lt 5 ]; then
   echo ""
 
   # Log error
-  python3 -m src.utils.logger --run-dir "$RUN_DIR" \
+  venv/bin/python -m src.utils.logger --run-dir "$RUN_DIR" \
     --message "Phase 5 validation failed: only $PDF_COUNT PDFs" --level ERROR
 
   # Notify UI
-  python3 -c "from src.utils.ui_notifier import create_notifier; \
+  venv/bin/python -c "from src.utils.ui_notifier import create_notifier; \
     create_notifier('$SESSION_ID').error('Phase 5 failed: insufficient PDFs')"
 
   exit 1
@@ -626,8 +647,8 @@ echo "PDF_COUNT=$PDF_COUNT" >> /tmp/run_config.env
 
 **Step 0: Notify Phase Start**
 ```bash
-python3 -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').phase_start(6, 'Quote Extraction')"
-python3 -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').progress(85)"
+venv/bin/python -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').phase_start(6, 'Quote Extraction')"
+venv/bin/python -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').progress(85)"
 ```
 
 **GUARD: Check PDF Availability**
@@ -650,7 +671,7 @@ if [ "$PDF_COUNT" -eq 0 ] || [ -z "$PDF_COUNT" ]; then
 EOF
 
   # Log warning
-  python3 -m src.utils.logger --run-dir "$RUN_DIR" \
+  venv/bin/python -m src.utils.logger --run-dir "$RUN_DIR" \
     --message "Phase 6 skipped: no PDFs available" --level WARNING
 
   # Skip to Phase 7
@@ -691,7 +712,7 @@ else
     echo "[$PDF_INDEX/${#PDF_FILES[@]}] Processing: $PDF_NAME"
 
     # Parse PDF text
-    python3 -m src.extraction.pdf_parser \
+    venv/bin/python -m src.extraction.pdf_parser \
       --pdf "$pdf_path" \
       --output "/tmp/pdf_text_$PDF_INDEX.json"
 
@@ -719,7 +740,7 @@ else
 
     # Get paper metadata
     DOI=$(echo "$PDF_NAME" | sed 's/.pdf$//' | sed 's/_/\//g')
-    PAPER_METADATA=$(python3 -c "
+    PAPER_METADATA=$(venv/bin/python -c "
 import json
 with open('$RUN_DIR/metadata/ranked_candidates.json') as f:
     papers = json.load(f)['papers']
@@ -732,7 +753,7 @@ with open('$RUN_DIR/metadata/ranked_candidates.json') as f:
     echo "  🤖 Spawning quote_extractor agent..."
 
     # Notify UI
-    python3 -c "from src.utils.ui_notifier import create_notifier; \
+    venv/bin/python -c "from src.utils.ui_notifier import create_notifier; \
       create_notifier('$SESSION_ID').agent_spawn('quote_extractor', 'haiku')"
 
     # ⚠️ CRITICAL: Use Task tool to spawn agent
@@ -765,7 +786,7 @@ Do NOT fabricate quotes! If you cannot find good quotes, return empty array.
     )
 
     # Notify agent complete
-    python3 -c "from src.utils.ui_notifier import create_notifier; \
+    venv/bin/python -c "from src.utils.ui_notifier import create_notifier; \
       create_notifier('$SESSION_ID').agent_complete('quote_extractor', 0)"
 
     # Collect quotes from agent output
@@ -795,14 +816,44 @@ cp /tmp/all_quotes.json $RUN_DIR/metadata/quotes.json
 **Step 4: Notify Phase Complete**
 ```bash
 QUOTE_COUNT=$(jq '[.quotes] | add | length' /tmp/all_quotes.json 2>/dev/null || echo 0)
-python3 -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').phase_complete(6, 'Quote Extraction')"
-python3 -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').progress(90)"
+venv/bin/python -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').phase_complete(6, 'Quote Extraction')"
+venv/bin/python -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').progress(90)"
+```
+
+**Step 3: Abstract Fallback for Papers Without PDFs**
+
+After processing all PDF files, iterate over ALL ranked papers and create abstract-based quotes for any paper that has no PDF or whose PDF parsing failed:
+
+```bash
+source /tmp/run_config.env
+
+# For papers without PDFs, use abstract as fallback quote
+venv/bin/python -c "
+import json, os
+with open('$RUN_DIR/metadata/ranked_candidates.json') as f:
+    papers = json.load(f).get('papers', [])
+
+pdf_dir = '$RUN_DIR/pdfs/'
+quotes = []
+for p in papers:
+    doi = p.get('doi', '').replace('/', '_').replace('.', '_')
+    pdf_exists = any(doi[:10] in f for f in os.listdir(pdf_dir) if f.endswith('.pdf')) if os.path.isdir(pdf_dir) else False
+    if not pdf_exists and p.get('abstract'):
+        abstract = p['abstract'][:300].strip()
+        quotes.append({'doi': p.get('doi',''), 'title': p.get('title',''), 'quote': abstract, 'source': 'abstract', 'authors': p.get('authors', []), 'year': p.get('year')})
+
+if quotes:
+    print(f'Added {len(quotes)} abstract-based fallback quotes for papers without PDFs')
+    with open('/tmp/abstract_quotes.json', 'w') as f:
+        json.dump({'quotes': quotes}, f, indent=2)
+"
 ```
 
 **Error Handling:**
-- PDF parse fails → Skip paper, log error
-- Quote extractor fails → Try keyword-based fallback
-- No quotes found → Mark paper but continue
+- PDF parse fails → Use abstract as fallback quote (do NOT skip the paper)
+- Quote extractor fails → Use abstract as fallback
+- No quotes found in PDF → Use abstract excerpt (max 300 chars) as quote
+- No abstract → Include paper in CSV with empty quote field (paper must NOT be omitted)
 
 ---
 
@@ -813,8 +864,8 @@ python3 -c "from src.utils.ui_notifier import create_notifier; create_notifier('
 **Step 0: Notify Phase Start**
 ```bash
 source /tmp/run_config.env
-python3 -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').phase_start(7, 'Export')"
-python3 -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').progress(95)"
+venv/bin/python -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').phase_start(7, 'Export')"
+venv/bin/python -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').progress(95)"
 ```
 
 **Steps:**
@@ -858,7 +909,7 @@ EOF
 
 3. **Export CSV with Citations:**
 ```bash
-python3 -m src.export.csv_exporter \
+venv/bin/python -m src.export.csv_exporter \
   --quotes /tmp/all_quotes.json \
   --papers /tmp/ranked_papers.json \
   --style $CITATION_STYLE \
@@ -867,14 +918,14 @@ python3 -m src.export.csv_exporter \
 
 4. **Export Markdown Summary:**
 ```bash
-python3 -m src.export.markdown_exporter \
+venv/bin/python -m src.export.markdown_exporter \
   --results $RUN_DIR/results.json \
   --output $RUN_DIR/summary.md
 ```
 
 5. **Export BibTeX:**
 ```bash
-python3 -m src.export.bibtex_exporter \
+venv/bin/python -m src.export.bibtex_exporter \
   --papers /tmp/ranked_papers.json \
   --output $RUN_DIR/bibliography.bib
 ```
@@ -890,8 +941,8 @@ cp /tmp/all_quotes.json $RUN_DIR/temp/
 
 7. **Stop Logging:**
 ```bash
-python3 -m src.utils.logger --run-dir "$RUN_DIR" --message "Export complete" --level INFO
-python3 -m src.utils.logger --run-dir "$RUN_DIR" --stop
+venv/bin/python -m src.utils.logger --run-dir "$RUN_DIR" --message "Export complete" --level INFO
+venv/bin/python -m src.utils.logger --run-dir "$RUN_DIR" --stop
 ```
 
 8. **Delete Checkpoint:**
@@ -908,8 +959,8 @@ PDFS_TOTAL=$(ls $RUN_DIR/pdfs/*.pdf 2>/dev/null | wc -l | tr -d ' ')
 QUOTES_TOTAL=$(jq '[.quotes] | add | length' /tmp/all_quotes.json 2>/dev/null || echo 0)
 
 # Notify completion
-python3 -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').phase_complete(7, 'Export')"
-python3 -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').complete($PAPERS_TOTAL, $PDFS_TOTAL, $QUOTES_TOTAL)"
+venv/bin/python -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').phase_complete(7, 'Export')"
+venv/bin/python -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').complete($PAPERS_TOTAL, $PDFS_TOTAL, $QUOTES_TOTAL)"
 ```
 
 10. **Show User:**
@@ -956,7 +1007,7 @@ INSERT INTO quotes (paper_id, quote, page, relevance)
 
 Access via Python:
 ```bash
-python -m src.state.state_manager --action save --data "$JSON"
+venv/bin/python -m src.state.state_manager --action save --data "$JSON"
 ```
 
 ---
@@ -971,7 +1022,7 @@ Use Python UINotifier module to send live updates:
 
 ```bash
 # Initialize notifier (auto-detects if Web UI is running)
-python3 -c "
+venv/bin/python -c "
 from src.utils.ui_notifier import create_notifier
 import json
 
@@ -1003,17 +1054,17 @@ notifier.phase_complete(1, 'Context Setup')
 **Example - Phase 3 with UI Updates:**
 ```bash
 # Phase start
-python3 -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').phase_start(3, 'API Search')"
+venv/bin/python -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').phase_start(3, 'API Search')"
 
 # Search APIs
-python -m src.search.search_engine --query "..." --output /tmp/results.json
+venv/bin/python -m src.search.search_engine --query "..." --output /tmp/results.json
 
 # Update UI with results
 PAPERS_FOUND=$(jq '.papers | length' /tmp/results.json)
-python3 -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').papers_found($PAPERS_FOUND)"
+venv/bin/python -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').papers_found($PAPERS_FOUND)"
 
 # Phase complete
-python3 -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').phase_complete(3, 'API Search')"
+venv/bin/python -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').phase_complete(3, 'API Search')"
 ```
 
 ### Console Output
@@ -1080,6 +1131,8 @@ Test with these queries:
    - Handle timeouts gracefully
 
 2. **Python Module Calls:**
+   - ALWAYS use `venv/bin/python -m src.*` — NEVER use `python`, `python3` without venv prefix
+   - NEVER use `source venv/bin/activate` — use direct venv/bin/python path instead
    - Use Bash tool
    - Check exit codes
    - Parse JSON outputs
@@ -1094,6 +1147,31 @@ Test with these queries:
    - All LLM calls via Claude Code agents
    - No Anthropic API key required
    - Python modules use anonymous APIs
+
+5. **Unified Error Reporting (Bug 24 fix):**
+   At every phase failure, report errors consistently using this pattern:
+   ```bash
+   # 1. Log to session file
+   venv/bin/python -m src.utils.logger --run-dir "$RUN_DIR" --message "Phase N failed: <reason>" --level ERROR
+   # 2. Notify UI
+   venv/bin/python -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').error('<reason>', phase=N)"
+   # 3. Echo to console for visibility
+   echo "❌ Phase N error: <reason>"
+   ```
+   The `error()` method sets `status: error` in the Web UI and logs with ❌ prefix.
+   For non-fatal errors (recoverable), use `log()` instead of `error()`.
+
+6. **Bash Command Formatting (CRITICAL for avoiding permission prompts):**
+   - Write Bash commands as SINGLE LINES using semicolons (`;`) to chain commands
+   - Do NOT use newlines within a single Bash tool call string
+   - Example correct: `venv/bin/python -c "..."; echo done`
+   - Example wrong: multiline string with `\n` inside Bash content
+   - For multi-step operations, use separate Bash tool calls instead of one long multiline
+
+6. **Environment Variables:**
+   - Load env with: `source /tmp/run_config.env` at the start of each phase
+   - Set env with: `echo "KEY=VALUE" >> /tmp/run_config.env`
+   - NEVER use `export KEY=VALUE` expecting it to persist across Bash tool calls (they don't share env)
 
 ---
 

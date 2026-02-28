@@ -32,7 +32,6 @@ import re
 
 from src.pdf.unpaywall_client import UnpaywallClient
 from src.pdf.core_client import COREClient
-from src.pdf.dbis_browser_downloader import DBISBrowserDownloader
 
 
 @dataclass
@@ -95,7 +94,11 @@ class PDFFetcher:
         # Initialize clients
         self.unpaywall_client = UnpaywallClient(email=unpaywall_email)
         self.core_client = COREClient(api_key=core_api_key)
-        self.dbis_browser = DBISBrowserDownloader(output_dir=self.output_dir) if enable_dbis_browser else None
+        if enable_dbis_browser:
+            from src.pdf.dbis_browser_downloader import DBISBrowserDownloader
+            self.dbis_browser = DBISBrowserDownloader(output_dir=self.output_dir)
+        else:
+            self.dbis_browser = None
 
         # Stats
         self.stats = {
@@ -349,6 +352,7 @@ class PDFFetcher:
 def fetch_pdfs(
     papers: List[Dict[str, Any]],
     session_id: str,
+    output_dir: Path,
     unpaywall_email: Optional[str] = None,
     core_api_key: Optional[str] = None
 ) -> List[PDFResult]:
@@ -358,6 +362,7 @@ def fetch_pdfs(
     Args:
         papers: List of paper dicts with 'doi' field
         session_id: Research session ID
+        output_dir: Directory to save PDFs (REQUIRED - e.g. Path("runs/2026-01-01/pdfs"))
         unpaywall_email: Optional Unpaywall email
         core_api_key: Optional CORE API key
 
@@ -365,6 +370,7 @@ def fetch_pdfs(
         List of PDFResults
     """
     with PDFFetcher(
+        output_dir=output_dir,
         unpaywall_email=unpaywall_email,
         core_api_key=core_api_key
     ) as fetcher:
@@ -372,31 +378,127 @@ def fetch_pdfs(
 
 
 # ============================================
-# Test Code
+# CLI Interface
+# ============================================
+
+def main():
+    """
+    CLI Interface for PDF Fetcher
+
+    Usage:
+        python -m src.pdf.pdf_fetcher --input papers.json --output-dir pdfs/ --session-id abc123
+        python -m src.pdf.pdf_fetcher --input papers.json --output-dir pdfs/ --enable-unpaywall --enable-core --results-file results.json
+    """
+    import argparse
+    import json
+    import sys
+    import uuid
+
+    parser = argparse.ArgumentParser(description="PDF Fetcher - Download PDFs via Unpaywall and CORE")
+    parser.add_argument('--input', required=True, help='Input JSON file with papers list')
+    parser.add_argument('--output-dir', required=True, help='Output directory for PDFs')
+    parser.add_argument('--session-id', help='Session ID (default: auto-generated)')
+    parser.add_argument('--max-papers', type=int, help='Maximum papers to process')
+    parser.add_argument('--enable-unpaywall', action='store_true', help='Enable Unpaywall API')
+    parser.add_argument('--enable-core', action='store_true', help='Enable CORE API')
+    parser.add_argument('--unpaywall-email', help='Email for Unpaywall API (polite pool)')
+    parser.add_argument('--core-api-key', help='API key for CORE API')
+    parser.add_argument('--results-file', help='Output file for download results JSON')
+    parser.add_argument('--test', action='store_true', help='Run test with sample DOIs')
+
+    args = parser.parse_args()
+
+    if args.test:
+        test_papers = [
+            {"doi": "10.1371/journal.pone.0000000"},
+            {"doi": "10.1038/nature12345"},
+        ]
+        output_dir = Path("runs/test_session/pdfs")
+        session_id = str(uuid.uuid4())[:8]
+        with PDFFetcher(output_dir=output_dir) as fetcher:
+            results = fetcher.fetch_batch(test_papers, session_id)
+            print(f"✅ Test complete: {sum(1 for r in results if r.success)}/{len(results)} downloaded")
+        sys.exit(0)
+
+    try:
+        # Load papers
+        with open(args.input, 'r') as f:
+            data = json.load(f)
+        papers = data.get('papers', data) if isinstance(data, dict) else data
+
+        if not papers:
+            print("❌ No papers found in input file", file=sys.stderr)
+            sys.exit(1)
+
+        # Apply max-papers limit
+        if args.max_papers:
+            papers = papers[:args.max_papers]
+
+        # Build fallback chain based on flags
+        fallback_chain = []
+        if args.enable_unpaywall:
+            fallback_chain.append("unpaywall")
+        if args.enable_core:
+            fallback_chain.append("core")
+        if not fallback_chain:
+            fallback_chain = ["unpaywall", "core"]  # default
+
+        # Session ID
+        session_id = args.session_id or str(uuid.uuid4())[:8]
+        output_dir = Path(args.output_dir)
+
+        print(f"📄 Processing {len(papers)} papers...")
+        print(f"   Output: {output_dir}")
+        print(f"   Session: {session_id}")
+        print(f"   Chain: {' → '.join(fallback_chain)}")
+
+        with PDFFetcher(
+            output_dir=output_dir,
+            unpaywall_email=args.unpaywall_email,
+            core_api_key=args.core_api_key,
+            fallback_chain=fallback_chain
+        ) as fetcher:
+            results = fetcher.fetch_batch(papers, session_id)
+
+        # Build results dict
+        successful = [r for r in results if r.success]
+        failed = [r for r in results if not r.success]
+
+        output = {
+            "session_id": session_id,
+            "total": len(results),
+            "downloaded": len(successful),
+            "failed_count": len(failed),
+            "downloads": {
+                "successful": [
+                    {"doi": r.doi, "path": r.pdf_path, "source": r.source}
+                    for r in successful
+                ],
+                "failed": [
+                    {"doi": r.doi, "error": r.error}
+                    for r in failed
+                ]
+            }
+        }
+
+        # Save results file if requested
+        if args.results_file:
+            Path(args.results_file).parent.mkdir(parents=True, exist_ok=True)
+            with open(args.results_file, 'w') as f:
+                json.dump(output, f, indent=2)
+            print(f"💾 Results saved to: {args.results_file}")
+
+        # Print summary
+        print(json.dumps(output, indent=2))
+
+    except Exception as e:
+        print(f"❌ Error: {e}", file=sys.stderr)
+        sys.exit(1)
+
+
+# ============================================
+# Test Code (backward compat)
 # ============================================
 
 if __name__ == "__main__":
-    """Test PDF Fetcher"""
-    import uuid
-
-    print("Testing PDF Fetcher...")
-
-    # Test papers (mix of Open Access and paywalled)
-    test_papers = [
-        {"doi": "10.1371/journal.pone.0000000"},  # PLoS ONE (OA)
-        {"doi": "10.1038/nature12345"},  # Nature (likely paywalled)
-        {"doi": "10.1109/ACCESS.2021.1234567"},  # IEEE Access (OA)
-    ]
-
-    # Test session
-    session_id = str(uuid.uuid4())[:8]
-
-    # Fetch PDFs
-    with PDFFetcher() as fetcher:
-        results = fetcher.fetch_batch(test_papers, session_id)
-
-        print(f"\n✅ Fetched {len(results)} papers")
-        print(f"   Success: {sum(1 for r in results if r.success)}")
-        print(f"   Skipped: {sum(1 for r in results if r.skipped)}")
-
-    print("\n✅ PDF Fetcher tests completed!")
+    main()

@@ -355,8 +355,16 @@ def main():
                     for item in llm_data.get('scores', [])
                 }
 
-        # Initialize scorer
-        scorer = FiveDScorer(weights=custom_weights)
+        # Initialize scorer with individual weight parameters
+        if custom_weights:
+            scorer = FiveDScorer(
+                relevance_weight=custom_weights.get('relevance', 0.4),
+                recency_weight=custom_weights.get('recency', 0.2),
+                quality_weight=custom_weights.get('quality', 0.2),
+                authority_weight=custom_weights.get('authority', 0.2)
+            )
+        else:
+            scorer = FiveDScorer()
 
         # Score papers
         query = args.query or ""
@@ -367,10 +375,16 @@ def main():
             scored = scored[:args.top]
 
         # Convert to JSON-serializable format
+        weights_used = {
+            "relevance": scorer.relevance_weight,
+            "recency": scorer.recency_weight,
+            "quality": scorer.quality_weight,
+            "authority": scorer.authority_weight
+        }
         results = {
             "query": query,
             "total_papers": len(scored),
-            "weights": scorer.weights,
+            "weights": weights_used,
             "papers": [
                 {
                     "doi": item["paper"].doi,
