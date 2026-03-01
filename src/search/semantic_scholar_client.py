@@ -197,6 +197,9 @@ class SemanticScholarClient:
             paper_data = response.json()
             return self._parse_paper(paper_data)
 
+        except httpx.TimeoutException as e:
+            logger.error(f"Semantic Scholar get_by_doi timeout for {doi}: {e}")
+            return None
         except Exception as e:
             logger.error(f"Semantic Scholar get_by_doi failed: {e}")
             return None

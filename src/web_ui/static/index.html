@@ -200,6 +200,23 @@
         let ws = null;
         let currentSessionId = null;
 
+        // I-11 fix: Restore session ID from sessionStorage on reload
+        function restoreSessionId() {
+            const saved = sessionStorage.getItem('academicAgentSessionId');
+            if (saved) {
+                currentSessionId = saved;
+                document.getElementById('sessionInfo').textContent =
+                    `Session ID: ${currentSessionId} (reconnecting...)`;
+                console.log('Restored session ID from storage:', currentSessionId);
+            }
+        }
+
+        // I-10 fix: Save session ID whenever it changes
+        function setSessionId(sessionId) {
+            currentSessionId = sessionId;
+            sessionStorage.setItem('academicAgentSessionId', sessionId);
+        }
+
         // Connect to WebSocket
         function connectWebSocket() {
             ws = new WebSocket('ws://localhost:8000/ws');
@@ -234,11 +251,37 @@
         function handleMessage(data) {
             console.log('Received:', data);
 
+            // I-10 fix: Handle session_started — always use coordinator's session_id
             if (data.type === 'session_started') {
-                currentSessionId = data.session.session_id;
+                setSessionId(data.session.session_id);
                 document.getElementById('queryTitle').textContent = `Query: ${data.session.query}`;
-                document.getElementById('sessionInfo').textContent = `Session ID: ${currentSessionId} | Mode: ${data.session.mode}`;
+                document.getElementById('sessionInfo').textContent =
+                    `Session ID: ${currentSessionId} | Mode: ${data.session.mode}`;
                 addLog(`🚀 Session started: ${data.session.query}`);
+            }
+
+            // I-11 fix: Handle session_current (sent on WebSocket connect for reconnect)
+            if (data.type === 'session_current') {
+                const session = data.session;
+                if (session) {
+                    setSessionId(session.session_id);
+                    document.getElementById('queryTitle').textContent = `Query: ${session.query}`;
+                    document.getElementById('sessionInfo').textContent =
+                        `Session ID: ${currentSessionId} | Mode: ${session.mode} | Status: ${session.status}`;
+                    updateDashboard({
+                        current_phase: session.current_phase,
+                        progress: session.progress,
+                        papers_found: session.papers_found,
+                        pdfs_downloaded: session.pdfs_downloaded
+                    });
+                    // Replay recent log messages
+                    if (data.log_messages && data.log_messages.length > 0) {
+                        addLog(`--- Reconnected (${data.log_messages.length} recent log entries) ---`);
+                        data.log_messages.slice(-10).forEach(entry => addLog(entry.message));
+                    } else {
+                        addLog(`↩️ Reconnected to session: ${session.query}`);
+                    }
+                }
             }
 
             if (data.type === 'session_update') {
@@ -322,7 +365,8 @@
         }
 
         // Initialize
-        connectWebSocket();
+        restoreSessionId();   // I-11: restore session ID from previous page load
+        connectWebSocket();   // then connect (server sends session_current on connect)
 
         // Simulate updates for testing (remove in production)
         /*

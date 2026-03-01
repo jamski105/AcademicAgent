@@ -158,24 +158,28 @@ class FiveDScorer:
             return precomputed[paper.doi]
         
         # Fallback: Keyword matching
-        query_lower = query.lower()
+        query_lower = query.lower().strip()
+        if not query_lower:
+            # No query provided: return neutral score (not 0.0)
+            return 0.5
+
         query_terms = set(query_lower.split())
-        
+
         # Check title
         title_lower = (paper.title or "").lower()
         title_matches = sum(1 for term in query_terms if term in title_lower)
         title_score = min(title_matches / len(query_terms), 1.0) if query_terms else 0.0
-        
+
         # Check abstract (if available)
         abstract_score = 0.0
         if paper.abstract:
             abstract_lower = paper.abstract.lower()
             abstract_matches = sum(1 for term in query_terms if term in abstract_lower)
             abstract_score = min(abstract_matches / len(query_terms), 1.0) if query_terms else 0.0
-        
+
         # Weighted: Title 0.7, Abstract 0.3
         relevance = title_score * 0.7 + abstract_score * 0.3
-        
+
         return relevance
     
     def _score_recency(self, paper: Paper) -> float:
@@ -396,7 +400,8 @@ def main():
                     "venue": item["paper"].venue,
                     "source_api": item["paper"].source_api,
                     "url": item["paper"].url,
-                    "scores": item["scores"]
+                    "scores": item["scores"],
+                    "final_score": item["scores"]["total"]
                 }
                 for item in scored
             ]

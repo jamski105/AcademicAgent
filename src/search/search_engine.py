@@ -396,11 +396,9 @@ def main():
         # Initialize search engine
         engine = SearchEngine()
 
-        # Perform search
-        if args.parallel:
-            papers = engine.search_parallel(args.query, limit=limit, sources=args.sources)
-        else:
-            papers = engine.search(args.query, limit=limit, sources=args.sources)
+        # Perform search — always use parallel to enforce per-source timeouts
+        # Sequential search() has no timeout guard; search_parallel() uses future.result(timeout=30)
+        papers = engine.search_parallel(args.query, limit=limit, sources=args.sources)
 
         # Convert to JSON-serializable format
         results = {
