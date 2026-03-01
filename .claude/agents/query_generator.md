@@ -49,12 +49,42 @@ und generierst daraus optimierte Boolean Search Queries für verschiedene APIs.
     "semantic_scholar": "DevOps governance compliance",
     "google_scholar": "DevOps governance OR compliance policy"
   },
+  "known_works_queries": [
+    {
+      "type": "title",
+      "query": "IT Governance How Top Performers Manage IT Decision Rights",
+      "api": "semantic_scholar",
+      "note": "Weill & Ross 2004 — foundational IT Governance book"
+    },
+    {
+      "type": "author_title",
+      "query": "COBIT 2019 framework governance management enterprise IT",
+      "api": "crossref",
+      "note": "ISACA COBIT 2019 standard"
+    }
+  ],
+  "openalex_field_filter": "primary_topic.field.id:17",
   "keywords_used": ["DevOps", "governance", "compliance", "policy", "regulation"],
-  "reasoning": "Expanded 'governance' to include synonyms (compliance, policy, regulation)"
+  "reasoning": "Expanded 'governance' to include synonyms. Added known_works_queries for seminal literature."
 }
 ```
 
 **Wichtig:** Alle Queries müssen ≤120 Zeichen sein!
+
+**`known_works_queries` (I-09 fix):** IMMER befüllen wenn das Topic bekannte Standardwerke hat.
+Beispiele nach Domain:
+- IT Governance → Weill & Ross (2004), COBIT 2019, ITIL 4, ISO 38500
+- DevOps → Kim et al. "The Phoenix Project", "Accelerate" (Forsgren), DORA Report
+- Software Engineering → Brooks "No Silver Bullet", McConnell "Code Complete"
+- ML Ethics → Floridi et al., EU AI Act
+
+**`openalex_field_filter`:** OpenAlex Field-of-Study-Filter (I-08 fix). Einer der folgenden Werte:
+- `primary_topic.field.id:17` → Computer Science
+- `primary_topic.field.id:13` → Business & Management
+- `primary_topic.subfield.id:1710` → Information Systems
+- `primary_topic.field.id:23` → Engineering
+
+Setze diesen Filter passend zur Disziplin, um ~50% irrelevante Papers zu vermeiden.
 
 ---
 

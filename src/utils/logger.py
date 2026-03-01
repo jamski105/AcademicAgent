@@ -259,13 +259,21 @@ def main():
     logger = SessionLogger(run_dir=run_dir)
 
     if args.start:
+        # Create/open the log file for the first time
         logger.start()
         print(f"✅ Logging started: {logger.log_path}")
     elif args.stop:
+        # Re-open in append mode, log end marker, close cleanly
+        logger.start()
         logger.stop()
         print(f"✅ Logging stopped: {logger.log_path}")
     elif args.message:
+        # I-06 fix: Each CLI call is a separate process — in-memory state is lost.
+        # Re-open the log file in append mode (mode='a') before writing the message.
+        # start() uses FileHandler(mode='a'), so this is safe and non-destructive.
+        logger.start()
         logger.log(args.message, level=args.level)
+        logger.stop()
         print(f"✅ Logged: {args.message}")
     else:
         parser.print_help()

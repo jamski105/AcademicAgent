@@ -12,11 +12,21 @@ Usage:
     ui.phase_complete(1, "Context Setup")
 """
 
+import json
 import logging
-import requests
+import time
+from datetime import datetime
+from pathlib import Path
 from typing import Optional, Dict, Any
 
+import requests
+
 logger = logging.getLogger(__name__)
+
+# I-19 fix: Persistent timing file for cross-process phase duration tracking.
+# Each Bash tool call creates a new Python process, so in-memory state is lost.
+# We persist phase start timestamps here so phase_complete() can compute duration.
+_TIMINGS_FILE = Path("/tmp/phase_timings.json")
 
 
 class UINotifier:
@@ -98,26 +108,63 @@ class UINotifier:
     # ============================================
 
     def phase_start(self, phase_number: int, phase_name: str) -> bool:
-        """Notify phase start"""
+        """Notify phase start and persist start timestamp for duration tracking (I-19 fix)"""
+        # Persist start time to file so phase_complete() (a separate process) can read it
+        try:
+            timings = json.loads(_TIMINGS_FILE.read_text()) if _TIMINGS_FILE.exists() else {}
+            timings[str(phase_number)] = time.time()
+            _TIMINGS_FILE.write_text(json.dumps(timings))
+        except Exception as e:
+            logger.debug(f"Could not write phase timing: {e}")
+
+        start_ts = datetime.now().strftime('%H:%M:%S')
         return self._send({
             "current_phase": phase_number,
             "status": "running",
-            "log_message": f"Phase {phase_number}/7: {phase_name} - Started"
+            "log_message": f"⏱️ Phase {phase_number}/7: {phase_name} — Started [{start_ts}]"
         })
 
     def phase_complete(self, phase_number: int, phase_name: str) -> bool:
-        """Notify phase completion"""
+        """Notify phase completion with duration (I-19 fix)"""
+        # Read persisted start time and compute elapsed duration
+        duration_str = ""
+        try:
+            if _TIMINGS_FILE.exists():
+                timings = json.loads(_TIMINGS_FILE.read_text())
+                start_time = timings.get(str(phase_number))
+                if start_time:
+                    elapsed = time.time() - start_time
+                    if elapsed < 60:
+                        duration_str = f" ({elapsed:.1f}s)"
+                    else:
+                        mins = int(elapsed // 60)
+                        secs = int(elapsed % 60)
+                        duration_str = f" ({mins}m {secs}s)"
+        except Exception as e:
+            logger.debug(f"Could not read phase timing: {e}")
+
         return self._send({
             "current_phase": phase_number,
-            "log_message": f"✅ Phase {phase_number}/7: {phase_name} - Complete"
+            "log_message": f"✅ Phase {phase_number}/7: {phase_name} — Complete{duration_str}"
         })
 
     def phase_error(self, phase_number: int, phase_name: str, error: str) -> bool:
-        """Notify phase error"""
+        """Notify phase error with duration if available (I-19 fix)"""
+        duration_str = ""
+        try:
+            if _TIMINGS_FILE.exists():
+                timings = json.loads(_TIMINGS_FILE.read_text())
+                start_time = timings.get(str(phase_number))
+                if start_time:
+                    elapsed = time.time() - start_time
+                    duration_str = f" after {elapsed:.1f}s"
+        except Exception:
+            pass
+
         return self._send({
             "current_phase": phase_number,
             "status": "error",
-            "log_message": f"❌ Phase {phase_number}/7: {phase_name} - Error: {error}"
+            "log_message": f"❌ Phase {phase_number}/7: {phase_name} — Error{duration_str}: {error}"
         })
 
     # ============================================

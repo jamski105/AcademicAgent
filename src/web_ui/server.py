@@ -130,7 +130,7 @@ async def root():
 
 @app.post("/api/start-research")
 async def start_research(data: dict):
-    """Start a new research session"""
+    """Start a new research session (idempotent — safe to call multiple times)"""
     query = data.get("query")
     mode = data.get("mode", "quick")
 
@@ -139,10 +139,19 @@ async def start_research(data: dict):
 
     # Use provided session_id if given (from coordinator), else generate UUID
     session_id = data.get("session_id") or str(uuid.uuid4())
+
+    # I-12 fix: Idempotent registration — if already registered, return existing session
+    # without overwriting state or broadcasting another session_started event.
+    if session_id in active_sessions:
+        existing = active_sessions[session_id]
+        logger.info(f"Session {session_id} already registered — returning existing (I-12 dedup)")
+        return {"session_id": session_id, "status": "already_registered",
+                "session": existing.to_dict()}
+
     session = ResearchSession(session_id, query, mode)
     active_sessions[session_id] = session
 
-    # Broadcast update
+    # Broadcast update so all connected UIs pick up the new session_id (I-10 fix)
     await manager.broadcast({
         "type": "session_started",
         "session": session.to_dict()
@@ -213,11 +222,45 @@ async def get_results(session_id: str):
     else:
         return {"error": "Results not yet available"}
 
+@app.get("/api/sessions/latest")
+async def get_latest_session():
+    """
+    I-11 fix: Return the most recently started active session.
+    Used by the UI on reconnect/reload to re-attach to a running session
+    instead of showing 'Waiting for session...' forever.
+    """
+    if not active_sessions:
+        return {"session": None}
+
+    # Return the session with the most recent start_time
+    latest = max(active_sessions.values(), key=lambda s: s.start_time)
+    return {"session": latest.to_dict()}
+
+
+@app.get("/api/sessions")
+async def list_sessions():
+    """List all active sessions (for debugging)"""
+    return {
+        "sessions": [s.to_dict() for s in active_sessions.values()],
+        "count": len(active_sessions)
+    }
+
+
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
-    """WebSocket for live updates"""
+    """WebSocket for live updates. On connect, sends current session state for reconnect (I-11)."""
     await manager.connect(websocket)
     try:
+        # I-11 fix: Send current session state immediately on connect so a reloaded
+        # UI can re-attach to the running session without waiting for the next update.
+        if active_sessions:
+            latest = max(active_sessions.values(), key=lambda s: s.start_time)
+            await websocket.send_json({
+                "type": "session_current",
+                "session": latest.to_dict(),
+                "log_messages": latest.log_messages[-50:]  # last 50 log entries
+            })
+
         while True:
             # Keep connection alive
             data = await websocket.receive_text()

@@ -312,19 +312,23 @@ class PDFFetcher:
 
         Args:
             doi: DOI
-            session_id: Session ID
+            session_id: Session ID (unused — PDFs go directly into output_dir)
 
         Returns:
-            Path like: ~/.cache/academic_agent/pdfs/{session_id}/{sanitized_doi}.pdf
+            Path like: {output_dir}/{sanitized_doi}.pdf
+
+        Note (I-03 fix): PDFs are saved directly into output_dir, NOT a session
+        subdirectory. The session is already encoded in the run directory path
+        (e.g. runs/2026-03-01_12-00-00/pdfs/), so creating another level breaks
+        `ls pdfs/*.pdf` glob patterns used by the Validation Gate.
         """
-        # Sanitize DOI for filename (replace / with _)
+        # Sanitize DOI for filename (replace special chars with _)
         safe_doi = re.sub(r'[^\w\-.]', '_', doi)
 
-        # Session-specific directory
-        session_dir = self.output_dir / session_id
-        session_dir.mkdir(parents=True, exist_ok=True)
+        # Ensure output_dir exists
+        self.output_dir.mkdir(parents=True, exist_ok=True)
 
-        return session_dir / f"{safe_doi}.pdf"
+        return self.output_dir / f"{safe_doi}.pdf"
 
     def get_stats(self) -> Dict[str, int]:
         """Get current statistics"""
@@ -430,7 +434,14 @@ def main():
             print("❌ No papers found in input file", file=sys.stderr)
             sys.exit(1)
 
-        # Apply max-papers limit
+        # I-18 fix: Sort papers by relevance score (highest first) so that if we
+        # run out of API quota or time, the most important papers are downloaded first.
+        papers.sort(
+            key=lambda p: p.get('final_score', p.get('scores', {}).get('total', p.get('score', 0))),
+            reverse=True
+        )
+
+        # Apply max-papers limit AFTER sorting so top papers are kept
         if args.max_papers:
             papers = papers[:args.max_papers]
 

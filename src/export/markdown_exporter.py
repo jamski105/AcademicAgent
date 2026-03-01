@@ -69,8 +69,8 @@ def export_markdown(results: Dict[str, Any], output_path: Path) -> None:
                 f.write(f"**Year:** {paper.get('year', 'N/A')}  \n")
                 f.write(f"**Venue:** {paper.get('venue', 'N/A')}  \n")
                 f.write(f"**DOI:** {paper.get('doi', 'N/A')}  \n")
-                if 'score' in paper or 'scores' in paper:
-                    score = paper.get('score') or paper.get('scores', {}).get('total', 0)
+                if 'final_score' in paper or 'score' in paper or 'scores' in paper:
+                    score = paper.get('final_score') or paper.get('score') or paper.get('scores', {}).get('total', 0)
                     f.write(f"**Score:** {score:.3f}  \n")
                 f.write(f"\n")
 

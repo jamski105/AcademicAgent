@@ -222,105 +222,96 @@ Falls der Start fehlschlägt, zeige eine Warnung aber fahre trotzdem fort:
 
 ---
 
-#### 7. Linear Coordinator Agent spawnen
+#### 7. Workflow direkt ausführen (Du bist der Coordinator)
 
-Spawne EINMAL den Linear Coordinator Agent via Task tool:
+**Du spawned KEINEN separaten Coordinator-Agent.** Du (Entry Point) bist direkt der Coordinator und führst alle Phasen selbst aus.
+
+**Hintergrund:** Ein gespawnter General-Purpose Agent erbt den gesamten Conversation-Kontext inkl. SKILL.md. Das verursacht Context-Leakage — der Agent interpretiert die SKILL.md-Instruktionen als seine eigene Aufgabe und versagt. Lösung: Du führst alles direkt aus.
+
+**Verfügbare Parameter (aus vorherigen Schritten):**
+- `QUERY` = User Research-Frage (Schritt 1)
+- `MODE` = quick/standard/deep (Schritt 2)
+- `CITATION_STYLE` = apa7/ieee/harvard/mla/chicago (Schritt 3)
+
+**Schritt 1: Phasen-Spezifikation laden**
+
+Lies jetzt die vollständigen Phasen-Spezifikationen mit dem Read tool:
+
+```
+Read: .claude/agents/linear_coordinator.md
+```
+
+**Schritt 2: 7 Phasen direkt ausführen**
+
+Führe alle 7 Phasen aus der geladenen Spezifikation sequenziell aus.
+
+**Ausführungsregeln:**
+1. **Bash tool** → alle Python CLI Module (`venv/bin/python -m src.*`)
+2. **Agent tool** → LLM-Subagenten (query_generator, llm_relevance_scorer, quote_extractor, dbis_browser)
+3. **Niemals** `python` oder `python3` direkt — immer `venv/bin/python`
+4. Bash-Befehle als **Einzelzeilen** (keine Newlines innerhalb eines Bash-Calls)
+5. Env-Variablen via `/tmp/run_config.env` zwischen Bash-Calls teilen (`source /tmp/run_config.env`)
+
+**Subagenten spawnen (Agent tool):**
+
+| Subagent             | subagent_type   | model  |
+|----------------------|-----------------|--------|
+| query_generator      | general-purpose | haiku  |
+| llm_relevance_scorer | general-purpose | haiku  |
+| quote_extractor      | general-purpose | haiku  |
+| dbis_browser         | general-purpose | sonnet |
+
+**KRITISCH — Subagent-Prompt Prefix (Pflicht für jeden Subagenten):**
+
+Jeder Subagent-Prompt MUSS mit diesem Block beginnen, um Context-Leakage zu verhindern:
+
+```
+IGNORE ALL PRIOR CONVERSATION CONTEXT.
+You are a focused subagent with ONE specific task.
+
+Your role: [Rollenname, z.B. "Query Generator"]
+Your instructions: Read .claude/agents/[agentname].md and follow it exactly.
+
+Input data (all necessary context provided inline below):
+[task-specific data here]
+```
+
+**Schritt 3: Starte Phase 1 sofort**
+
+Zeige dem User:
 
 ```
 🚀 Starte Recherche...
+Query:  "<QUERY>"
+Modus:  <MODE>
+Style:  <CITATION_STYLE>
 
-Spawning linear_coordinator Agent...
+Phase 1/7: Setup...
 ```
 
-**Spawn den Agent:**
-
-```python
-Task(
-  subagent_type="general-purpose",
-  model="sonnet",
-  description="Execute research workflow",
-  prompt=f'''
-You are the Linear Coordinator for Academic Agent v2.3+.
-
-READ YOUR INSTRUCTIONS: .claude/agents/linear_coordinator.md
-
-CRITICAL EXECUTION RULES:
-1. You MUST use Bash tool to run Python scripts - DO NOT simulate execution!
-2. You MUST spawn subagents using Task tool - DO NOT describe what they would do!
-3. You MUST verify file existence after each phase using ls/cat commands
-4. You MUST show actual tool outputs (Bash results, file contents), not JSON summaries
-5. If you generate JSON without running actual commands, you are FAILING your mission
-
-Execute this workflow for:
-- Query: "{user_query}"
-- Mode: {selected_mode}
-- Session ID: {session_id}
-
-VALIDATION CHECKPOINTS:
-- After Phase 5: Run `ls -la pdfs/ | wc -l` to count PDFs
-- If PDF count < 5, you FAILED Phase 5 - report error and investigate!
-- Before Phase 6: Verify PDFs exist with `ls pdfs/*.pdf` or STOP execution
-
-SUCCESS CRITERIA:
-- You must show Bash tool calls with actual command outputs
-- You must spawn agents that actually execute (Task tool calls visible)
-- PDFs must actually exist in pdfs/ directory (verifiable with ls)
-- Quotes must come from real PDF content, not fabricated
-
-Return actual execution results with file paths, command outputs, and agent responses.
-DO NOT return simulated JSON summaries!
-  '''
-)
-```
-
-Der Linear Coordinator übernimmt ab hier und führt die 6 Phasen aus.
-
-**Wichtig:** Der Coordinator spawnt intern weitere Agents:
-- query_generator (Haiku)
-- llm_relevance_scorer (Haiku)
-- quote_extractor (Haiku)
-- dbis_browser (Sonnet + Chrome MCP)
-
-**🔍 Execution Monitoring:**
-
-Watch the coordinator's output carefully:
-
-```
-⏳ Monitoring execution...
-
-💡 VERIFICATION TIP: Look for these indicators of REAL execution:
-✅ Bash tool calls visible (python3 -m src.xxx commands)
-✅ Task tool calls to spawn agents (dbis_browser, quote_extractor)
-✅ File system operations (ls, cat, cp commands)
-✅ Actual file paths shown (/tmp/queries.json, pdfs/*.pdf)
-
-🚨 WARNING SIGNS of simulation bug:
-❌ Only JSON summaries without Bash commands
-❌ No Chrome window opens during Phase 5
-❌ Generic quotes without specific paper context
-❌ Claims PDFs downloaded but no ls output shown
-```
+Beginne sofort mit Phase 1 aus linear_coordinator.md.
 
 ---
 
-#### 7. Fortschritt monitoren (optional)
+#### 8. Fortschritt anzeigen (während Ausführung)
 
-Wenn der Agent läuft, zeige Progress-Updates:
+Zeige dem User nach jeder Phase ein kurzes Update:
 
 ```
 ⏳ Recherche läuft...
 
-Phase 1/6: Setup ✅
-Phase 2/6: Searching APIs... ⏳
+Phase 1/7: Setup ✅
+Phase 2/7: Query Generation ✅
+Phase 3/7: API Search... ⏳
   - CrossRef: 12 Papers gefunden
   - OpenAlex: In Progress...
 ```
 
 ---
 
-#### 8. Ergebnis präsentieren
+#### 9. Ergebnis präsentieren
 
-Wenn der Coordinator fertig ist:
+Wenn alle 7 Phasen abgeschlossen sind:
 
 ```
 ✅ Recherche abgeschlossen!
@@ -349,7 +340,7 @@ Du kannst die Session jederzeit fortsetzen mit:
 3. **Interaktiver Browser:** User sieht DBIS Browser und macht manuellen Login
 4. **Fehlerbehandlung:** Bei Fehler zeige Checkpoint-Info für Resume
 5. **Transparenz:** Zeige Progress-Updates
-6. **Einfachheit:** Nur EINMAL Agent spawnen (Linear Coordinator macht den Rest)
+6. **Einfachheit:** Entry Point ist direkt der Coordinator — kein extra Coordinator-Agent (verhindert Context-Leakage)
 
 ---
 
@@ -372,13 +363,13 @@ Der Workflow wird ab dem letzten Checkpoint fortgesetzt.
 
 ## Technische Details
 
-**Spawnt:** 1x Linear Coordinator Agent (Sonnet 4.6)
+**Kein separater Coordinator-Agent** — Entry Point führt direkt aus.
 
-**Der Coordinator spawnt intern:**
-- 1x query_generator Agent (Haiku 4.5)
-- 1x llm_relevance_scorer Agent (Haiku 4.5)
-- 1x quote_extractor Agent (Haiku 4.5)
-- 0-N dbis_browser Agents (Sonnet 4.6 + Chrome MCP, 1 per failed PDF)
+**Entry Point spawnt (via Agent tool):**
+- 1x query_generator (Haiku 4.5) — Phase 2
+- 1x llm_relevance_scorer (Haiku 4.5) — Phase 4
+- 1x quote_extractor (Haiku 4.5) — Phase 6
+- 0-N dbis_browser (Sonnet 4.6 + Chrome MCP) — Phase 5, 1 per fehlgeschlagenem PDF
 
 **Python CLI-Module (via Bash):**
 - search_engine.py

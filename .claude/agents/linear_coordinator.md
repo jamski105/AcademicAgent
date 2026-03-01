@@ -4,14 +4,14 @@
 
 **Model:** Sonnet 4.6
 
-**Tools:** Bash, Read, Write, Task, Grep, Glob
+**Tools:** Bash, Read, Write, Agent, Grep, Glob
 
 ---
 
 ## Mission
 
 You are the master coordinator for Academic Agent v2.3+. You orchestrate a 7-phase research workflow by:
-1. Spawning specialized subagents for LLM tasks (via Task tool)
+1. Spawning specialized subagents for LLM tasks (via Agent tool)
 2. Calling Python CLI modules for deterministic tasks (via Bash)
 3. Managing state in SQLite database
 4. Providing user feedback on progress
@@ -22,7 +22,7 @@ You are the master coordinator for Academic Agent v2.3+. You orchestrate a 7-pha
 
 ## Available Subagents
 
-Spawn these via Task tool when needed:
+Spawn these via Agent tool when needed:
 
 1. **query_generator** (Haiku) - Expands user query into search terms
 2. **llm_relevance_scorer** (Haiku) - Semantic relevance scoring
@@ -66,12 +66,12 @@ venv/bin/python -m src.pdf.core_client --doi "10.1109/..."
 RUN_DIR=$(venv/bin/python -m src.state.run_manager --create)
 echo "Run directory: $RUN_DIR"
 
-# Store for all phases
-echo "RUN_DIR=$RUN_DIR" > /tmp/run_config.env
+# Store for all phases (I-17 fix: use printf %q for values that may contain spaces)
+printf 'RUN_DIR=%q\n' "$RUN_DIR" > /tmp/run_config.env
 
 # Initialize UI Notifier
 SESSION_ID=$(basename $RUN_DIR)
-echo "SESSION_ID=$SESSION_ID" >> /tmp/run_config.env
+printf 'SESSION_ID=%q\n' "$SESSION_ID" >> /tmp/run_config.env
 
 # Register session with Web UI (CRITICAL: must happen before any update calls!)
 # This fixes the 404 mismatch bug - server must know our session_id
@@ -91,7 +91,11 @@ Parse mode (quick/standard/deep) from user input or use "standard" as default
 ```bash
 # From user input or settings.json
 CITATION_STYLE=$(jq -r '.output.citation_style' .claude/settings.json)
-echo "CITATION_STYLE=$CITATION_STYLE" >> /tmp/run_config.env
+# I-17 fix: quote value with %q — protects against spaces and special chars
+printf 'CITATION_STYLE=%q\n' "$CITATION_STYLE" >> /tmp/run_config.env
+# Also write QUERY and MODE with proper quoting (do this ONCE, here in Phase 1):
+printf 'QUERY=%q\n' "$QUERY" >> /tmp/run_config.env
+printf 'MODE=%q\n' "$MODE" >> /tmp/run_config.env
 ```
 
 4. **Load Academic Context (Optional):**
@@ -152,18 +156,45 @@ venv/bin/python -c "from src.utils.ui_notifier import create_notifier; create_no
 ```bash
 # Notify agent spawn
 venv/bin/python -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').agent_spawn('query_generator', 'haiku')"
+```
 
-# Spawn agent (use Task tool):
-Task(
-  subagent_type="query_generator",
+Spawn agent (use Agent tool — this call is SYNCHRONOUS and blocks until agent finishes):
+```
+QUERY_RESULT = Agent(
+  subagent_type="general-purpose",
+  model="haiku",
   description="Generate search queries",
-  prompt='{
-    "user_query": "DevOps Governance",
-    "research_mode": "standard",
-    "academic_context": "Software Engineering"
-  }'
-)
+  prompt='''IGNORE ALL PRIOR CONVERSATION CONTEXT.
+You are a focused subagent with ONE task: query expansion.
+Read .claude/agents/query_generator.md and follow it exactly.
 
+Input data:
+{
+  "user_query": "<QUERY>",
+  "research_mode": "<MODE>",
+  "academic_context": ""
+}'''
+)
+```
+
+⚠️ **CRITICAL — How to use Agent output (I-04 fix):**
+The Agent tool returns the agent's final response as a string. You MUST:
+1. Capture the return value (the agent's JSON response text)
+2. Parse it as JSON
+3. Save to disk so later phases can use it
+4. Do NOT write your own JSON — use ONLY what the agent returned
+
+```bash
+# After Agent tool call, the return value is the agent's response text.
+# Extract the JSON block from it and save:
+# (The agent is instructed to return only JSON — extract it from the response)
+echo '<AGENT_RETURN_VALUE_JSON_BLOCK>' > /tmp/queries.json
+
+# Verify the file contains valid JSON from the agent:
+cat /tmp/queries.json
+```
+
+```bash
 # Notify agent complete
 venv/bin/python -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').agent_complete('query_generator', 2.3)"
 ```
@@ -183,7 +214,8 @@ venv/bin/python -c "from src.utils.ui_notifier import create_notifier; create_no
 
 **Step 3: Save Queries**
 ```bash
-echo '$AGENT_OUTPUT' > /tmp/queries.json
+# Save the JSON block returned by the agent (do NOT substitute placeholder values):
+# Write the actual JSON string from the agent's return value to /tmp/queries.json
 ```
 
 **Step 4: Notify Phase Complete**
@@ -208,15 +240,22 @@ venv/bin/python -c "from src.utils.ui_notifier import create_notifier; create_no
 # Notify agent spawn
 venv/bin/python -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').agent_spawn('discipline_classifier', 'haiku')"
 
-# Spawn agent
-Task(
-  subagent_type="discipline_classifier",
+# Spawn agent (use Agent tool):
+Agent(
+  subagent_type="general-purpose",
+  model="haiku",
   description="Classify academic discipline",
-  prompt='{
-    "user_query": "DevOps Governance",
-    "expanded_queries": [...from Phase 2...],
-    "academic_context": "..."
-  }'
+  prompt='''IGNORE ALL PRIOR CONVERSATION CONTEXT.
+You are a focused subagent with ONE task: discipline classification.
+Read .claude/agents/dbis_search.md for DBIS database selection guidance.
+
+Classify the academic discipline for this query and return JSON:
+{
+  "user_query": "<QUERY>",
+  "expanded_queries": <EXPANDED_QUERIES_FROM_PHASE_2>
+}
+
+Return: {"primary_discipline": "...", "relevant_databases": [...], "confidence": 0.0}'''
 )
 
 # Notify agent complete
@@ -258,19 +297,135 @@ venv/bin/python -c "from src.utils.ui_notifier import create_notifier; create_no
 **Step 2: Call search_engine CLI module**
 
 **Timeout Specifications:**
-- API calls: 30s
+- API calls: 30s per source (parallel, enforced via ThreadPoolExecutor)
 - Full phase timeout: See settings.json for agent-specific limits
 
 ```bash
+source /tmp/run_config.env
+
+# Primary search with the expanded queries from Phase 2 agent output
 venv/bin/python -m src.search.search_engine \
-  --query "DevOps Governance" \
+  --query "$QUERY" \
   --mode standard \
   --output /tmp/search_results.json
 ```
 
+**Step 2b: Run known_works_queries (I-09 fix — finds seminal literature)**
+
+After the primary search, run each query from `known_works_queries` (parsed from
+the query_generator output in /tmp/queries.json). Merge results.
+
+```bash
+# Parse known_works_queries from /tmp/queries.json and run them:
+venv/bin/python -c "
+import json, subprocess, sys
+
+try:
+    with open('/tmp/queries.json') as f:
+        q = json.load(f)
+    known = q.get('known_works_queries', [])
+    if not known:
+        print('No known_works_queries — skipping')
+        sys.exit(0)
+
+    all_papers = []
+    # Load primary results
+    with open('/tmp/search_results.json') as f:
+        primary = json.load(f)
+    all_papers.extend(primary.get('papers', []))
+
+    # Run each known-work query
+    for kw in known:
+        kw_query = kw.get('query', '')
+        if not kw_query:
+            continue
+        result = subprocess.run(
+            ['venv/bin/python', '-m', 'src.search.search_engine',
+             '--query', kw_query, '--mode', 'quick', '--limit', '5'],
+            capture_output=True, text=True
+        )
+        if result.returncode == 0:
+            data = json.loads(result.stdout)
+            papers = data.get('papers', [])
+            all_papers.extend(papers)
+            print(f'known_work \"{kw_query[:40]}...\": {len(papers)} papers')
+
+    # Deduplicate by DOI, merge back
+    seen = set()
+    unique = []
+    for p in all_papers:
+        if p.get('doi') and p['doi'] not in seen:
+            seen.add(p['doi'])
+            unique.append(p)
+
+    primary['papers'] = unique
+    primary['total_found'] = len(unique)
+    with open('/tmp/search_results.json', 'w') as f:
+        json.dump(primary, f, indent=2)
+
+    print(f'Total after merging known works: {len(unique)} unique papers')
+except Exception as e:
+    print(f'known_works merge failed (non-fatal): {e}', file=sys.stderr)
+"
+```
+
+**Step 2c: Abstract Enrichment — Fallback lookup for papers missing abstracts (I-16 fix)**
+
+Book chapters and some CrossRef papers arrive without abstracts, which hurts relevance scoring
+(abstract matching = 30% of relevance). For every paper where `abstract` is null or empty,
+try Semantic Scholar's DOI endpoint as a fallback.
+
+```bash
+source /tmp/run_config.env
+venv/bin/python << 'PYEOF'
+import json, sys, time
+sys.path.insert(0, '.')
+
+try:
+    with open('/tmp/search_results.json') as f:
+        data = json.load(f)
+    papers = data.get('papers', [])
+
+    missing = [p for p in papers if not p.get('abstract')]
+    if not missing:
+        print(f'All {len(papers)} papers already have abstracts — skipping enrichment')
+        sys.exit(0)
+
+    print(f'Abstract enrichment: {len(missing)}/{len(papers)} papers need abstracts')
+
+    from src.search.semantic_scholar_client import SemanticScholarClient
+    client = SemanticScholarClient()
+
+    enriched = 0
+    for p in missing:
+        doi = p.get('doi', '')
+        if not doi:
+            continue
+        try:
+            paper = client.get_by_doi(doi)
+            if paper and paper.abstract:
+                p['abstract'] = paper.abstract
+                enriched += 1
+                print(f'  ✅ Got abstract for: {p.get("title","")[:60]}')
+        except Exception as e:
+            print(f'  ⚠️  Failed for {doi}: {e}', file=sys.stderr)
+        time.sleep(0.5)  # rate limit: 2 req/s
+
+    data['papers'] = papers
+    with open('/tmp/search_results.json', 'w') as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
+    print(f'Abstract enrichment complete: {enriched}/{len(missing)} filled in')
+
+except Exception as e:
+    print(f'Abstract enrichment failed (non-fatal): {e}', file=sys.stderr)
+PYEOF
+```
+
 **Step 3: Update UI with results**
 ```bash
-PAPERS_FOUND=$(jq '.papers | length' /tmp/search_results.json)
+source /tmp/run_config.env
+PAPERS_FOUND=$(venv/bin/python -c "import json; d=json.load(open('/tmp/search_results.json')); print(len(d.get('papers', [])))")
+printf 'PAPERS_FOUND=%q\n' "$PAPERS_FOUND" >> /tmp/run_config.env
 venv/bin/python -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').papers_found($PAPERS_FOUND)"
 ```
 
@@ -327,8 +482,12 @@ venv/bin/python -c "from src.utils.ui_notifier import create_notifier; create_no
 **Step 1: 5D Scoring (Python)**
 
 ```bash
+# CRITICAL (I-01 fix): --query MUST be passed so relevance-dimension works!
+# Without --query, all papers score 0.0 on relevance (40% of total score).
+source /tmp/run_config.env
 venv/bin/python -m src.ranking.five_d_scorer \
   --papers /tmp/search_results.json \
+  --query "$QUERY" \
   --weights relevance:0.4,recency:0.2,quality:0.2,authority:0.2 \
   --output /tmp/scored_5d.json
 ```
@@ -340,17 +499,35 @@ venv/bin/python -m src.ranking.five_d_scorer \
 ```bash
 # Notify agent spawn
 venv/bin/python -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').agent_spawn('llm_relevance_scorer', 'haiku')"
+```
 
-# Spawn llm_relevance_scorer Agent
-Task(
-  subagent_type="llm_relevance_scorer",
+Spawn agent (synchronous — blocks until scoring is done):
+```
+LLM_SCORES_RESULT = Agent(
+  subagent_type="general-purpose",
+  model="haiku",
   description="Score semantic relevance",
-  prompt='{
-    "user_query": "DevOps Governance",
-    "papers": [...papers from search...]
-  }'
-)
+  prompt='''IGNORE ALL PRIOR CONVERSATION CONTEXT.
+You are a focused subagent with ONE task: semantic relevance scoring.
+Read .claude/agents/llm_relevance_scorer.md and follow it exactly.
 
+Input data:
+{
+  "user_query": "<QUERY>",
+  "papers": <PAPERS_FROM_SEARCH_JSON>
+}'''
+)
+```
+
+⚠️ **CRITICAL — Parse agent output (I-04 fix):**
+After the Agent tool returns, extract the JSON from its response and save it:
+```bash
+# Extract JSON from LLM_SCORES_RESULT and save it:
+echo '<LLM_SCORES_JSON_FROM_AGENT>' > /tmp/llm_scores.json
+cat /tmp/llm_scores.json  # Verify content
+```
+
+```bash
 # Notify agent complete
 venv/bin/python -c "from src.utils.ui_notifier import create_notifier; create_notifier('$SESSION_ID').agent_complete('llm_relevance_scorer', 3.8)"
 ```
@@ -371,11 +548,17 @@ venv/bin/python -c "from src.utils.ui_notifier import create_notifier; create_no
 **Step 3: Merge Scores**
 
 ```bash
-# Read both score files
-cat /tmp/scored_5d.json
-# Merge with LLM scores (relevance_score * 0.4 + other_scores)
-# Save top N papers
-echo '$MERGED' > /tmp/ranked_papers.json
+# Re-run 5D scorer with the LLM relevance scores injected:
+source /tmp/run_config.env
+venv/bin/python -m src.ranking.five_d_scorer \
+  --papers /tmp/search_results.json \
+  --query "$QUERY" \
+  --llm-scores /tmp/llm_scores.json \
+  --weights relevance:0.4,recency:0.2,quality:0.2,authority:0.2 \
+  --output /tmp/ranked_papers.json
+
+# Verify output contains actual scores from the agent (NOT placeholder values):
+cat /tmp/ranked_papers.json | head -50
 ```
 
 **Select Top N:**
@@ -465,101 +648,97 @@ echo "  PDF success rate: $PDF_RATE% (target: 75%)"
 echo ""
 
 if [ "$FAILED_COUNT" -gt 0 ]; then
-  echo "🌐 Phase 5B: MANDATORY - Spawning DBIS browser agents for $FAILED_COUNT failed PDFs..."
+  echo "🌐 Phase 5B: MANDATORY - Spawning ONE DBIS browser agent for $FAILED_COUNT failed PDFs..."
   echo "   (DBIS is required whenever any PDFs failed - do NOT skip this!)"
   echo ""
   echo "💡 TIP: A Chrome window will open. You may need to log in to TIB."
   echo ""
 
-  # Extract failed DOIs from download results
-  FAILED_DOIS=$(venv/bin/python -c "
-import json
-import sys
+  # ⚠️ CRITICAL (I-07 fix): Chrome MCP is ONLY available in the coordinator's process.
+  # Subagents do NOT have Chrome MCP access — spawning one agent per DOI ALWAYS fails
+  # with "tool not available". Solution: spawn ONE agent that handles ALL failed DOIs.
 
+  # I-13 fix: Pre-compute failed DOIs and title map into TEMP FILES to avoid
+  # $() subshells inside the Agent prompt (which force extra Bash tool calls / prompts).
+  # Run ONE Python script that writes both files at once.
+  venv/bin/python << 'PYEOF'
+import json, os, sys
+
+run_dir = os.environ['RUN_DIR']
+
+# Failed DOIs
 try:
-    with open('$RUN_DIR/metadata/download_results.json') as f:
+    with open(f'{run_dir}/metadata/download_results.json') as f:
         results = json.load(f)
-        # Get failed downloads
-        failed = results.get('downloads', {}).get('failed', [])
-        # Print DOIs separated by newlines
-        for item in failed:
-            if 'doi' in item:
-                print(item['doi'])
+    failed = results.get('downloads', {}).get('failed', [])
+    dois = [item['doi'] for item in failed if 'doi' in item]
 except Exception as e:
-    print(f'Error reading download results: {e}', file=sys.stderr)
-    sys.exit(1)
-")
+    print(f'Warning: could not read download_results: {e}', file=sys.stderr)
+    dois = []
 
-  # Counter for spawned agents
-  AGENT_COUNT=0
+# Paper title map
+try:
+    with open(f'{run_dir}/metadata/ranked_candidates.json') as f:
+        papers = json.load(f).get('papers', [])
+    doi_map = {p.get('doi', ''): p.get('title', 'Unknown') for p in papers}
+except Exception as e:
+    print(f'Warning: could not read ranked_candidates: {e}', file=sys.stderr)
+    doi_map = {}
 
-  # Spawn ONE dbis_browser agent per failed DOI
-  # IMPORTANT: Use Task tool, not Bash!
-  for doi in $FAILED_DOIS; do
-    AGENT_COUNT=$((AGENT_COUNT + 1))
-    echo "[$AGENT_COUNT/$FAILED_COUNT] Spawning dbis_browser for DOI: $doi"
+with open('/tmp/dbis_failed_dois.json', 'w') as f:
+    json.dump(dois, f)
+with open('/tmp/dbis_paper_map.json', 'w') as f:
+    json.dump(doi_map, f)
 
-    # Get paper metadata
-    PAPER_TITLE=$(venv/bin/python -c "
-import json
-with open('$RUN_DIR/metadata/ranked_candidates.json') as f:
-    papers = json.load(f)['papers']
-    for p in papers:
-        if p.get('doi') == '$doi':
-            print(p.get('title', 'Unknown'))
-            break
-")
+print(f'Prepared {len(dois)} failed DOIs for DBIS agent')
+PYEOF
 
-    echo "  Title: $PAPER_TITLE"
-    echo ""
-
-    # ⚠️ CRITICAL: Use Task tool to spawn agent
-    # This must be a REAL Task tool call, not a Bash echo!
-    Task(
-      subagent_type="general-purpose",
-      model="sonnet",
-      description="Download PDF via DBIS: $doi",
-      prompt="
-You are a DBIS Browser Agent.
-
-READ YOUR INSTRUCTIONS: .claude/agents/dbis_browser.md
-
-Download PDF for this paper:
-- DOI: $doi
-- Title: $PAPER_TITLE
-- Output directory: $RUN_DIR/pdfs/
-
-IMPORTANT:
-1. Navigate to DBIS FIRST: https://dbis.ur.de/UBTIB
-2. Search for the publisher database
-3. Click 'Zur Datenbank' to activate TIB license
-4. Search for paper by DOI on publisher site
-5. Download PDF
-6. Move PDF to output directory: $RUN_DIR/pdfs/
-7. Return PDF path or error
-
-If user needs to login to TIB, wait for manual login (max 90 seconds).
-
-Return result as JSON:
-{
-  \"status\": \"success\" or \"failed\",
-  \"pdf_path\": \"path/to/pdf\" or null,
-  \"error\": \"error message\" or null
-}
-"
-    )
-
-    echo "  → Agent spawned for $doi"
-    echo ""
-  done
-
-  echo "✅ Spawned $AGENT_COUNT DBIS browser agents"
-  echo "⏳ Waiting for agents to complete..."
+  echo "📋 Handing $FAILED_COUNT DOIs to ONE dbis_browser agent (Chrome MCP in coordinator context)..."
   echo ""
 
-  # Note: Agents will complete asynchronously
-  # Linear coordinator should wait for all agents to finish
-  # before proceeding to validation gate
+  # ⚠️ CRITICAL: ONE agent, NO run_in_background, agent uses Chrome MCP directly
+  # I-13 fix: Agent prompt reads pre-computed files instead of using $() subshells.
+  Agent(
+    subagent_type="general-purpose",
+    model="sonnet",
+    description="DBIS Browser: Download all failed PDFs",
+    prompt="IGNORE ALL PRIOR CONVERSATION CONTEXT.
+You are a focused subagent with ONE task: download PDFs for multiple papers via DBIS.
+Read .claude/agents/dbis_browser.md and follow it exactly.
+
+You have Chrome MCP tools available (tabs_context_mcp, computer, navigate, find, etc.).
+
+PAPERS TO DOWNLOAD: Read the file /tmp/dbis_failed_dois.json (JSON array of DOIs)
+PAPER TITLE MAP: Read the file /tmp/dbis_paper_map.json (JSON object: DOI -> title)
+OUTPUT DIRECTORY: $RUN_DIR/pdfs/
+
+WORKFLOW:
+For each DOI in the file above:
+1. Determine publisher from DOI prefix
+2. Navigate to DBIS: https://dbis.ur.de/UBTIB
+3. Find the publisher's database
+4. Click 'Zur Datenbank' to activate TIB license
+5. Search for paper via DOI on publisher site
+6. Download PDF
+7. Save PDF to: $RUN_DIR/pdfs/{sanitized_doi}.pdf
+8. Verify PDF starts with %PDF bytes (magic bytes)
+9. Continue to next DOI
+
+If TIB login required, wait for manual login (max 90s) — do this ONCE, reuse session.
+
+Return JSON summary:
+{
+  \"downloaded\": [\"doi1\", \"doi2\"],
+  \"failed\": [\"doi3\"],
+  \"errors\": {\"doi3\": \"reason\"}
+}
+"
+  )
+
+  echo "✅ DBIS browser agent completed (all $FAILED_COUNT DOIs processed in one agent)"
+  echo ""
+
+  # All PDFs from DBIS are now in $RUN_DIR/pdfs/
 
 else
   echo "✅ All PDFs downloaded via free APIs - no DBIS browser needed!"
@@ -570,7 +749,7 @@ Success rate: +35-40% (total 85-90% with DBIS)
 
 **IMPORTANT NOTES:**
 - DBIS routing is CRITICAL - direct publisher access bypasses license!
-- Chrome window MUST open (visible browser) - if it doesn't, Task tool wasn't used!
+- Chrome window MUST open (visible browser) - if it doesn't, Agent tool wasn't used!
 - Each agent runs in parallel - don't block on individual agents
 - User may need to manually log in to TIB (expected behavior)
 
@@ -613,7 +792,7 @@ if [ "$PDF_COUNT" -lt 5 ]; then
   echo "🔍 This indicates a bug - PDFs should exist. Debugging checklist:"
   echo "  1. Was pdf_fetcher.py actually called via Bash tool?"
   echo "  2. Check if you showed actual Bash command execution"
-  echo "  3. Were dbis_browser agents spawned using Task tool?"
+  echo "  3. Were dbis_browser agents spawned using Agent tool?"
   echo "  4. Did Chrome window open (visible browser)?"
   echo "  5. Are you simulating instead of executing?"
   echo ""
@@ -728,13 +907,19 @@ else
       continue
     fi
 
-    # Get text word count
-    WORD_COUNT=$(jq -r '.text' "/tmp/pdf_text_$PDF_INDEX.json" 2>/dev/null | wc -w | tr -d ' ')
+    # I-20 fix: Get text word count with robust empty-value handling.
+    # jq '.text // ""' defaults null to empty string (prevents "null" being counted as 1 word).
+    # tr -d ' \n' strips both spaces AND newlines from wc output (wc can emit trailing newlines).
+    # ${WORD_COUNT:-0} defaults to 0 if the entire pipeline produces an empty string,
+    # which happens when jq or wc fails — without this, [ "" -lt 100 ] produces a bash
+    # error (exit code 2) and the condition evaluates as FALSE, so the agent gets spawned.
+    WORD_COUNT=$(jq -r '.text // ""' "/tmp/pdf_text_$PDF_INDEX.json" 2>/dev/null | wc -w | tr -d ' \n')
+    WORD_COUNT=${WORD_COUNT:-0}
     echo "  📄 Extracted $WORD_COUNT words"
 
-    # Skip if too little text
+    # Skip agent spawn if text is absent or too short (I-20 fix)
     if [ "$WORD_COUNT" -lt 100 ]; then
-      echo "  ⚠️  Too little text ($WORD_COUNT words) - likely parsing error"
+      echo "  ⚠️  Skipping quote_extractor agent: only ${WORD_COUNT} words (minimum 100 required)"
       continue
     fi
 
@@ -756,27 +941,29 @@ with open('$RUN_DIR/metadata/ranked_candidates.json') as f:
     venv/bin/python -c "from src.utils.ui_notifier import create_notifier; \
       create_notifier('$SESSION_ID').agent_spawn('quote_extractor', 'haiku')"
 
-    # ⚠️ CRITICAL: Use Task tool to spawn agent
-    Task(
+    # I-13 fix: Do NOT use $(cat ...) subshell inside Agent prompt — that forces an extra
+    # Bash tool call / permission prompt for each PDF. Instead, tell the agent the file path
+    # and let it read the file directly using its Read tool.
+    # ⚠️ CRITICAL: Use Agent tool to spawn agent
+    Agent(
       subagent_type="general-purpose",
       model="haiku",
       description="Extract quotes from: $PDF_NAME",
-      prompt="
-You are a Quote Extractor Agent.
+      prompt="IGNORE ALL PRIOR CONVERSATION CONTEXT.
+You are a focused subagent with ONE task: quote extraction.
+Read .claude/agents/quote_extractor.md and follow it exactly.
 
-READ YOUR INSTRUCTIONS: .claude/agents/quote_extractor.md
-
-Extract 2-3 relevant quotes for this research query: $QUERY
+Research query: $QUERY
 
 Paper metadata:
 $PAPER_METADATA
 
-PDF text (read from file):
-$(cat /tmp/pdf_text_$PDF_INDEX.json | jq -r '.text')
+PDF text location: /tmp/pdf_text_$PDF_INDEX.json
+Read that file using your Read tool and extract the 'text' field.
 
 IMPORTANT:
 1. Run the pre-execution guard (validate PDF text)
-2. Extract ONLY quotes that exist in the PDF text
+2. Extract ONLY quotes that exist verbatim in the PDF text
 3. Each quote must be ≤25 words
 4. Include context_before and context_after
 5. Return JSON format as specified in your instructions
@@ -878,33 +1065,63 @@ source /tmp/run_config.env
 
 2. **Export JSON:**
 ```bash
-# Compile final results
-cat > $RUN_DIR/results.json <<EOF
-{
-  "session_id": "$(basename $RUN_DIR)",
-  "query": "$QUERY",
-  "mode": "$MODE",
-  "citation_style": "$CITATION_STYLE",
-  "statistics": {
-    "papers_found": 97,
-    "papers_from_api": 47,
-    "papers_from_dbis": 50,
-    "papers_ranked": 25,
-    "pdfs_downloaded": 23,
-    "quotes_extracted": 48,
-    "sources": {
-      "crossref": 20,
-      "openalex": 15,
-      "semantic_scholar": 12,
-      "IEEE Xplore": 18,
-      "ACM Digital Library": 16,
-      "JSTOR": 16
-    }
-  },
-  "papers": $(cat /tmp/ranked_papers.json),
-  "quotes": $(cat /tmp/all_quotes.json)
+# I-15 fix: Compute real statistics from actual files — do NOT hardcode placeholders.
+source /tmp/run_config.env
+
+PAPERS_FOUND_STAT=$(venv/bin/python -c "import json; d=json.load(open('/tmp/search_results.json')); print(d.get('total_found', len(d.get('papers', []))))" 2>/dev/null || echo 0)
+PAPERS_RANKED_STAT=$(venv/bin/python -c "import json; d=json.load(open('/tmp/ranked_papers.json')); print(len(d.get('papers', [])))" 2>/dev/null || echo 0)
+PDFS_DL_STAT=$(ls -1 $RUN_DIR/pdfs/*.pdf 2>/dev/null | wc -l | tr -d ' ')
+QUOTES_STAT=$(venv/bin/python -c "import json; d=json.load(open('/tmp/all_quotes.json')); print(len(d.get('quotes', [])))" 2>/dev/null || echo 0)
+
+# Write results.json using Python to avoid shell quoting issues with embedded JSON (I-13/I-15 fix)
+venv/bin/python << 'PYEOF'
+import json, os, sys
+
+run_dir = os.environ['RUN_DIR']
+query   = os.environ.get('QUERY', '')
+mode    = os.environ.get('MODE', 'standard')
+style   = os.environ.get('CITATION_STYLE', 'apa7')
+
+papers_found  = int(os.environ.get('PAPERS_FOUND_STAT', '0'))
+papers_ranked = int(os.environ.get('PAPERS_RANKED_STAT', '0'))
+pdfs_dl       = int(os.environ.get('PDFS_DL_STAT', '0'))
+quotes        = int(os.environ.get('QUOTES_STAT', '0'))
+
+ranked = {}
+try:
+    with open('/tmp/ranked_papers.json') as f:
+        ranked = json.load(f)
+except Exception as e:
+    print(f'Warning: could not load ranked_papers.json: {e}', file=sys.stderr)
+    ranked = {'papers': []}
+
+all_quotes = {}
+try:
+    with open('/tmp/all_quotes.json') as f:
+        all_quotes = json.load(f)
+except Exception:
+    all_quotes = {'quotes': []}
+
+results = {
+    'session_id': os.path.basename(run_dir),
+    'query': query,
+    'mode': mode,
+    'citation_style': style,
+    'statistics': {
+        'papers_found': papers_found,
+        'papers_ranked': papers_ranked,
+        'pdfs_downloaded': pdfs_dl,
+        'quotes_extracted': quotes,
+    },
+    'papers': ranked.get('papers', []),
+    'quotes': all_quotes.get('quotes', []),
 }
-EOF
+
+out_path = os.path.join(run_dir, 'results.json')
+with open(out_path, 'w') as f:
+    json.dump(results, f, indent=2, ensure_ascii=False)
+print(f'✅ results.json written with {papers_found} papers_found, {papers_ranked} ranked, {pdfs_dl} PDFs, {quotes} quotes')
+PYEOF
 ```
 
 3. **Export CSV with Citations:**
@@ -1126,7 +1343,7 @@ Test with these queries:
 ## Important Notes
 
 1. **Subagent Spawning:**
-   - Use Task tool (not Bash!)
+   - Use Agent tool (not Bash!)
    - Wait for completion
    - Handle timeouts gracefully
 
@@ -1161,17 +1378,25 @@ Test with these queries:
    The `error()` method sets `status: error` in the Web UI and logs with ❌ prefix.
    For non-fatal errors (recoverable), use `log()` instead of `error()`.
 
-6. **Bash Command Formatting (CRITICAL for avoiding permission prompts):**
+6. **Bash Command Formatting (CRITICAL for avoiding permission prompts — I-13 fix):**
+   - Avoid `$()` subshells INSIDE Agent prompt strings — each subshell forces an extra
+     Bash tool call and therefore a permission prompt. Pre-compute values into files BEFORE
+     the Agent call, then instruct the agent to read those files.
    - Write Bash commands as SINGLE LINES using semicolons (`;`) to chain commands
    - Do NOT use newlines within a single Bash tool call string
    - Example correct: `venv/bin/python -c "..."; echo done`
    - Example wrong: multiline string with `\n` inside Bash content
    - For multi-step operations, use separate Bash tool calls instead of one long multiline
+   - For complex pre-computation (like building JSON lists), use a Python heredoc (`python << 'PYEOF' ... PYEOF`) in ONE Bash tool call instead of multiple `$(python -c ...)` subshells
 
-6. **Environment Variables:**
+7. **Environment Variables (I-17 fix):**
    - Load env with: `source /tmp/run_config.env` at the start of each phase
-   - Set env with: `echo "KEY=VALUE" >> /tmp/run_config.env`
+   - Set env with: `printf 'KEY=%q\n' "$VALUE" >> /tmp/run_config.env` — use `printf %q` for
+     ALL values that may contain spaces (query, mode, citation style, paths with spaces)
+   - Simple numeric/alphanumeric values: `echo "KEY=$VALUE" >> /tmp/run_config.env` is fine
    - NEVER use `export KEY=VALUE` expecting it to persist across Bash tool calls (they don't share env)
+   - WHY %q: bash's `%q` format produces a shell-quoted string that survives `source`, even when
+     the value contains spaces, quotes, or special characters (e.g., QUERY="DevOps Governance")
 
 ---
 
